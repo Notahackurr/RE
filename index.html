@@ -235,11 +235,24 @@ input[type="range"] { width: 100%; accent-color: var(--acc); }
 
 /* progress */
 .prog { max-width: 760px; margin: 0 auto; width: 100%; }
-.prog-head { display: grid; grid-template-columns: auto 1fr auto; gap: 18px; align-items: center; }
-.ring { position: relative; width: 84px; height: 84px; }
-.ring svg { width: 100%; height: 100%; transform: rotate(-90deg); }
-.ring .trk { stroke: var(--raise); } .ring .arc { stroke: var(--acc); stroke-linecap: round; transition: stroke-dashoffset .5s var(--ease); }
-.ring b { position: absolute; inset: 0; display: grid; place-items: center; font: 600 18px var(--mono); }
+/* mascot: plays in a spotlight inside the progress ring until the job reaches 100% */
+.prog-hero { display: grid; justify-items: center; text-align: center; gap: 4px; padding-top: 4px; }
+.mascot-ring { position: relative; width: clamp(180px, 34vw, 236px); aspect-ratio: 1; margin-bottom: 6px; }
+.mascot-ring svg { position: absolute; inset: 0; width: 100%; height: 100%; transform: rotate(-90deg); overflow: visible; }
+.mascot-ring .trk { stroke: var(--raise); }
+.mascot-ring .arc { stroke-linecap: round; transition: stroke-dashoffset .6s var(--ease); }
+.mascot-stage { position: relative; display: block; overflow: hidden; border-radius: 50%; isolation: isolate;
+  background: radial-gradient(circle at 50% 38%, #FFFFFF 0%, #F3F5FF 46%, color-mix(in srgb, var(--acc-fill-3) 26%, #E9EDFF) 100%);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .7), inset 0 -10px 24px color-mix(in srgb, var(--acc-fill-2) 14%, transparent), 0 18px 44px color-mix(in srgb, var(--acc-fill-2) 26%, transparent); }
+.mascot-ring .mascot-stage { position: absolute; inset: 8%; }
+.mascot-stage img { display: block; width: 115.4%; max-width: none; margin: -19.2% 0 0 -11.5%; user-select: none; -webkit-user-select: none; pointer-events: none; image-rendering: auto; }
+.mascot-stage.sm { width: 92px; height: 92px; }
+.prog-hero .pct { font: 600 15px var(--mono); color: var(--muted); font-variant-numeric: tabular-nums; }
+.prog-hero h2 { max-width: 30ch; }
+.prog-foot { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; border-top: 1px solid var(--line); padding-top: 14px; }
+.prog-foot .hint { flex: 1; min-width: 200px; }
+#progress .stages { max-width: 520px; width: 100%; margin: 0 auto; }
+.mascot-ring .trk { stroke: var(--raise); } .mascot-ring .arc { stroke: var(--acc); stroke-linecap: round; transition: stroke-dashoffset .5s var(--ease); }
 .stages { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; }
 .stage { display: grid; grid-template-columns: 26px 1fr auto; gap: 12px; align-items: center; padding: 9px 0; }
 .stage .d { width: 22px; height: 22px; border-radius: 50%; border: 1.5px solid var(--line-2); display: grid; place-items: center; font-size: 12px; font-weight: 800; }
@@ -428,8 +441,8 @@ input[type="range"] { width: 100%; accent-color: var(--acc); }
 .drop h2, .hero-grad { background: linear-gradient(100deg, var(--fg) 20%, var(--acc) 60%, var(--acc-3)); background-size: 200% auto; -webkit-background-clip: text; background-clip: text; color: transparent; animation: flow 12s ease-in-out infinite; }
 .drop .ico, .add-tile .ico, .dropover .ico { background: var(--grad-soft); }
 .card { background: linear-gradient(180deg, color-mix(in srgb, var(--panel) 96%, var(--acc-fill)) 0%, var(--panel) 140px); }
-.ring .arc { stroke: url(#ringGrad); filter: drop-shadow(0 0 6px color-mix(in srgb, var(--acc-fill-2) 45%, transparent)); }
-.ring .g1 { stop-color: var(--acc-fill); } .ring .g2 { stop-color: var(--acc-fill-2); } .ring .g3 { stop-color: var(--acc-fill-3); }
+.mascot-ring .arc { stroke: url(#ringGrad); filter: drop-shadow(0 0 6px color-mix(in srgb, var(--acc-fill-2) 45%, transparent)); }
+.mascot-ring .g1 { stop-color: var(--acc-fill); } .mascot-ring .g2 { stop-color: var(--acc-fill-2); } .mascot-ring .g3 { stop-color: var(--acc-fill-3); }
 .stage .bar i, .mini-bar i { background: var(--grad); background-size: 200% 100%; animation: flow 3s linear infinite; }
 .stage[data-s="done"] .d { background: var(--grad); }
 .tabs button[aria-selected="true"]::after { background: var(--grad); }
@@ -601,7 +614,7 @@ html.side-closed .topbar .mobile-brand b { display: none; }
         <div class="narrow stack" id="clipSetup">
           <input id="takeInput" type="file" accept="video/*,.mov,.mp4,.m4v" hidden>
           <label class="drop" id="clipDrop" for="takeInput">
-            <span class="ico" data-icon="upload"></span>
+            <span class="mascot-stage sm"><img src="mascot/rs-mascot.png" alt="" draggable="false"></span>
             <h2>Turn a take into a finished reel</h2>
             <p class="hint">Pauses and retakes trimmed, captions added, clips and music placed to fit what you say.</p>
             <span class="btn primary">Choose a video</span>
@@ -626,7 +639,7 @@ html.side-closed .topbar .mobile-brand b { display: none; }
         <div class="narrow stack" id="batchSetup">
           <input id="longInput" type="file" accept="video/*,.mov,.mp4,.m4v" hidden>
           <label class="drop" id="batchDrop" for="longInput">
-            <span class="ico" data-icon="batch"></span>
+            <span class="mascot-stage sm"><img src="mascot/rs-mascot.png" alt="" draggable="false"></span>
             <h2>Turn a long video into a batch of reels</h2>
             <p class="hint">A podcast, a vlog, a talk: every line is scored, the strongest hooks open each reel, and each one is edited for you.</p>
             <span class="btn primary">Choose a long video</span>
@@ -666,13 +679,18 @@ html.side-closed .topbar .mobile-brand b { display: none; }
 
       <!-- shared: progress and review move into whichever mode is using them -->
       <div class="card prog" id="progress" hidden>
-        <div class="prog-head">
-          <div class="ring" aria-hidden="true"><svg viewBox="0 0 100 100"><circle class="trk" cx="50" cy="50" r="44" fill="none" stroke-width="7"/><defs><linearGradient id="ringGrad" x1="0" y1="0" x2="1" y2="1"><stop class="g1" offset="0"/><stop class="g2" offset=".55"/><stop class="g3" offset="1"/></linearGradient></defs><circle class="arc" id="ringArc" cx="50" cy="50" r="44" fill="none" stroke-width="7" stroke-dasharray="276.46" stroke-dashoffset="276.46"/></svg><b id="ringPct">0%</b></div>
-          <div><div class="eyebrow" id="progStep">Starting</div><h2 id="progTitle">Creating your reel</h2></div>
-          <button class="btn ghost" id="cancelBtn" type="button">Cancel</button>
+        <div class="prog-hero">
+          <div class="mascot-ring" aria-hidden="true">
+            <svg viewBox="0 0 100 100"><defs><linearGradient id="ringGrad" x1="0" y1="0" x2="1" y2="1"><stop class="g1" offset="0"/><stop class="g2" offset=".55"/><stop class="g3" offset="1"/></linearGradient></defs>
+              <circle class="trk" cx="50" cy="50" r="47" fill="none" stroke-width="3.2"/><circle class="arc" id="ringArc" cx="50" cy="50" r="47" fill="none" stroke-width="3.2" stroke-dasharray="295.31" stroke-dashoffset="295.31"/></svg>
+            <div class="mascot-stage"><img id="mascotLoop" alt="" decoding="async" draggable="false"></div>
+          </div>
+          <b class="pct" id="ringPct">0%</b>
+          <div class="eyebrow" id="progStep">Starting</div>
+          <h2 id="progTitle">Creating your reel</h2>
         </div>
         <ol class="stages" id="stages"></ol>
-        <p class="hint">Keep this page open until it finishes. You can look around the rest of the app meanwhile.</p>
+        <div class="prog-foot"><p class="hint">Keep this page open until it finishes. You can look around the rest of the app meanwhile.</p><button class="btn ghost" id="cancelBtn" type="button">Cancel</button></div>
       </div>
 
       <div id="review" hidden>
@@ -1472,7 +1490,7 @@ async function transcodeClip(file, onP) {
 const Prog = {
   list: [], p: {}, t0: {}, outer: null,
   start(container, title, stages, outer = null) {
-    place($('#progress'), container); this.list = stages; this.p = {}; this.t0 = {}; this.outer = outer;
+    place($('#progress'), container); syncMascot(); this.list = stages; this.p = {}; this.t0 = {}; this.outer = outer;
     $('#progTitle').textContent = title; $('#progStep').textContent = outer ? `Reel ${outer.k + 1} of ${outer.n}` : 'Starting';
     $('#stages').innerHTML = stages.map(([id, l]) => `<li class="stage" id="st-${id}" data-s="wait"><span class="d"></span><span class="lbl"><span>${l}</span><span class="sub"></span><span class="bar"><i></i></span></span><span class="t"></span></li>`).join('');
     this.ring();
@@ -1481,7 +1499,7 @@ const Prog = {
     const ids = this.list.map(x => x[0]); if (!ids.length) return;
     let f = ids.reduce((a, id) => a + (this.p[id] || 0), 0) / ids.length;
     if (this.outer) f = (this.outer.k + f) / this.outer.n;
-    $('#ringArc').style.strokeDashoffset = String(276.46 * (1 - f)); $('#ringPct').textContent = Math.round(f * 100) + '%';
+    $('#ringArc').style.strokeDashoffset = String(295.31 * (1 - f)); $('#ringPct').textContent = Math.round(f * 100) + '%';
   },
   stage(id, p, msg) {
     const li = $('#st-' + id); if (!li) return;
@@ -1495,6 +1513,16 @@ const Prog = {
   },
 };
 const onStage = (id, p, msg) => Prog.stage(id, p, msg);
+// the mascot loop: fetched when you pick a video, playing only while the progress screen is showing
+const MASCOT = 'mascot/rs-mascot-loop.webp';
+let mascotWarm = null;
+const warmMascot = () => { if (!mascotWarm) { mascotWarm = new Image(); mascotWarm.decoding = 'async'; mascotWarm.src = MASCOT; } };
+function syncMascot() {
+  const img = $('#mascotLoop'), on = !$('#progress').hidden;
+  if (on && !img.getAttribute('src')) img.src = MASCOT;
+  else if (!on && img.getAttribute('src')) img.removeAttribute('src');
+}
+new MutationObserver(syncMascot).observe($('#progress'), { attributes: true, attributeFilter: ['hidden'] });
 let wake = null;
 async function keepAwake(on) { try { if (on && 'wakeLock' in navigator) wake = await navigator.wakeLock.request('screen'); else if (!on && wake) { await wake.release(); wake = null; } } catch (e) { wake = null; } }
 $('#cancelBtn').onclick = () => { if (S.abort) S.abort.abort(); };
@@ -1538,7 +1566,7 @@ async function setTake(f) {
   try { const mv = await videoThumb(f, $('#takeThumb')); if (S.clip.file === f) $('#takeSpecs').textContent = `${clock(mv.duration)} · ${mv.W > mv.H ? 'landscape' : 'vertical'}${mv.a ? '' : ' · no sound'}`; }
   catch (err) { if (S.clip.file === f) $('#takeSpecs').textContent = err.message; }
 }
-$('#takeInput').addEventListener('change', e => { const f = e.target.files[0]; e.target.value = ''; setTake(f); });
+$('#takeInput').addEventListener('change', e => { const f = e.target.files[0]; e.target.value = ''; warmMascot(); setTake(f); });
 wireDrop($('#clipDrop'), setTake);
 async function make() {
   if (!S.clip.file) return;
@@ -1591,7 +1619,7 @@ async function setLong(f) {
     else if (mv.duration < 40) { $('#batchError').textContent = 'This video is short. Clip → Reel is made for single takes like this.'; $('#batchError').hidden = false; }
   } catch (err) { if (B.file === f) $('#longSpecs').textContent = err.message; }
 }
-$('#longInput').addEventListener('change', e => { const f = e.target.files[0]; e.target.value = ''; setLong(f); });
+$('#longInput').addEventListener('change', e => { const f = e.target.files[0]; e.target.value = ''; warmMascot(); setLong(f); });
 wireDrop($('#batchDrop'), setLong);
 async function findReels() {
   const B = S.batch; if (!B.file) return;
@@ -1721,7 +1749,7 @@ function openReview(where, idx) {
   const fresh = S.P !== owner.P || S.blob !== owner.blob;
   S.P = owner.P; S.blob = owner.blob; S.rev = { where, idx };
   $('#newReel').hidden = where !== 'clip';
-  $('#pageTitle').textContent = where === 'clip' ? TITLES.clip : `Reel ${idx + 1} of ${S.batch.reels.length}`;
+  if (S.view === (where === 'clip' ? 'clip' : 'batch')) $('#pageTitle').textContent = where === 'clip' ? TITLES.clip : `Reel ${idx + 1} of ${S.batch.reels.length}`;
   if (fresh) loadReview();
   updateBar();
 }
