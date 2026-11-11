@@ -59,7 +59,7 @@ svg.i { width: 20px; height: 20px; flex: none; fill: none; stroke: currentColor;
 .nav-i[aria-current="page"] { background: var(--acc-soft); color: var(--fg); }
 .nav-i[aria-current="page"] svg { color: var(--acc); }
 .nav-i b { font-weight: 600; font-size: 14.5px; }
-.nav-i small { grid-column: 2; font-size: 12px; color: var(--faint); margin-top: -2px; }
+.nav-i small { grid-column: 2 / -1; font-size: 12px; color: var(--faint); margin-top: -2px; }
 .nav-i { position: relative; }
 .nav-i .dot { position: absolute; right: 12px; top: 16px; width: 7px; height: 7px; border-radius: 50%; background: var(--acc); box-shadow: 0 0 10px var(--acc); }
 .side-label { font: 600 11px var(--ui); letter-spacing: .08em; text-transform: uppercase; color: var(--faint); padding: 14px 12px 4px; }
@@ -138,8 +138,8 @@ h3 { margin: 0; font-size: 15px; font-weight: 650; }
 .seg button[aria-pressed="true"] { background: var(--panel); color: var(--fg); box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25), inset 0 0 0 1px var(--line-2); }
 .field { display: grid; gap: 7px; font-size: 13.5px; font-weight: 600; }
 .field > .hint { font-weight: 400; }
-input[type="text"], input[type="email"], select, textarea { width: 100%; padding: 10px 12px; border-radius: 11px; border: 1px solid var(--line-2); background: var(--sunk); font-weight: 400; font-size: 14.5px; transition: border-color .2s, box-shadow .2s; }
-input[type="text"]:focus, input[type="email"]:focus, select:focus, textarea:focus { outline: none; border-color: var(--acc); box-shadow: 0 0 0 3px var(--acc-soft); }
+input[type="text"], input[type="email"], input[type="search"], select, textarea { width: 100%; padding: 10px 12px; border-radius: 11px; border: 1px solid var(--line-2); background: var(--sunk); font-weight: 400; font-size: 14.5px; transition: border-color .2s, box-shadow .2s; }
+input[type="text"]:focus, input[type="email"]:focus, input[type="search"]:focus, select:focus, textarea:focus { outline: none; border-color: var(--acc); box-shadow: 0 0 0 3px var(--acc-soft); }
 textarea { min-height: 92px; resize: vertical; font-family: var(--mono); font-size: 13px; line-height: 1.55; }
 input[type="range"] { width: 100%; accent-color: var(--acc); }
 .range-labels { display: flex; justify-content: space-between; font-size: 12px; color: var(--faint); font-weight: 500; }
@@ -405,17 +405,120 @@ input[type="range"] { width: 100%; accent-color: var(--acc); }
 .add-opt:disabled { opacity: .45; cursor: default; }
 .steps { margin: 0; padding-left: 20px; display: grid; gap: 8px; }
 .prev-video { width: 100%; max-height: 56vh; border-radius: 14px; background: #000; display: block; }
-@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }
+
+/* ---------- library & motion (v3) */
+.nav-i { grid-template-columns: 22px 1fr auto; z-index: 1; }
+.nav-i[aria-current="page"] { background: none; }
+.nav-i .cnt { grid-column: 3; grid-row: 1; font: 600 11.5px var(--ui); color: var(--faint); background: var(--panel-2); border-radius: 999px; padding: 1px 8px; min-width: 24px; text-align: center; transition: background .25s, color .25s; }
+.nav-i[aria-current="page"] .cnt { background: color-mix(in srgb, var(--acc) 22%, transparent); color: var(--fg); }
+.nav-i .cnt:empty { display: none; }
+.side { overflow-y: auto; }
+.side-ind { position: absolute; left: 14px; right: 14px; top: 0; height: 0; border-radius: 12px; background: var(--acc-soft); opacity: 0; pointer-events: none; z-index: 0;
+  transition: transform .45s cubic-bezier(.3, 1.3, .5, 1), height .35s var(--ease), opacity .2s; }
+.side-ind::before { content: ""; position: absolute; left: 0; top: 10px; bottom: 10px; width: 3px; border-radius: 3px; background: var(--grad); }
+.side-add { display: grid; grid-template-columns: 34px 1fr; gap: 10px; align-items: center; margin-top: 10px; padding: 10px; border-radius: 14px; border: 1.5px dashed var(--line-2); cursor: pointer; transition: border-color .25s, background .25s, transform .2s var(--ease); }
+.side-add:hover { border-color: var(--acc); background: color-mix(in srgb, var(--acc) 6%, transparent); }
+.side-add:active { transform: scale(.98); }
+.side-add .ic { width: 34px; height: 34px; border-radius: 10px; display: grid; place-items: center; background: var(--grad); color: var(--on-acc); }
+.side-add .ic svg.i { width: 18px; height: 18px; }
+.side-add b { display: block; font-size: 13.5px; font-weight: 650; } .side-add small { display: block; font-size: 11.5px; color: var(--muted); line-height: 1.35; }
+.lib-top { display: flex; gap: 12px; align-items: center; justify-content: space-between; flex-wrap: wrap; }
+.ltabs { position: relative; display: inline-grid; grid-auto-flow: column; grid-auto-columns: 1fr; padding: 4px; border-radius: 14px; background: var(--sunk); border: 1px solid var(--line); }
+.ltabs button { position: relative; z-index: 1; display: flex; align-items: center; justify-content: center; gap: 7px; padding: 8px 16px; min-height: 40px; border: 0; background: none; border-radius: 10px; font-weight: 600; font-size: 14px; color: var(--muted); transition: color .25s; white-space: nowrap; }
+.ltabs button svg.i { width: 17px; height: 17px; }
+.ltabs button[aria-selected="true"] { color: var(--fg); }
+.ltabs button[aria-selected="true"] svg { color: var(--acc); }
+.ltabs .n { font-size: 11.5px; font-weight: 600; color: var(--faint); }
+.ltabs .ind { position: absolute; z-index: 0; top: 4px; bottom: 4px; left: 0; width: 0; border-radius: 10px; background: var(--panel); box-shadow: 0 1px 3px rgba(0, 0, 0, .25), inset 0 0 0 1px var(--line-2); transition: transform .45s cubic-bezier(.3, 1.25, .5, 1), width .35s var(--ease); }
+.lib-tools { display: flex; gap: 8px; align-items: center; flex: 1; justify-content: flex-end; min-width: 240px; }
+.search { position: relative; flex: 1; max-width: 300px; display: flex; align-items: center; }
+.search svg.i { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); width: 17px; height: 17px; color: var(--faint); pointer-events: none; z-index: 1; }
+.search input::-webkit-search-decoration { -webkit-appearance: none; }
+.search input { padding-left: 36px; min-height: 42px; border-radius: 12px; -webkit-appearance: none; }
+@media (max-width: 640px) { .ltabs { width: 100%; grid-auto-columns: minmax(0, 1fr); } .ltabs button { padding: 8px 4px; gap: 5px; font-size: 13.5px; } .ltabs button svg.i { display: none; } .lib-tools { min-width: 0; width: 100%; } .search { max-width: none; } #libAddLabel { display: none; } #libAdd { padding: 9px 12px; } }
+@media (pointer: coarse) { .drop-only { display: none; } }
+.lib-top, .lib-tools, .ltabs { min-width: 0; }
+.lib { grid-template-columns: repeat(auto-fill, minmax(156px, 1fr)); gap: 14px; }
+.lib.photos { grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); }
+.tile { position: relative; gap: 7px; animation: tileIn .5s var(--ease) both; animation-delay: calc(min(var(--i, 0), 24) * 22ms); }
+@keyframes tileIn { from { opacity: 0; transform: translateY(10px) scale(.97); } }
+.tile .media { cursor: pointer; transition: transform .35s var(--ease), box-shadow .35s var(--ease); box-shadow: 0 0 0 1px var(--line); }
+.lib.photos .tile .media { aspect-ratio: 4 / 3; }
+.tile:hover .media { transform: translateY(-3px); box-shadow: 0 0 0 1px var(--line-2), 0 16px 34px rgba(0, 0, 0, .3); }
+.tile .media::after { content: ""; position: absolute; inset: 55% 0 0; background: linear-gradient(transparent, rgba(0, 0, 0, .45)); pointer-events: none; }
+.tile .tag { z-index: 1; } .tile .mine { z-index: 1; }
+.tile .need { position: absolute; z-index: 1; left: 7px; bottom: 7px; font-size: 11px; font-weight: 700; background: rgba(0, 0, 0, .62); color: #fff; padding: 2px 7px; border-radius: 6px; backdrop-filter: blur(6px); }
+.tile b { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.add-tile { display: grid; place-items: center; align-content: center; gap: 8px; aspect-ratio: 9 / 16; border-radius: 14px; border: 1.5px dashed var(--line-2); background: none; color: var(--muted); font-weight: 600; font-size: 13.5px; text-align: center; padding: 12px; cursor: pointer; transition: border-color .25s, color .25s, background .25s; animation: tileIn .5s var(--ease) both; }
+.lib.photos .add-tile { aspect-ratio: 4 / 3; }
+.add-tile:hover { border-color: var(--acc); color: var(--fg); background: color-mix(in srgb, var(--acc) 5%, transparent); }
+.add-tile .ico { width: 44px; height: 44px; border-radius: 14px; display: grid; place-items: center; background: var(--acc-soft); color: var(--acc); }
+.skel { aspect-ratio: 9 / 16; border-radius: 14px; background: linear-gradient(100deg, var(--panel-2) 30%, var(--raise) 50%, var(--panel-2) 70%); background-size: 300% 100%; animation: shimmer 1.4s linear infinite; }
+@keyframes shimmer { from { background-position: 100% 0; } to { background-position: -100% 0; } }
+.empty-hero { grid-column: 1 / -1; display: grid; justify-items: center; gap: 10px; text-align: center; padding: 36px 18px; border: 1.5px dashed var(--line-2); border-radius: var(--r); color: var(--muted); }
+.empty-hero b { color: var(--fg); font-size: 16px; }
+.trk { display: grid; grid-template-columns: 40px minmax(0, 1fr) auto; gap: 12px; align-items: center; padding: 10px 12px; border-radius: 14px; background: var(--panel-2); border: 1px solid var(--line); animation: tileIn .45s var(--ease) both; animation-delay: calc(min(var(--i, 0), 12) * 30ms); }
+.trk b { display: block; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; } .trk span { font-size: 12.5px; color: var(--muted); }
+.trk .acts { display: flex; gap: 4px; align-items: center; }
+.mtile .def { grid-column: 1; font-size: 11px; font-weight: 700; color: var(--acc); }
+/* asset sheet */
+.asset { display: grid; gap: 16px; grid-template-columns: minmax(0, 1fr); }
+@media (min-width: 640px) { .asset { grid-template-columns: 200px minmax(0, 1fr); align-items: start; } }
+.asset .pv { width: 100%; border-radius: 14px; background: #000; display: block; aspect-ratio: 9 / 16; object-fit: cover; }
+.asset .pv.wide { aspect-ratio: 4 / 3; }
+.asset .tags { display: flex; flex-wrap: wrap; gap: 6px; }
+/* import tray */
+.tray { position: fixed; z-index: 45; right: 20px; bottom: calc(20px + env(safe-area-inset-bottom, 0px)); width: min(340px, calc(100vw - 32px)); padding: 12px; border-radius: 18px; background: var(--panel); border: 1px solid var(--line-2); box-shadow: 0 20px 50px rgba(0, 0, 0, .4); animation: trayIn .4s cubic-bezier(.3, 1.3, .5, 1); }
+@keyframes trayIn { from { opacity: 0; transform: translateY(16px) scale(.97); } }
+.tray-head { padding: 2px 4px 8px; font-size: 14px; }
+.tray-list { display: grid; gap: 6px; max-height: 40vh; overflow: auto; }
+.tray-row { display: grid; grid-template-columns: 36px minmax(0, 1fr) auto; gap: 10px; align-items: center; padding: 6px; border-radius: 12px; background: var(--panel-2); }
+.tray-row .th { width: 36px; height: 36px; border-radius: 9px; background: var(--sunk); object-fit: cover; display: grid; place-items: center; color: var(--muted); overflow: hidden; }
+.tray-row .th svg.i { width: 17px; height: 17px; }
+.tray-row b { display: block; font-size: 13px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tray-row small { font-size: 12px; color: var(--muted); }
+.tray-row .ok { color: var(--ok); } .tray-row .bad { color: var(--bad); }
+@media (max-width: 899px) { .tray { left: 16px; right: 16px; width: auto; bottom: calc(80px + env(safe-area-inset-bottom, 0px)); } }
+.dropover { position: fixed; inset: 0; z-index: 70; display: grid; place-items: center; padding: 24px; background: color-mix(in srgb, var(--bg) 70%, transparent); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); animation: fade .2s; pointer-events: none; }
+.dropover > div { display: grid; justify-items: center; gap: 10px; text-align: center; padding: 48px 40px; border-radius: 28px; border: 2px dashed var(--acc); background: var(--panel); box-shadow: 0 30px 80px rgba(0, 0, 0, .4); animation: trayIn .35s cubic-bezier(.3, 1.3, .5, 1); }
+.dropover .ico { width: 64px; height: 64px; border-radius: 20px; display: grid; place-items: center; background: var(--acc-soft); color: var(--acc); }
+.dropover .ico svg.i { width: 30px; height: 30px; }
+.dropover b { font-size: 20px; } .dropover small { color: var(--muted); font-size: 14px; max-width: 34ch; }
+.toast { display: flex; align-items: center; gap: 12px; }
+.toast button { border: 0; background: none; color: inherit; font-weight: 700; text-decoration: underline; text-underline-offset: 3px; padding: 0; }
+/* motion: page changes cross-fade and rise, interactive surfaces respond */
+html.vt .view:not([hidden]) { animation: none; }
+.content { view-transition-name: content; }
+.topbar h1 { view-transition-name: title; }
+::view-transition-old(content) { animation: vtOut .16s ease-in both; }
+::view-transition-new(content) { animation: vtIn .38s cubic-bezier(.2, .8, .2, 1) both; }
+::view-transition-old(title) { animation: vtOut .12s ease-in both; }
+::view-transition-new(title) { animation: vtIn .3s var(--ease) both; }
+@keyframes vtOut { to { opacity: 0; transform: translateY(-4px); } }
+@keyframes vtIn { from { opacity: 0; transform: translateY(8px); } }
+.card { transition: border-color .3s var(--ease), box-shadow .3s var(--ease); }
+.btn { transition: background .2s, border-color .2s, transform .25s cubic-bezier(.3, 1.4, .5, 1), box-shadow .25s, opacity .2s, filter .2s; }
+.btn:active { transform: scale(.96); }
+.chip { transition: background .2s, color .2s, border-color .2s, transform .2s cubic-bezier(.3, 1.4, .5, 1); }
+.chip:active { transform: scale(.95); }
+.mtile { transition: border-color .2s, background .2s, transform .25s cubic-bezier(.3, 1.4, .5, 1), box-shadow .2s; }
+.mtile:active { transform: scale(.97); }
+.seg button { transition: background .25s var(--ease), color .2s, box-shadow .25s; }
+html { scroll-behavior: smooth; }
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } html { scroll-behavior: auto; } }
 </style>
 </head>
 <body>
 <div class="shell">
-  <aside class="side" aria-label="Main">
+  <aside class="side" aria-label="Main"><i class="side-ind" aria-hidden="true"></i>
     <div class="brand"><span class="logo" data-icon="play"></span><b>Reel <span>Studio</span></b></div>
     <button class="nav-i" data-go="clip"><span data-icon="clip"></span><b>Clip → Reel</b><small>One take, one finished reel</small></button>
     <button class="nav-i" data-go="batch"><span data-icon="batch"></span><b>Long form → Reels</b><small>A long video into a batch</small></button>
-    <div class="side-label">Assets</div>
-    <button class="nav-i" data-go="library"><span data-icon="grid"></span><b>Library</b><small>Clips, photos and music</small></button>
+    <div class="side-label">Library</div>
+    <button class="nav-i" data-go="library" data-tab="clips"><span data-icon="film"></span><b>Clips</b><span class="cnt" data-cnt="clips"></span></button>
+    <button class="nav-i" data-go="library" data-tab="photos"><span data-icon="image"></span><b>Photos</b><span class="cnt" data-cnt="photos"></span></button>
+    <button class="nav-i" data-go="library" data-tab="music"><span data-icon="note"></span><b>Music</b><span class="cnt" data-cnt="music"></span></button>
+    <label class="side-add" for="mediaInput"><span class="ic" data-icon="plus"></span><span><b>Add your media</b><small>Videos, photos or songs — or drop them anywhere</small></span></label>
     <div class="grow"></div>
     <button class="nav-i" data-go="settings"><span data-icon="gear"></span><b>Settings</b></button>
     <div class="plan-card"><b>Free plan</b><span>Paid plans and billing are coming soon.</span></div>
@@ -563,25 +666,32 @@ input[type="range"] { width: 100%; accent-color: var(--acc); }
       <!-- ============ LIBRARY ============ -->
       <section class="view" id="view-library" hidden>
         <div class="stack">
-          <div class="row between">
-            <div class="seg" role="group" aria-label="Library section" id="libSeg"><button type="button" data-v="visuals" aria-pressed="true">Clips and photos</button><button type="button" data-v="music" aria-pressed="false">Music</button></div>
-            <span id="libAddWrap"><label class="btn primary" for="addClips"><span data-icon="plus"></span>Add clips or photos</label></span>
-            <input id="addClips" type="file" accept="video/*,image/*" multiple hidden>
-            <input id="addTracks" type="file" accept="audio/*,.mp3,.m4a,.wav,.aac" multiple hidden>
+          <div class="lib-top">
+            <div class="ltabs" role="tablist" aria-label="Library" id="libTabs"><i class="ind" aria-hidden="true"></i>
+              <button role="tab" type="button" data-tab="clips"><span data-icon="film"></span>Clips<span class="n"></span></button>
+              <button role="tab" type="button" data-tab="photos"><span data-icon="image"></span>Photos<span class="n"></span></button>
+              <button role="tab" type="button" data-tab="music"><span data-icon="note"></span>Music<span class="n"></span></button>
+            </div>
+            <div class="lib-tools">
+              <label class="search"><span data-icon="search"></span><input type="search" id="libSearch" placeholder="Search" aria-label="Search the library" autocomplete="off"></label>
+              <button class="btn primary" id="libAdd" type="button"><span data-icon="plus"></span><span id="libAddLabel">Add clips</span></button>
+            </div>
           </div>
-          <div class="stack" id="libVisuals">
-            <p class="hint">Your reels cut away to these. Yours are used first and stay on this device. Stock is free to use in your reels.</p>
-            <div id="addQueue" class="list"></div>
+          <input id="mediaInput" type="file" accept="video/*,image/*,audio/*,.mov,.mp4,.m4v,.heic,.mp3,.m4a,.wav,.aac" multiple hidden>
+          <input id="addClips" type="file" accept="video/*,.mov,.mp4,.m4v" multiple hidden>
+          <input id="addPhotos" type="file" accept="image/*,.heic" multiple hidden>
+          <input id="addTracks" type="file" accept="audio/*,.mp3,.m4a,.wav,.aac" multiple hidden>
+          <div id="libVisual" class="stack">
             <div class="chips" id="libFilters" role="group" aria-label="Filter"></div>
             <div class="lib" id="libGrid"></div>
           </div>
           <div class="stack" id="libMusic" hidden>
             <div class="card">
-              <div class="row between"><div><h3>Your tracks</h3><p class="hint">Instrumentals you have the rights to use. They stay on this device.</p></div><label class="btn" for="addTracks"><span data-icon="plus"></span>Add tracks</label></div>
+              <div class="row between"><div><h3>Your songs</h3><p class="hint">Instrumentals you have the rights to use. They stay on this device.</p></div><button class="btn" type="button" id="addSongs"><span data-icon="plus"></span>Add songs</button></div>
               <div class="list" id="trackList"></div>
             </div>
             <div class="card">
-              <div><h3>Built-in music</h3><p class="hint">Written fresh for every reel to its exact length, so there's nothing to get flagged. Tap play to hear a sample.</p></div>
+              <div><h3>Built-in music</h3><p class="hint">Written fresh for every reel to its exact length, so nothing gets flagged. Tap ▶ to listen, tap a style to make it your default.</p></div>
               <div class="mgrid" id="genreList"></div>
             </div>
           </div>
@@ -668,6 +778,9 @@ input[type="range"] { width: 100%; accent-color: var(--acc); }
     <button class="btn primary" data-close type="button">Got it</button>
   </div>
 </div>
+<div class="sheet" id="assetSheet" hidden role="dialog" aria-modal="true" aria-label="Details"><div class="card" id="assetCard"></div></div>
+<div class="tray" id="tray" hidden role="status" aria-live="polite"><div class="tray-head"><b id="trayTitle">Adding to your library</b></div><div class="tray-list" id="trayList"></div></div>
+<div class="dropover" id="dropOver" hidden><div><span class="ico" data-icon="upload"></span><b>Drop to add to your library</b><small>Videos become clips, photos become photo cards, songs go to Music.</small></div></div>
 <div class="toast" id="toast" hidden role="status"></div>
 
 <script src="engine.js"></script>
@@ -677,7 +790,12 @@ input[type="range"] { width: 100%; accent-color: var(--acc); }
 const E = window.ReelEngine;
 const $ = s => document.querySelector(s), $$ = s => [...document.querySelectorAll(s)];
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-const toast = (msg, ms = 2600) => { const t = $('#toast'); t.textContent = msg; t.hidden = false; clearTimeout(toast._t); toast._t = setTimeout(() => { t.hidden = true; }, ms); };
+const toast = (msg, ms = 2600, act) => {
+  const t = $('#toast'); t.textContent = msg;
+  if (act) { const b = document.createElement('button'); b.type = 'button'; b.textContent = act.label; b.onclick = () => { t.hidden = true; act.fn(); }; t.append(b); }
+  t.hidden = false; t.style.animation = 'none'; void t.offsetWidth; t.style.animation = '';
+  clearTimeout(toast._t); toast._t = setTimeout(() => { t.hidden = true; }, ms);
+};
 const store = { get(k, d) { try { const v = localStorage.getItem('rs.' + k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } }, set(k, v) { try { localStorage.setItem('rs.' + k, JSON.stringify(v)); } catch (e) { /* storage blocked */ } } };
 const clock = t => { t = Math.max(0, Math.round(t)); return `${Math.floor(t / 60)}:${String(t % 60).padStart(2, '0')}`; };
 const longClock = t => { t = Math.max(0, Math.round(t)); const h = Math.floor(t / 3600), m = Math.floor(t % 3600 / 60); return h ? `${h}:${String(m).padStart(2, '0')}:${String(t % 60).padStart(2, '0')}` : clock(t); };
@@ -708,6 +826,10 @@ const P_ = {
   hook: '<path d="M13 2 4 14h7l-1 8 9-12h-7z"/>',
   stop: '<rect x="7" y="7" width="10" height="10" rx="1.5" fill="currentColor" stroke="none"/>',
   check: '<path d="m5 12.5 4.5 4.5L19 7.5"/>',
+  film: '<rect x="3.5" y="3.5" width="17" height="17" rx="3"/><path d="M8 3.5v17M16 3.5v17M3.5 8.5H8M3.5 15.5H8M16 8.5h4.5M16 15.5h4.5"/>',
+  search: '<circle cx="11" cy="11" r="6.5"/><path d="m20 20-4.2-4.2"/>',
+  edit: '<path d="M4 20h4L19 9l-4-4L4 16z"/><path d="m13.5 6.5 4 4"/>',
+  trash: '<path d="M4.5 7h15M10 11v6M14 11v6M6.5 7l1 12.5a1.5 1.5 0 0 0 1.5 1.5h6a1.5 1.5 0 0 0 1.5-1.5l1-12.5M9.5 7V4.5h5V7"/>',
 };
 const icon = n => `<svg class="i" viewBox="0 0 24 24" aria-hidden="true">${P_[n] || ''}</svg>`;
 const paintIcons = (root = document) => root.querySelectorAll('[data-icon]').forEach(el => { if (!el.dataset.painted) { el.insertAdjacentHTML('afterbegin', icon(el.dataset.icon)); el.dataset.painted = '1'; } });
@@ -783,7 +905,7 @@ const IDB = (() => {
 })();
 const urls = new Map();
 const blobUrl = (key, blob) => { if (!blob) return null; if (!urls.has(key)) urls.set(key, URL.createObjectURL(blob)); return urls.get(key); };
-const S = { stock: [], photos: [], added: [], tracks: [], libFilter: 'all', libTab: 'visuals', trends: null,
+const S = { stock: [], photos: [], added: [], tracks: [], libFilter: 'all', libTab: 'clips', libQuery: '', stockLoaded: false, trends: null,
   clip: { stage: 'setup', file: null, P: null, blob: null }, batch: { stage: 'setup', file: null, fileUrl: null, prep: null, cands: [], reels: [] },
   P: null, blob: null, rev: null, busy: null, abort: null, view: 'clip' };
 async function loadDeviceLibrary() {
@@ -806,20 +928,35 @@ const stamp = () => { const d = new Date(), p = n => String(n).padStart(2, '0');
 
 // ---------------------------------------------------------- navigation
 const TITLES = { clip: 'Clip → Reel', batch: 'Long form → Reels', library: 'Library', settings: 'Settings' };
+const LIB_TITLES = { clips: 'Clips', photos: 'Photos', music: 'Music' };
+const reduced = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
+const canVT = !!document.startViewTransition;
+if (canVT) document.documentElement.classList.add('vt');
+/** Run a UI change as a smooth page transition where the browser supports it. */
+const smooth = fn => { if (canVT && !reduced()) { try { return document.startViewTransition(fn); } catch (e) { /* fall through */ } } fn(); };
+function markNav() {
+  $$('[data-go]').forEach(b => { const on = b.dataset.go === S.view && (!b.dataset.tab || b.dataset.tab === S.libTab); b.setAttribute('aria-current', on ? 'page' : 'false'); });
+  const cur = $('.side [data-go][aria-current="page"]'), ind = $('.side-ind');
+  if (cur && ind && cur.offsetParent) { ind.style.transform = `translateY(${cur.offsetTop}px)`; ind.style.height = cur.offsetHeight + 'px'; ind.style.opacity = '1'; }
+  else if (ind) ind.style.opacity = '0';
+}
 function go(v, opts = {}) {
   S.view = v;
-  $$('[data-go]').forEach(b => b.setAttribute('aria-current', b.dataset.go === v ? 'page' : 'false'));
+  if (v === 'library' && opts.tab) setLibTab(opts.tab, true);
   $$('.view').forEach(s => { s.hidden = s.id !== 'view-' + v; });
+  markNav();
   $('#pageTitle').textContent = TITLES[v];
   if (v !== 'library') { $$('#libGrid video').forEach(x => x.pause()); }
   stopPlaying();
+  if (v === 'library') { renderLib(); requestAnimationFrame(moveTabInd); }
   if (v === 'clip') showClip(); else if (v === 'batch') showBatch(); else hideShared();
   if (v === 'settings') renderSettings(opts.section);
   updateBar(); updateBusy();
   if (!opts.keepScroll) window.scrollTo(0, 0);
   if (opts.section) setTimeout(() => { const el = document.getElementById('set-' + opts.section); if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 60);
 }
-$$('[data-go]').forEach(b => b.addEventListener('click', () => go(b.dataset.go)));
+$$('[data-go]').forEach(b => b.addEventListener('click', () => { if (b.dataset.go === S.view && (!b.dataset.tab || b.dataset.tab === S.libTab)) return window.scrollTo({ top: 0 }); smooth(() => go(b.dataset.go, { tab: b.dataset.tab })); }));
+addEventListener('resize', () => { markNav(); moveTabInd(); });
 function hideShared() { $('#progress').hidden = true; $('#review').hidden = true; $('#backBtn').hidden = true; }
 function place(el, container) { if (el.parentElement !== container) container.appendChild(el); el.hidden = false; }
 function updateBusy() {
@@ -828,7 +965,7 @@ function updateBusy() {
   $$('[data-go] .dot').forEach(d => d.remove());
   if (S.busy) $$(`[data-go="${S.busy}"]`).forEach(x => x.insertAdjacentHTML('beforeend', '<i class="dot"></i>'));
 }
-$('#busyChip').onclick = () => S.busy && go(S.busy);
+$('#busyChip').onclick = () => S.busy && smooth(() => go(S.busy));
 document.addEventListener('keydown', e => { if (e.key === 'Escape') { $$('.sheet').forEach(x => { x.hidden = true; }); closeMenu(); stopPreview(); } });
 $$('.sheet').forEach(sh => { sh.addEventListener('click', e => { if (e.target === sh || e.target.closest('[data-close]')) { sh.hidden = true; if (sh.id === 'prevSheet') stopPreview(); } }); });
 // account menu
@@ -838,8 +975,8 @@ document.addEventListener('click', e => { if (!e.target.closest('.menu-wrap')) c
 $$('#menuTheme button').forEach(b => b.onclick = e => { e.stopPropagation(); SET.theme = b.dataset.v; save(); refresh(); });
 $$('#acctMenu [data-menu]').forEach(b => b.onclick = () => {
   closeMenu(); const k = b.dataset.menu;
-  if (k === 'account') go('settings', { section: 'account' });
-  else if (k === 'settings') go('settings');
+  if (k === 'account') smooth(() => go('settings', { section: 'account' }));
+  else if (k === 'settings') smooth(() => go('settings'));
   else if (k === 'install') { $('#homeSheet').hidden = false; }
   else if (k === 'help') { $('#helpSheet').hidden = false; }
 });
@@ -902,11 +1039,15 @@ const ctl = {
     field('Size', seg([['s', 'Small'], ['m', 'Medium'], ['l', 'Large']], () => SET.cap.size, v => { SET.cap.size = v; })),
     field('Position', seg([['lower', 'Lower'], ['middle', 'Middle']], () => SET.cap.pos, v => { SET.cap.pos = v; })),
     field('Letters', seg([['normal', 'As spoken'], ['upper', 'ALL CAPS']], () => SET.cap.upper ? 'upper' : 'normal', v => { SET.cap.upper = v === 'upper'; }))),
-  visuals: () => frag(
-    h('<p class="hint">Clips and photos are matched to the meaning and feel of each line, and how you say it. Your own clips go first.</p>'),
+  visuals: () => { const own = ownItems(), nc = own.filter(i => i.kind === 'clip').length, np = own.length - nc;
+    const mine = h(`<div class="trk" style="grid-template-columns:40px minmax(0,1fr) auto;animation:none"><span class="play" style="background:var(--acc-soft);color:var(--acc);border:0">${icon('film')}</span><div style="min-width:0"><b>Your clips and photos</b><span>${own.length ? `${nc} clip${nc === 1 ? '' : 's'}, ${np} photo${np === 1 ? '' : 's'} · used first` : 'None yet. Your own footage is matched first.'}</span></div><div class="acts"><button class="btn sm" type="button">${icon('plus')}Add</button>${own.length ? '<button class="btn ghost sm" type="button" data-see>See all</button>' : ''}</div></div>`);
+    mine.querySelector('.btn:not([data-see])').onclick = () => $('#mediaInput').click();
+    const see = mine.querySelector('[data-see]'); if (see) see.onclick = () => smooth(() => { go('library', { tab: nc ? 'clips' : 'photos' }); S.libFilter = 'mine'; renderLib(); });
+    return frag(
+    h('<p class="hint">Clips and photos are matched to the meaning and feel of each line, and how you say it. Your own clips go first.</p>'), mine,
     sw('Free stock footage', `${S.stock.length} clips and ${S.photos.length} photos, free to use in your reels.`, () => SET.vis.stock, v => { SET.vis.stock = v; }),
     sw('Photo cards', 'A photo slides into the lower half while you stay on camera.', () => SET.vis.photos, v => { SET.vis.photos = v; }),
-    field('How many', seg([['fewer', 'Fewer'], ['balanced', 'Balanced'], ['more', 'More']], () => SET.vis.amount, v => { SET.vis.amount = v; }))),
+    field('How many', seg([['fewer', 'Fewer'], ['balanced', 'Balanced'], ['more', 'More']], () => SET.vis.amount, v => { SET.vis.amount = v; }))); },
   music: () => musicPicker({ value: SET.music.choice, level: SET.music.level, onPick: v => { SET.music.choice = v; save(); refresh(); }, onLevel: v => { SET.music.level = v; save(); } }),
   editing: () => frag(
     field('Pauses', seg([['tight', 'Tight'], ['natural', 'Natural'], ['relaxed', 'Relaxed']], () => SET.edit.pauses, v => { SET.edit.pauses = v; }), 'How much of the silence between lines is cut.'),
@@ -946,7 +1087,7 @@ function refresh() {
   accordion($('#clipStyle'), ['captions', 'visuals', 'music', 'editing']);
   accordion($('#batchStyle'), ['reels', 'captions', 'visuals', 'music', 'editing']);
   if (S.view === 'settings') renderSettings();
-  if (S.libTab === 'music') renderGenres();
+  if (S.view === 'library') renderLib();
   if (S.P && !$('#review').hidden) renderReelMusic();
   notes();
 }
@@ -1001,36 +1142,13 @@ function musicPicker({ value, level, onPick, onLevel }) {
   }
   const el = h(`<div class="stack" style="gap:14px"><div class="mgrid">${tiles.join('')}</div>
     <label class="field" ${value === 'none' ? 'hidden' : ''}>Music volume<input type="range" min="-22" max="-4" step="1" value="${level}"><div class="range-labels"><span>Quiet</span><span>Loud</span></div></label>
-    ${S.tracks.length ? '' : '<p class="hint">Want your own songs? Add them in Library → Music.</p>'}</div>`);
+    <button class="btn ghost sm" type="button" data-addsong style="justify-self:start">${icon('plus')}Add your own songs</button></div>`);
+  el.querySelector('[data-addsong]').onclick = () => $('#addTracks').click();
   el.querySelectorAll('[data-v]').forEach(t => { const pick = e => { if (e.target.closest('[data-play]')) return; onPick(t.dataset.v); }; t.onclick = pick; t.onkeydown = e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onPick(t.dataset.v); } }; });
   el.querySelectorAll('[data-play]').forEach(b => b.onclick = e => { e.stopPropagation(); playKey(b.dataset.play); });
   const r = el.querySelector('input[type=range]'); r.onchange = () => onLevel(+r.value);
   return el;
 }
-function renderGenres() {
-  $('#genreList').innerHTML = Object.entries(E.GENRES).map(([k, g]) => `<div class="mtile" data-k="${k}"><b>${g.label}</b><small>${g.about} · ${g.bpm} bpm</small><button class="play ${playingKey === 'genre:' + k ? 'on' : ''}" type="button" data-play="genre:${k}" aria-label="Hear ${g.label}">${icon(playingKey === 'genre:' + k ? 'stop' : 'play')}</button></div>`).join('');
-  $$('#genreList [data-play]').forEach(b => b.onclick = () => playKey(b.dataset.play));
-}
-function renderTracks() {
-  const l = $('#trackList');
-  l.innerHTML = S.tracks.length ? S.tracks.map(t => `<div class="item"><div class="ph">${icon('note')}</div><div><b>${esc(t.name)}</b><span>${clock(t.duration)}</span></div>
-      <div class="row" style="gap:4px"><button class="play" type="button" data-play="mine:${esc(t.docId)}" aria-label="Play">${icon(playingKey === 'mine:' + t.docId ? 'stop' : 'play')}</button><button class="btn ghost sm" type="button" data-del="${esc(t.docId)}">Remove</button></div></div>`).join('')
-    : '<div class="empty">No tracks yet. Reels use the built-in music until you add some.</div>';
-  $$('#trackList [data-play]').forEach(b => b.onclick = () => playKey(b.dataset.play));
-  $$('#trackList [data-del]').forEach(b => b.onclick = async () => {
-    if (b.dataset.confirm !== '1') { b.dataset.confirm = '1'; b.textContent = 'Tap again'; setTimeout(() => { b.dataset.confirm = ''; b.textContent = 'Remove'; }, 3000); return; }
-    try { await IDB.del('tracks', b.dataset.del); if (playingKey === 'mine:' + b.dataset.del) stopPlaying(); previewCache.delete('mine:' + b.dataset.del); await loadDeviceLibrary(); toast('Track removed'); } catch (e) { toast(`Couldn't remove: ${e.message}`); }
-  });
-}
-$('#addTracks').addEventListener('change', async e => {
-  const files = [...e.target.files]; e.target.value = '';
-  for (const f of files) {
-    toast(`Adding ${f.name}…`, 8000);
-    try { const { blob, duration } = await E.audioToM4a(f); await IDB.put('tracks', { docId: newId(), name: f.name.replace(/\.[^.]+$/, ''), duration: +duration.toFixed(1), blob, addedAt: new Date().toISOString() }); await loadDeviceLibrary(); toast(`Added ${f.name}`); }
-    catch (err) { toast(`Couldn't add ${f.name}: ${err.code || err.message}`, 5000); }
-  }
-});
-
 // ---------------------------------------------------------- library: clips and photos
 const label = it => it ? (it.subject || it.suggested_use || String(it.name || it.id || '').replace(/_/g, ' ')) : '';
 async function loadStock() {
@@ -1039,82 +1157,216 @@ async function loadStock() {
     S.stock = st.clips.map(c => ({ ...c, kind: 'clip', duration: c.duration_s, url: 'stock/' + c.file, thumbUrl: 'stock/' + c.thumb, source: 'stock', suggested_use: c.subject }));
     S.photos = (st.photos || []).map(p => ({ ...p, kind: 'photo', url: 'stock/' + p.file, thumbUrl: 'stock/' + (p.thumb || p.file), source: 'stock', suggested_use: p.subject }));
   } catch (e) { S.stock = []; S.photos = []; }
-  renderLib(); refresh();
+  S.stockLoaded = true; renderLib(); refresh();
 }
 async function loadTrends() { try { S.trends = await (await fetch('trends.json', { cache: 'no-store' })).json(); } catch (e) { S.trends = null; } }
 function ownItems() {
   return S.added.map(a => ({ id: a.name, name: a.name, kind: a.kind || 'clip', duration: a.duration, tags: a.tags || [], category: a.category || 'added', subject: a.subject || a.name,
-    suggested_use: a.subject || (a.tags || []).join(', '), url: a.url, thumbUrl: a.thumbUrl, source: 'added', docId: a.docId, energy: a.energy }));
+    suggested_use: a.subject || (a.tags || []).join(', '), url: a.url, thumbUrl: a.thumbUrl, source: 'added', docId: a.docId, energy: a.energy, needsInfo: !!a.needsInfo }));
 }
 function allItems() { return [...ownItems(), ...S.stock, ...S.photos]; }
 function planItems() { return (SET.vis.stock ? [...ownItems(), ...S.stock] : ownItems()).filter(i => i.kind !== 'photo'); }
 function popItems() { const own = ownItems().filter(i => i.kind === 'still' || i.kind === 'photo'); return SET.vis.stock ? [...S.photos, ...own] : own; }
-const CATS = { all: 'All', mine: 'Mine', photos: 'Photos', nature: 'Nature', training: 'Training', habits: 'Habits', lifestyle: 'Lifestyle', food: 'Food', family: 'Family', mood: 'Mood', contrast: 'Contrast', added: 'Other' };
+const CATS = { all: 'All', mine: 'Yours', stock: 'Stock', photos: 'Photos', nature: 'Nature', training: 'Training', habits: 'Habits', lifestyle: 'Lifestyle', food: 'Food', family: 'Family', mood: 'Mood', contrast: 'Contrast', added: 'Other' };
 const ADD_CATS = ['added', 'nature', 'training', 'habits', 'lifestyle', 'food', 'family', 'mood', 'contrast'];
-const inCat = (i, k) => k === 'all' || (k === 'mine' ? i.source === 'added' : k === 'photos' ? i.kind === 'photo' || i.kind === 'still' : i.category === k);
+const inCat = (i, k) => k === 'all' || (k === 'mine' ? i.source === 'added' : k === 'stock' ? i.source === 'stock' : k === 'photos' ? i.kind === 'photo' || i.kind === 'still' : i.category === k);
+
+// ---------------------------------------------------------- library view: Clips · Photos · Music
+const libItems = tab => tab === 'photos' ? [...ownItems().filter(i => i.kind !== 'clip'), ...S.photos] : [...ownItems().filter(i => i.kind === 'clip'), ...S.stock];
+const matches = (i, q) => !q || [label(i), ...(i.tags || []), CATS[i.category] || '', i.name || ''].join(' ').toLowerCase().includes(q);
+function setLibTab(tab, quiet) {
+  if (S.libTab !== tab) { S.libTab = tab; S.libFilter = 'all'; }
+  $$('#libTabs [data-tab]').forEach(b => b.setAttribute('aria-selected', String(b.dataset.tab === tab)));
+  $('#libVisual').hidden = tab === 'music'; $('#libMusic').hidden = tab !== 'music';
+  $('#libAddLabel').textContent = { clips: 'Add clips', photos: 'Add photos', music: 'Add songs' }[tab];
+  $('#libSearch').placeholder = { clips: 'Search clips', photos: 'Search photos', music: 'Search songs' }[tab];
+  if (tab !== 'music') stopPlaying(); $$('#libGrid video').forEach(x => x.pause());
+  if (!quiet) { markNav(); renderLib(); requestAnimationFrame(moveTabInd); }
+}
+function moveTabInd() {
+  const b = $(`#libTabs [data-tab="${S.libTab}"]`), ind = $('#libTabs .ind'); if (!b || !b.offsetParent) return;
+  ind.style.width = b.offsetWidth + 'px'; ind.style.transform = `translateX(${b.offsetLeft}px)`;
+}
+$$('#libTabs [data-tab]').forEach(b => b.onclick = () => smooth(() => setLibTab(b.dataset.tab)));
+$('#libSearch').oninput = e => { S.libQuery = e.target.value.trim().toLowerCase(); renderLib(); };
+$('#libAdd').onclick = () => $(S.libTab === 'music' ? '#addTracks' : S.libTab === 'photos' ? '#addPhotos' : '#addClips').click();
+$('#addSongs').onclick = () => $('#addTracks').click();
+function renderCounts() {
+  const own = ownItems(), c = { clips: S.stock.length + own.filter(i => i.kind === 'clip').length, photos: S.photos.length + own.filter(i => i.kind !== 'clip').length, music: Object.keys(E.GENRES).length + S.tracks.length };
+  for (const k in c) { $$(`[data-cnt="${k}"]`).forEach(x => { x.textContent = S.stockLoaded || k === 'music' ? c[k] : ''; }); const t = $(`#libTabs [data-tab="${k}"] .n`); if (t) t.textContent = S.stockLoaded || k === 'music' ? c[k] : ''; }
+  requestAnimationFrame(moveTabInd);
+}
+let hoverVideo = null;
 function renderLib() {
-  const items = allItems(), f = $('#libFilters');
-  const cats = Object.keys(CATS).filter(k => k === 'mine' || k === 'all' || items.some(i => inCat(i, k)));
-  f.innerHTML = cats.map(k => `<button class="chip" type="button" data-c="${k}" aria-pressed="${S.libFilter === k}">${CATS[k]}<span class="n">${items.filter(i => inCat(i, k)).length}</span></button>`).join('');
-  f.querySelectorAll('button').forEach(b => b.onclick = () => { S.libFilter = b.dataset.c; renderLib(); });
-  const list = items.filter(i => inCat(i, S.libFilter));
-  $('#libGrid').innerHTML = list.length ? list.map(i => {
+  renderCounts();
+  if (S.libTab === 'music') return renderMusicLib();
+  const tab = S.libTab, items = libItems(tab), q = S.libQuery, grid = $('#libGrid');
+  grid.classList.toggle('photos', tab === 'photos');
+  const cats = ['all', 'mine', 'stock', ...Object.keys(CATS).filter(k => !['all', 'mine', 'stock', 'photos'].includes(k) && items.some(i => i.category === k))];
+  $('#libFilters').innerHTML = cats.map(k => `<button class="chip" type="button" data-c="${k}" aria-pressed="${S.libFilter === k}">${CATS[k]}<span class="n">${items.filter(i => inCat(i, k) && matches(i, q)).length}</span></button>`).join('');
+  $$('#libFilters button').forEach(b => b.onclick = () => { S.libFilter = b.dataset.c; renderLib(); });
+  if (!S.stockLoaded) { grid.innerHTML = Array.from({ length: 10 }, () => '<div class="skel"></div>').join(''); return; }
+  const list = items.filter(i => inCat(i, S.libFilter) && matches(i, q));
+  const noun = tab === 'photos' ? 'photos' : 'clips';
+  const addTile = `<button class="add-tile" type="button" data-add style="--i:0"><span class="ico">${icon('plus')}</span>Add your own ${noun}<small class="muted drop-only" style="font-weight:400">or drop files here</small></button>`;
+  const tiles = list.map((i, k) => {
     const mine = i.source === 'added' ? '<span class="mine">Yours</span>' : '';
+    const need = i.source === 'added' && i.needsInfo ? '<span class="need">Add a description</span>' : '';
     const media = i.kind === 'clip'
-      ? `<button class="media" type="button" data-play aria-label="Preview: ${esc(label(i))}"><video src="${esc(i.url)}" ${i.thumbUrl ? `poster="${esc(i.thumbUrl)}"` : ''} muted loop playsinline preload="none"></video><span class="tag">${(+i.duration || 0).toFixed(0)}s</span>${mine}</button>`
-      : `<div class="media"><img src="${esc(i.thumbUrl || i.url)}" alt="${esc(label(i))}" loading="lazy"><span class="tag">Photo</span>${mine}</div>`;
-    const del = i.source === 'added' ? `<button class="btn ghost sm" type="button" data-del="${esc(i.docId)}">Remove</button>` : '';
-    return `<article class="tile">${media}<b>${esc(label(i))}</b><small>${esc(CATS[i.category] || '')}</small>${del}</article>`;
-  }).join('') : `<div class="empty" style="grid-column:1/-1">${S.libFilter === 'mine' ? 'Nothing of yours yet. Tap “Add clips or photos”.' : 'Nothing here yet.'}</div>`;
-  $$('#libGrid [data-play]').forEach(b => b.onclick = () => { const v = b.querySelector('video'); $$('#libGrid video').forEach(x => { if (x !== v) x.pause(); }); v.paused ? v.play().catch(() => {}) : v.pause(); });
-  $$('#libGrid [data-del]').forEach(b => b.onclick = async () => {
-    if (b.dataset.confirm !== '1') { b.dataset.confirm = '1'; b.textContent = 'Tap again to remove'; setTimeout(() => { b.dataset.confirm = ''; b.textContent = 'Remove'; }, 3000); return; }
-    try { await IDB.del('clips', b.dataset.del); await loadDeviceLibrary(); toast('Removed'); } catch (e) { toast(`Couldn't remove: ${e.message}`); }
+      ? `<video src="${esc(i.url)}" ${i.thumbUrl ? `poster="${esc(i.thumbUrl)}"` : ''} muted loop playsinline preload="none"></video><span class="tag">${(+i.duration || 0).toFixed(0)}s</span>`
+      : `<img src="${esc(i.thumbUrl || i.url)}" alt="" loading="lazy">`;
+    return `<article class="tile" style="--i:${k + 1}"><button class="media" type="button" data-open="${esc(i.id)}" aria-label="${esc(label(i))}">${media}${mine}${need}</button><b>${esc(label(i))}</b><small>${i.source === 'added' ? 'Yours' : 'Stock'} · ${esc(CATS[i.category] || 'Other')}</small></article>`;
+  });
+  if (q && !list.length) grid.innerHTML = `<div class="empty-hero"><b>Nothing matches “${esc(S.libQuery)}”</b><span>Try another word, or clear the search.</span></div>`;
+  else if (S.libFilter === 'mine' && !list.length) grid.innerHTML = `<div class="empty-hero"><span class="ico" style="width:52px;height:52px;border-radius:16px;display:grid;place-items:center;background:var(--acc-soft);color:var(--acc)">${icon(tab === 'photos' ? 'image' : 'film')}</span><b>No ${noun} of your own yet</b><span>Add some and they're used first in your reels. They stay on this device.</span><button class="btn primary" type="button" data-add>${icon('plus')}Add ${noun}</button></div>`;
+  else grid.innerHTML = (S.libFilter === 'all' || S.libFilter === 'mine' ? addTile : '') + tiles.join('');
+  $$('#libGrid [data-add]').forEach(b => b.onclick = () => $(tab === 'photos' ? '#addPhotos' : '#addClips').click());
+  $$('#libGrid [data-open]').forEach(b => {
+    b.onclick = () => openAsset(allItems().find(x => x.id === b.dataset.open));
+    const v = b.querySelector('video'); if (!v) return;
+    b.onpointerenter = e => { if (e.pointerType !== 'mouse') return; if (hoverVideo && hoverVideo !== v) hoverVideo.pause(); hoverVideo = v; v.play().catch(() => {}); };
+    b.onpointerleave = e => { if (e.pointerType !== 'mouse') return; v.pause(); };
   });
 }
-$('#libSeg').querySelectorAll('button').forEach(b => b.onclick = () => {
-  S.libTab = b.dataset.v; $('#libSeg').querySelectorAll('button').forEach(x => x.setAttribute('aria-pressed', String(x === b)));
-  $('#libVisuals').hidden = S.libTab !== 'visuals'; $('#libMusic').hidden = S.libTab !== 'music'; $('#libAddWrap').hidden = S.libTab !== 'visuals';
-  if (S.libTab === 'music') { renderGenres(); renderTracks(); } else stopPlaying();
-});
-$('#addClips').addEventListener('change', async e => { const files = [...e.target.files]; e.target.value = ''; for (const f of files) await addClip(f); });
-async function addClip(file) {
-  const row = h(`<div class="item"><div class="ph"></div><div><b>${esc(file.name)}</b><span class="st">Getting it ready…</span><div class="mini-bar"><i></i></div></div><span></span></div>`);
-  $('#addQueue').prepend(row);
-  const st = row.querySelector('.st'), bar = row.querySelector('.mini-bar i');
-  const base = file.name.replace(/\.[^.]+$/, '').toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '') || 'clip';
-  try {
-    let blob, kind = 'clip', dur = 2.5, thumb;
-    if (file.type.startsWith('image/')) {
-      kind = 'still'; const bmp = await createImageBitmap(file);
-      const cv = new OffscreenCanvas(1080, 1920), c = cv.getContext('2d'), k = Math.max(1080 / bmp.width, 1920 / bmp.height);
-      c.drawImage(bmp, (1080 - bmp.width * k) / 2, (1920 - bmp.height * k) / 2, bmp.width * k, bmp.height * k);
-      blob = await cv.convertToBlob({ type: 'image/jpeg', quality: 0.9 }); thumb = await thumbFrom(cv);
-    } else {
-      const r = await transcodeClip(file, p => { bar.style.width = (p * 90) + '%'; st.textContent = `Getting it ready · ${Math.round(p * 100)}%`; });
-      blob = r.blob; dur = r.duration; thumb = r.thumb;
-    }
-    const words = base.split('_').filter(w => w && !/^(img|mov|vid|video|dsc|pxl|\d+)$/.test(w));
-    const thUrl = URL.createObjectURL(thumb || blob), uid = newId(), k = uid.slice(0, 6);
-    row.innerHTML = `<img src="${thUrl}" alt=""><div><b>Describe it so it gets matched</b><span>${kind === 'clip' ? dur.toFixed(1) + ' s clip' : 'Photo'}</span></div><button class="btn ghost sm" type="button" data-x>Discard</button>`;
-    const form = h(`<div class="stack" style="grid-column:1/-1;gap:12px;padding:4px 2px 2px">
-      <label class="field" for="s${k}">What does it show?<input type="text" id="s${k}" value="${esc(words.join(' '))}" placeholder="Hands chalking up before a set"></label>
-      <label class="field" for="t${k}">Words or feelings you'd say over it<input type="text" id="t${k}" placeholder="slow progress, patience, showing up"></label>
-      <div class="row" style="gap:12px;align-items:end"><label class="field" for="c${k}" style="flex:1">Type<select id="c${k}">${ADD_CATS.map(c => `<option value="${c}">${CATS[c]}</option>`).join('')}</select></label>
-      <label class="field" for="e${k}" style="flex:1">Energy<select id="e${k}"><option value="low">Calm</option><option value="medium" selected>Medium</option><option value="high">Intense</option></select></label></div>
-      <button class="btn primary" type="button">Save to library</button></div>`);
-    row.appendChild(form);
-    row.querySelector('[data-x]').onclick = () => row.remove();
-    form.querySelector('.btn.primary').onclick = async () => {
-      const subject = form.querySelector('#s' + k).value.trim() || words.join(' ') || 'clip';
-      const tags = [...new Set([...form.querySelector('#t' + k).value.split(','), ...subject.split(/\s+/)].map(x => x.trim().toLowerCase()).filter(Boolean))];
-      let name = subject.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '').slice(0, 40) || base;
-      const taken = new Set(allItems().map(i => i.id)); for (let n = 2, b0 = name; taken.has(name); n++) name = `${b0}_${n}`;
-      try { await IDB.put('clips', { docId: uid, name, subject, category: form.querySelector('#c' + k).value, energy: form.querySelector('#e' + k).value, tags, kind, duration: +dur.toFixed(2), blob, thumb: thumb || null, addedAt: new Date().toISOString() }); row.remove(); S.libFilter = 'mine'; await loadDeviceLibrary(); toast('Saved to your library'); }
-      catch (e) { toast(`Couldn't save: ${e.code || e.message}`); }
-    };
-  } catch (e) { st.textContent = e.message; st.style.color = 'var(--bad)'; }
+// music tab
+function renderMusicLib() {
+  const q = S.libQuery, tracks = S.tracks.filter(t => !q || t.name.toLowerCase().includes(q)), def = SET.music.choice;
+  $('#trackList').innerHTML = tracks.length ? tracks.map((t, k) => `<div class="trk" style="--i:${k}"><button class="play" type="button" data-play="mine:${esc(t.docId)}" aria-label="Play ${esc(t.name)}">${icon(playingKey === 'mine:' + t.docId ? 'stop' : 'play')}</button>
+      <div style="min-width:0"><b>${esc(t.name)}</b><span>${clock(t.duration)}${def === 'mine:' + t.docId ? ' · <span style="color:var(--acc);font-weight:600">Default</span>' : ''}</span></div>
+      <div class="acts">${def === 'mine:' + t.docId ? '' : `<button class="btn sm" type="button" data-def="${esc(t.docId)}">Use by default</button>`}<button class="btn ghost sm" type="button" data-edit="${esc(t.docId)}" aria-label="Edit ${esc(t.name)}">${icon('edit')}</button></div></div>`).join('')
+    : (q ? `<div class="empty">No songs match “${esc(S.libQuery)}”.</div>` : `<div class="empty-hero"><b>No songs of your own yet</b><span>Reels use the built-in music until you add some. MP3, M4A and WAV work.</span><button class="btn primary" type="button" data-addsong>${icon('plus')}Add songs</button></div>`);
+  $$('#trackList [data-play]').forEach(b => b.onclick = () => playKey(b.dataset.play));
+  $$('#trackList [data-def]').forEach(b => b.onclick = () => { SET.music.choice = 'mine:' + b.dataset.def; save(); refresh(); renderMusicLib(); toast('That song is now your default music'); });
+  $$('#trackList [data-edit]').forEach(b => b.onclick = () => openTrack(S.tracks.find(t => t.docId === b.dataset.edit)));
+  $$('#trackList [data-addsong]').forEach(b => b.onclick = () => $('#addTracks').click());
+  const gs = Object.entries(E.GENRES).filter(([, g]) => !q || (g.label + ' ' + g.about).toLowerCase().includes(q));
+  $('#genreList').innerHTML = gs.map(([k, g], i) => `<div class="mtile" role="button" tabindex="0" data-gdef="${k}" aria-pressed="${def === 'genre:' + k}" style="animation:tileIn .45s var(--ease) both;animation-delay:${i * 30}ms"><b>${g.label}</b><small>${def === 'genre:' + k ? '<span class="def">Default · </span>' : ''}${g.about}</small><button class="play" type="button" data-play="genre:${k}" aria-label="Hear ${g.label}">${icon(playingKey === 'genre:' + k ? 'stop' : 'play')}</button></div>`).join('');
+  $$('#genreList [data-play]').forEach(b => b.onclick = e => { e.stopPropagation(); playKey(b.dataset.play); });
+  $$('#genreList [data-gdef]').forEach(t => { const pick = () => { SET.music.choice = 'genre:' + t.dataset.gdef; save(); refresh(); renderMusicLib(); toast(`${E.GENRES[t.dataset.gdef].label} is now your default music`); }; t.onclick = e => { if (!e.target.closest('[data-play]')) pick(); }; t.onkeydown = e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); pick(); } }; });
 }
+function renderGenres() { if (S.libTab === 'music') renderMusicLib(); }
+function renderTracks() { if (S.libTab === 'music') renderMusicLib(); }
+
+// ---------------------------------------------------------- details sheet for a clip, photo or song
+const ENERGY = [['low', 'Calm'], ['medium', 'Medium'], ['high', 'Intense']];
+function openAsset(it) {
+  if (!it) return;
+  const own = it.source === 'added', rec = own ? S.added.find(a => a.docId === it.docId) : null, card = $('#assetCard');
+  const pv = it.kind === 'clip' ? `<video class="pv" src="${esc(it.url)}" ${it.thumbUrl ? `poster="${esc(it.thumbUrl)}"` : ''} autoplay muted loop playsinline controls></video>`
+    : `<img class="pv ${it.kind === 'photo' ? 'wide' : ''}" src="${esc(it.url)}" alt="">`;
+  if (!own) {
+    card.innerHTML = `<div class="row between" style="flex-wrap:nowrap"><div><div class="eyebrow">Free stock · ${esc(CATS[it.category] || '')}</div><h2>${esc(label(it))}</h2></div><button class="btn ghost" data-close type="button">Close</button></div>
+      <div class="asset">${pv}<div class="stack" style="gap:12px"><p class="hint">Free to use in your reels (Mixkit Free License). Reel Studio matches it to lines about:</p><div class="tags">${(it.tags || []).map(t => `<span class="pill">${esc(t)}</span>`).join('')}</div>
+      <p class="hint">Don't want stock at all? Turn off “Free stock footage” under Visuals.</p></div></div>`;
+  } else {
+    const isClip = it.kind === 'clip';
+    card.innerHTML = `<div class="row between" style="flex-wrap:nowrap"><div><div class="eyebrow">Yours · ${isClip ? `${(+it.duration || 0).toFixed(1)} s clip` : 'Photo'}</div><h2>Describe it</h2></div><button class="btn ghost" data-close type="button">Close</button></div>
+      <div class="asset">${pv}<div class="stack" style="gap:14px">
+        <label class="field">What does it show?<input type="text" data-f="subject" value="${esc(rec.subject || '')}" placeholder="${isClip ? 'Hands chalking up before a set' : 'My kids at the park'}"></label>
+        <label class="field">Words or feelings you'd say over it<input type="text" data-f="tags" value="${esc((rec.tags || []).join(', '))}" placeholder="patience, slow progress, showing up"><span class="hint">This is how it gets matched to what you say.</span></label>
+        <div class="field"><span>Type</span><div class="chips" data-f="category">${ADD_CATS.map(c => `<button class="chip" type="button" data-v="${c}" aria-pressed="${(rec.category || 'added') === c}">${CATS[c]}</button>`).join('')}</div></div>
+        <div class="field"><span>Energy</span><div class="seg" data-f="energy">${ENERGY.map(([v, l]) => `<button type="button" data-v="${v}" aria-pressed="${(rec.energy || 'medium') === v}">${l}</button>`).join('')}</div></div>
+        <div class="row between"><button class="btn danger" type="button" data-del>${icon('trash')}Remove</button><button class="btn primary" type="button" data-save>Save</button></div>
+      </div></div>`;
+    card.querySelectorAll('[data-f="category"] .chip, [data-f="energy"] button').forEach(b => b.onclick = () => b.parentElement.querySelectorAll('button').forEach(x => x.setAttribute('aria-pressed', String(x === b))));
+    card.querySelector('[data-save]').onclick = async () => {
+      const subject = card.querySelector('[data-f="subject"]').value.trim();
+      const tags = [...new Set([...card.querySelector('[data-f="tags"]').value.split(','), ...subject.split(/\s+/).filter(w => !E.isStop(w) && w.length > 2)].map(x => x.trim().toLowerCase()).filter(x => x.length > 1))];
+      const category = (card.querySelector('[data-f="category"] [aria-pressed="true"]') || {}).dataset?.v || 'added', energy = (card.querySelector('[data-f="energy"] [aria-pressed="true"]') || {}).dataset?.v || 'medium';
+      try { await IDB.put('clips', { ...stripUrls(rec), subject: subject || rec.subject, tags, category, energy, needsInfo: !subject && !tags.length }); $('#assetSheet').hidden = true; await loadDeviceLibrary(); toast('Saved'); }
+      catch (e) { toast(`Couldn't save: ${e.message}`); }
+    };
+    const del = card.querySelector('[data-del]');
+    del.onclick = async () => {
+      if (del.dataset.c !== '1') { del.dataset.c = '1'; del.lastChild.textContent = 'Tap again to remove'; setTimeout(() => { del.dataset.c = ''; del.lastChild.textContent = 'Remove'; }, 3000); return; }
+      try { await IDB.del('clips', rec.docId); $('#assetSheet').hidden = true; await loadDeviceLibrary(); toast('Removed from your library'); } catch (e) { toast(`Couldn't remove: ${e.message}`); }
+    };
+  }
+  $('#assetSheet').hidden = false;
+  const first = card.querySelector('input[data-f="subject"]'); if (first && !first.value && matchMedia('(pointer: fine)').matches) first.focus();
+}
+const stripUrls = r => { const { url, thumbUrl, ...rest } = r; return rest; };
+function openTrack(t) {
+  if (!t) return;
+  const card = $('#assetCard'), def = SET.music.choice === 'mine:' + t.docId;
+  card.innerHTML = `<div class="row between" style="flex-wrap:nowrap"><div><div class="eyebrow">Your song · ${clock(t.duration)}</div><h2>${esc(t.name)}</h2></div><button class="btn ghost" data-close type="button">Close</button></div>
+    <div class="row"><button class="play" type="button" data-play="mine:${esc(t.docId)}" aria-label="Play">${icon(playingKey === 'mine:' + t.docId ? 'stop' : 'play')}</button><span class="hint">Listen</span></div>
+    <label class="field">Name<input type="text" data-f="name" value="${esc(t.name)}"></label>
+    <div class="row between"><button class="btn danger" type="button" data-del>${icon('trash')}Remove</button><div class="row">${def ? '<span class="pill acc">Default music</span>' : '<button class="btn" type="button" data-def>Use by default</button>'}<button class="btn primary" type="button" data-save>Save</button></div></div>`;
+  card.querySelector('[data-play]').onclick = () => playKey('mine:' + t.docId);
+  const d = card.querySelector('[data-def]'); if (d) d.onclick = () => { SET.music.choice = 'mine:' + t.docId; save(); refresh(); renderMusicLib(); openTrack(t); toast('That song is now your default music'); };
+  card.querySelector('[data-save]').onclick = async () => { const name = card.querySelector('[data-f="name"]').value.trim() || t.name; try { await IDB.put('tracks', { ...stripUrls(t), name }); $('#assetSheet').hidden = true; await loadDeviceLibrary(); toast('Saved'); } catch (e) { toast(`Couldn't save: ${e.message}`); } };
+  const del = card.querySelector('[data-del]');
+  del.onclick = async () => {
+    if (del.dataset.c !== '1') { del.dataset.c = '1'; del.lastChild.textContent = 'Tap again to remove'; setTimeout(() => { del.dataset.c = ''; del.lastChild.textContent = 'Remove'; }, 3000); return; }
+    try { await IDB.del('tracks', t.docId); if (playingKey === 'mine:' + t.docId) stopPlaying(); previewCache.delete('mine:' + t.docId); $('#assetSheet').hidden = true; await loadDeviceLibrary(); toast('Song removed'); } catch (e) { toast(`Couldn't remove: ${e.message}`); }
+  };
+  $('#assetSheet').hidden = false;
+}
+
+// ---------------------------------------------------------- adding your own media: any file, from anywhere, saved right away
+const kindOf = f => /^video\//.test(f.type) || /\.(mov|mp4|m4v)$/i.test(f.name) ? 'clip' : /^image\//.test(f.type) || /\.(jpe?g|png|heic|heif|webp)$/i.test(f.name) ? 'still' : /^audio\//.test(f.type) || /\.(mp3|m4a|wav|aac)$/i.test(f.name) ? 'track' : null;
+const tray = { n: 0, done: 0, timer: null };
+function trayRow(f, kind) {
+  clearTimeout(tray.timer); tray.n++; $('#tray').hidden = false;
+  const row = h(`<div class="tray-row"><span class="th">${icon(kind === 'track' ? 'note' : kind === 'still' ? 'image' : 'film')}</span><div style="min-width:0"><b>${esc(f.name)}</b><small>Waiting…</small><div class="mini-bar"><i></i></div></div><span></span></div>`);
+  $('#trayList').append(row); $('#trayTitle').textContent = `Adding ${tray.n} to your library`;
+  return { set: (msg, p) => { row.querySelector('small').textContent = msg; if (p != null) row.querySelector('.mini-bar i').style.width = Math.round(p * 100) + '%'; },
+    thumb: blob => { const u = URL.createObjectURL(blob); row.querySelector('.th').innerHTML = `<img src="${u}" alt="" style="width:100%;height:100%;object-fit:cover">`; },
+    end: (ok, msg) => { row.querySelector('.mini-bar').remove(); row.querySelector('small').textContent = msg; row.querySelector('small').className = ok ? 'ok' : 'bad'; row.lastElementChild.innerHTML = ok ? icon('check') : ''; tray.done++;
+      if (tray.done >= tray.n) { $('#trayTitle').textContent = 'Added to your library'; tray.timer = setTimeout(() => { $('#tray').hidden = true; $('#trayList').innerHTML = ''; tray.n = 0; tray.done = 0; }, 3200); } } };
+}
+const niceName = (f, kind) => { const w = f.name.replace(/\.[^.]+$/, '').replace(/[_\-.]+/g, ' ').split(/\s+/).filter(x => x && !/^(img|mov|vid|video|dsc|pxl|screenshot|image|photo|\d+)$/i.test(x)); return w.join(' ').trim(); };
+async function importFiles(files) {
+  const list = [...files], bad = list.filter(f => !kindOf(f)), good = list.filter(f => kindOf(f));
+  if (bad.length) toast(`${bad.length === 1 ? `“${bad[0].name}” isn't` : `${bad.length} files aren't`} a video, photo or song, so ${bad.length === 1 ? 'it was' : 'they were'} skipped.`, 4200);
+  if (!good.length) return;
+  const rows = good.map(f => [f, kindOf(f), trayRow(f, kindOf(f))]), added = { clip: 0, still: 0, track: 0 };
+  for (const [f, kind, r] of rows) {
+    try {
+      const words = niceName(f, kind), stampId = newId();
+      if (kind === 'track') {
+        r.set('Converting…', 0.2);
+        const { blob, duration } = await E.audioToM4a(f);
+        await IDB.put('tracks', { docId: stampId, name: words || f.name.replace(/\.[^.]+$/, ''), duration: +duration.toFixed(1), blob, addedAt: new Date().toISOString() });
+      } else {
+        let blob, thumb, dur = 2.5;
+        if (kind === 'still') {
+          r.set('Preparing…', 0.3);
+          const bmp = await createImageBitmap(f), cv = new OffscreenCanvas(1080, 1920), c = cv.getContext('2d'), k = Math.max(1080 / bmp.width, 1920 / bmp.height);
+          c.drawImage(bmp, (1080 - bmp.width * k) / 2, (1920 - bmp.height * k) / 2, bmp.width * k, bmp.height * k);
+          blob = await cv.convertToBlob({ type: 'image/jpeg', quality: 0.9 }); thumb = await thumbFrom(cv);
+        } else {
+          const t = await transcodeClip(f, p => r.set(`Getting it ready · ${Math.round(p * 100)}%`, p)); blob = t.blob; dur = t.duration; thumb = t.thumb;
+        }
+        if (thumb) r.thumb(thumb);
+        let name = (words || (kind === 'clip' ? 'my clip' : 'my photo')).toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '').slice(0, 40) || 'clip';
+        const taken = new Set(allItems().map(i => i.id)); for (let n = 2, b0 = name; taken.has(name); n++) name = `${b0}_${n}`;
+        await IDB.put('clips', { docId: stampId, name, subject: words || (kind === 'clip' ? 'My clip' : 'My photo'), category: 'added', energy: 'medium', tags: words ? words.toLowerCase().split(/\s+/) : [], kind, duration: +dur.toFixed(2), blob, thumb: thumb || null, addedAt: new Date().toISOString(), needsInfo: true });
+        taken.add(name);
+      }
+      added[kind]++; r.end(true, 'Added');
+      S.added = (await IDB.all('clips')).map(a => ({ ...a, url: blobUrl('c' + a.docId, a.blob), thumbUrl: blobUrl('t' + a.docId, a.thumb) }));
+    } catch (e) { console.error(e); r.end(false, e && e.name === 'QuotaExceededError' ? 'Not enough space on this device' : `Couldn't add: ${e.message || e}`); }
+  }
+  await loadDeviceLibrary();
+  const parts = [added.clip && `${added.clip} clip${added.clip > 1 ? 's' : ''}`, added.still && `${added.still} photo${added.still > 1 ? 's' : ''}`, added.track && `${added.track} song${added.track > 1 ? 's' : ''}`].filter(Boolean);
+  if (parts.length) {
+    const tab = added.clip ? 'clips' : added.still ? 'photos' : 'music';
+    const where = S.view === 'library' && S.libTab === tab;
+    if (where) { S.libFilter = tab === 'music' ? S.libFilter : 'mine'; renderLib(); }
+    toast(`Added ${parts.join(', ')}.${tab !== 'music' ? ' Tap one to describe it so it matches better.' : ''}`, 5200, where ? null : { label: 'View', fn: () => smooth(() => { go('library', { tab }); if (tab !== 'music') { S.libFilter = 'mine'; renderLib(); } }) });
+  }
+}
+['#mediaInput', '#addClips', '#addPhotos', '#addTracks'].forEach(id => $(id).addEventListener('change', e => { const f = [...e.target.files]; e.target.value = ''; importFiles(f); }));
+// drop files anywhere outside the take pickers
+let dragDepth = 0;
+const hasFiles = e => e.dataTransfer && [...(e.dataTransfer.types || [])].includes('Files');
+const overPicker = e => e.target.closest && e.target.closest('#clipDrop, #batchDrop');
+addEventListener('dragenter', e => { if (!hasFiles(e)) return; dragDepth++; if (!overPicker(e) && !S.busy) $('#dropOver').hidden = false; });
+addEventListener('dragover', e => { if (!hasFiles(e)) return; e.preventDefault(); $('#dropOver').hidden = !!overPicker(e) || !!S.busy; });
+addEventListener('dragleave', e => { if (!hasFiles(e)) return; if (--dragDepth <= 0) { dragDepth = 0; $('#dropOver').hidden = true; } });
+addEventListener('drop', e => { if (!hasFiles(e)) return; dragDepth = 0; $('#dropOver').hidden = true; if (overPicker(e)) return; e.preventDefault(); importFiles(e.dataTransfer.files); });
 async function thumbFrom(cv) { const t = new OffscreenCanvas(270, 480); t.getContext('2d').drawImage(cv, 0, 0, 270, 480); return t.convertToBlob({ type: 'image/jpeg', quality: 0.8 }); }
 async function transcodeClip(file, onP) {
   await E.ensureMuxer();
@@ -1703,7 +1955,7 @@ function renderSettings() {
 paintIcons();
 $('#appLink').value = location.href.split('#')[0];
 $('#menuInstall').hidden = standalone();
-applyTheme(); refresh(); renderGenres();
+setLibTab(S.libTab, true); applyTheme(); refresh();
 loadStock(); loadTrends().then(refresh); loadDeviceLibrary();
 go('clip');
 
