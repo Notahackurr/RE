@@ -23,7 +23,9 @@
   --fg: #ECEFF5; --muted: #98A1B3; --faint: #626B7E;
   --acc: #FF9A3C; --acc-2: #FF5E3A; --on-acc: #1C0E04; --acc-soft: rgba(255, 154, 60, 0.14);
   --ok: #3DD68C; --bad: #FF6474; --bad-soft: rgba(255, 100, 116, 0.12);
-  --grad: linear-gradient(135deg, var(--acc), var(--acc-2));
+  --acc-3: #F6A8C8; --acc-fill: var(--acc); --acc-fill-2: var(--acc-2); --acc-fill-3: var(--acc-3);
+  --grad: linear-gradient(120deg, var(--acc-fill) 0%, var(--acc-fill-2) 45%, var(--acc-fill-3) 100%);
+  --grad-soft: linear-gradient(120deg, color-mix(in srgb, var(--acc-fill) 22%, transparent), color-mix(in srgb, var(--acc-fill-3) 16%, transparent));
   --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 12px 32px rgba(0, 0, 0, 0.28);
   --ui: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif; --mono: "IBM Plex Mono", ui-monospace, Menlo, monospace;
   --r: 18px; --r-sm: 12px; --ease: cubic-bezier(0.2, 0.8, 0.2, 1);
@@ -151,7 +153,7 @@ input[type="range"] { width: 100%; accent-color: var(--acc); }
 .switch input:checked::after { transform: translateX(18px); }
 .swatches { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
 .sw { width: 32px; height: 32px; border-radius: 50%; border: 0; padding: 0; box-shadow: inset 0 0 0 1px rgba(127, 127, 127, 0.35); transition: transform .15s var(--ease), box-shadow .15s; }
-.sw:hover { transform: scale(1.08); }
+.sw:hover { box-shadow: inset 0 0 0 1px rgba(127, 127, 127, 0.35), 0 0 0 3px var(--acc-soft); }
 .sw[aria-pressed="true"] { box-shadow: 0 0 0 2px var(--panel), 0 0 0 4px var(--fg); }
 .sw.custom { position: relative; overflow: hidden; cursor: pointer; display: inline-block; background: conic-gradient(#ff5e5e, #ffd05e, #5eff8a, #5ec8ff, #9b5eff, #ff5ec8, #ff5e5e); }
 .sw.custom.picked { background: radial-gradient(circle, var(--pick) 0 52%, transparent 54%), conic-gradient(#ff5e5e, #ffd05e, #5eff8a, #5ec8ff, #9b5eff, #ff5ec8, #ff5e5e); box-shadow: 0 0 0 2px var(--panel), 0 0 0 4px var(--fg); }
@@ -394,7 +396,7 @@ input[type="range"] { width: 100%; accent-color: var(--acc); }
 .picks { display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 10px; }
 .pick { display: grid; gap: 5px; border: 0; background: none; padding: 0; text-align: left; min-width: 0; }
 .pick img, .pick .ph { width: 100%; aspect-ratio: 9 / 16; object-fit: cover; border-radius: 10px; background: var(--sunk); display: block; box-shadow: inset 0 0 0 1px var(--line); transition: box-shadow .2s, transform .2s var(--ease); }
-.pick:hover img { box-shadow: 0 0 0 2px var(--acc); transform: translateY(-2px); }
+.pick:hover img { box-shadow: 0 0 0 2px var(--acc); }
 .pick span { font-size: 12px; color: var(--muted); line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 .add-line { display: grid; grid-template-columns: auto 1fr auto auto; gap: 8px; align-items: center; }
 .add-line p { margin: 0; text-align: center; font-weight: 600; overflow-wrap: anywhere; }
@@ -405,6 +407,59 @@ input[type="range"] { width: 100%; accent-color: var(--acc); }
 .add-opt:disabled { opacity: .45; cursor: default; }
 .steps { margin: 0; padding-left: 20px; display: grid; gap: 8px; }
 .prev-video { width: 100%; max-height: 56vh; border-radius: 14px; background: #000; display: block; }
+
+/* ---------- color & light (v4): soft accents, moving gradients, ambient glow */
+.ambient { position: fixed; inset: 0; z-index: 0; pointer-events: none; overflow: hidden; }
+.ambient i { position: absolute; border-radius: 50%; filter: blur(90px); opacity: .16; will-change: transform; }
+:root[data-theme="light"] .ambient i { opacity: .22; }
+.ambient i:nth-child(1) { width: 52vw; height: 40vw; left: 18vw; top: -22vw; background: var(--acc-fill); animation: drift1 34s ease-in-out infinite alternate; }
+.ambient i:nth-child(2) { width: 40vw; height: 34vw; right: -12vw; top: 10vh; background: var(--acc-fill-3); animation: drift2 41s ease-in-out infinite alternate; }
+.ambient i:nth-child(3) { width: 36vw; height: 30vw; left: 30vw; bottom: -24vw; background: var(--acc-fill-2); opacity: .10; animation: drift1 47s ease-in-out infinite alternate-reverse; }
+@keyframes drift1 { to { transform: translate(8vw, 6vh) scale(1.12); } }
+@keyframes drift2 { to { transform: translate(-10vw, 8vh) scale(.9); } }
+.shell { position: relative; z-index: 1; }
+.btn.primary, .side-add .ic, .brand .logo, .switch input:checked, .inc input:checked, .play.on, .chip.acc { background: var(--grad); background-size: 220% 220%; animation: flow 9s ease-in-out infinite; }
+.btn.primary { box-shadow: 0 8px 24px color-mix(in srgb, var(--acc-fill-2) 32%, transparent), inset 0 1px 0 rgba(255, 255, 255, .35); }
+.btn.primary:hover { filter: none; box-shadow: 0 10px 30px color-mix(in srgb, var(--acc-fill-3) 40%, transparent), inset 0 1px 0 rgba(255, 255, 255, .45); }
+@keyframes flow { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
+.side-ind { background: var(--grad-soft); }
+.nav-i[aria-current="page"] .cnt { background: color-mix(in srgb, var(--acc-fill) 28%, transparent); }
+.drop { background: radial-gradient(120% 90% at 50% 0%, color-mix(in srgb, var(--acc-fill) 10%, transparent), transparent 60%), radial-gradient(80% 70% at 100% 100%, color-mix(in srgb, var(--acc-fill-3) 9%, transparent), transparent 60%), var(--panel); }
+.drop h2, .hero-grad { background: linear-gradient(100deg, var(--fg) 20%, var(--acc) 60%, var(--acc-3)); background-size: 200% auto; -webkit-background-clip: text; background-clip: text; color: transparent; animation: flow 12s ease-in-out infinite; }
+.drop .ico, .add-tile .ico, .dropover .ico { background: var(--grad-soft); }
+.card { background: linear-gradient(180deg, color-mix(in srgb, var(--panel) 96%, var(--acc-fill)) 0%, var(--panel) 140px); }
+.ring .arc { stroke: url(#ringGrad); filter: drop-shadow(0 0 6px color-mix(in srgb, var(--acc-fill-2) 45%, transparent)); }
+.ring .g1 { stop-color: var(--acc-fill); } .ring .g2 { stop-color: var(--acc-fill-2); } .ring .g3 { stop-color: var(--acc-fill-3); }
+.stage .bar i, .mini-bar i { background: var(--grad); background-size: 200% 100%; animation: flow 3s linear infinite; }
+.stage[data-s="done"] .d { background: var(--grad); }
+.tabs button[aria-selected="true"]::after { background: var(--grad); }
+.ltabs .ind { background: linear-gradient(var(--panel), var(--panel)) padding-box, var(--grad) border-box; border: 1px solid transparent; box-shadow: 0 2px 10px color-mix(in srgb, var(--acc-fill) 20%, transparent); }
+.mtile[aria-pressed="true"], .edit.viewing { border-color: transparent; background: linear-gradient(var(--panel-2), var(--panel-2)) padding-box, var(--grad) border-box; box-shadow: none; }
+.seg button[aria-pressed="true"] { box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2), inset 0 0 0 1px color-mix(in srgb, var(--acc) 35%, var(--line-2)); }
+.chip[aria-pressed="true"] { background: var(--grad); background-size: 220% 220%; border-color: transparent; color: var(--on-acc); animation: flow 9s ease-in-out infinite; }
+.cand .score { background: conic-gradient(from 210deg, var(--acc-fill), var(--acc-fill-2), var(--acc-fill-3) calc(var(--p) * 1%), var(--raise) 0); }
+.changebar { border-color: transparent; background: linear-gradient(var(--panel), var(--panel)) padding-box, var(--grad) border-box; border: 1.5px solid transparent; }
+.avatar { background: linear-gradient(var(--panel-2), var(--panel-2)) padding-box, var(--grad) border-box; border: 1.5px solid transparent; }
+.cap .words button[aria-pressed="true"] { background: var(--hl, var(--acc)); }
+.toast { background: color-mix(in srgb, var(--fg) 94%, var(--acc-fill)); }
+
+/* ---------- collapsible sidebar */
+:root { --side-w: 248px; }
+.side { width: var(--side-w); transition: transform .45s cubic-bezier(.2, .8, .2, 1), visibility 0s linear 0s; }
+.main { transition: margin-left .45s cubic-bezier(.2, .8, .2, 1); }
+.changebar { transition: left .45s cubic-bezier(.2, .8, .2, 1); }
+html.side-closed { --side: 0px; }
+html.side-closed .side { transform: translateX(-100%); visibility: hidden; transition: transform .45s cubic-bezier(.2, .8, .2, 1), visibility 0s linear .45s; }
+.side-x { position: absolute; top: calc(env(safe-area-inset-top, 0px) + 16px); right: 10px; z-index: 2; width: 34px; height: 34px; border-radius: 10px; border: 0; background: none; color: var(--faint); display: grid; place-items: center; transition: background .2s, color .2s; }
+.side-x:hover { background: var(--panel-2); color: var(--fg); }
+.side-x svg.i { width: 19px; height: 19px; }
+.side-toggle { width: 38px; height: 38px; margin-left: -8px; border-radius: 11px; border: 0; background: none; color: var(--muted); display: none; place-items: center; transition: background .2s, color .2s; }
+.side-toggle:hover { background: var(--panel-2); color: var(--fg); }
+.side-toggle svg.i { width: 20px; height: 20px; }
+html.side-closed .side-toggle { display: grid; }
+html.side-closed .topbar .mobile-brand { display: flex; }
+html.side-closed .topbar .mobile-brand b { display: none; }
+@media (max-width: 899px) { .side-toggle, .side-x { display: none !important; } }
 
 /* ---------- library & motion (v3) */
 .nav-i { grid-template-columns: 22px 1fr auto; z-index: 1; }
@@ -444,7 +499,7 @@ input[type="range"] { width: 100%; accent-color: var(--acc); }
 @keyframes tileIn { from { opacity: 0; transform: translateY(10px) scale(.97); } }
 .tile .media { cursor: pointer; transition: transform .35s var(--ease), box-shadow .35s var(--ease); box-shadow: 0 0 0 1px var(--line); }
 .lib.photos .tile .media { aspect-ratio: 4 / 3; }
-.tile:hover .media { transform: translateY(-3px); box-shadow: 0 0 0 1px var(--line-2), 0 16px 34px rgba(0, 0, 0, .3); }
+.tile:hover .media { box-shadow: 0 0 0 1.5px color-mix(in srgb, var(--acc) 55%, transparent), 0 16px 34px rgba(0, 0, 0, .3); }
 .tile .media::after { content: ""; position: absolute; inset: 55% 0 0; background: linear-gradient(transparent, rgba(0, 0, 0, .45)); pointer-events: none; }
 .tile .tag { z-index: 1; } .tile .mine { z-index: 1; }
 .tile .need { position: absolute; z-index: 1; left: 7px; bottom: 7px; font-size: 11px; font-weight: 700; background: rgba(0, 0, 0, .62); color: #fff; padding: 2px 7px; border-radius: 6px; backdrop-filter: blur(6px); }
@@ -494,8 +549,8 @@ html.vt .view:not([hidden]) { animation: none; }
 ::view-transition-new(content) { animation: vtIn .38s cubic-bezier(.2, .8, .2, 1) both; }
 ::view-transition-old(title) { animation: vtOut .12s ease-in both; }
 ::view-transition-new(title) { animation: vtIn .3s var(--ease) both; }
-@keyframes vtOut { to { opacity: 0; transform: translateY(-4px); } }
-@keyframes vtIn { from { opacity: 0; transform: translateY(8px); } }
+@keyframes vtOut { to { opacity: 0; } }
+@keyframes vtIn { from { opacity: 0; } }
 .card { transition: border-color .3s var(--ease), box-shadow .3s var(--ease); }
 .btn { transition: background .2s, border-color .2s, transform .25s cubic-bezier(.3, 1.4, .5, 1), box-shadow .25s, opacity .2s, filter .2s; }
 .btn:active { transform: scale(.96); }
@@ -504,13 +559,15 @@ html.vt .view:not([hidden]) { animation: none; }
 .mtile { transition: border-color .2s, background .2s, transform .25s cubic-bezier(.3, 1.4, .5, 1), box-shadow .2s; }
 .mtile:active { transform: scale(.97); }
 .seg button { transition: background .25s var(--ease), color .2s, box-shadow .25s; }
-html { scroll-behavior: smooth; }
-@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } html { scroll-behavior: auto; } }
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }
+/* touch screens zoom the page into any field under 16px, which throws the cursor around */
+@media (pointer: coarse) { input[type="text"], input[type="email"], input[type="search"], select, textarea, .cap input { font-size: 16px !important; } }
 </style>
 </head>
 <body>
+<div class="ambient" aria-hidden="true"><i></i><i></i><i></i></div>
 <div class="shell">
-  <aside class="side" aria-label="Main"><i class="side-ind" aria-hidden="true"></i>
+  <aside class="side" aria-label="Main"><i class="side-ind" aria-hidden="true"></i><button class="side-x" id="sideClose" type="button" aria-label="Hide sidebar" title="Hide sidebar (Ctrl+\)"><span data-icon="sidebar"></span></button>
     <div class="brand"><span class="logo" data-icon="play"></span><b>Reel <span>Studio</span></b></div>
     <button class="nav-i" data-go="clip"><span data-icon="clip"></span><b>Clip → Reel</b><small>One take, one finished reel</small></button>
     <button class="nav-i" data-go="batch"><span data-icon="batch"></span><b>Long form → Reels</b><small>A long video into a batch</small></button>
@@ -526,6 +583,7 @@ html { scroll-behavior: smooth; }
 
   <div class="main">
     <header class="topbar">
+      <button class="side-toggle" id="sideOpen" type="button" aria-label="Show sidebar" title="Show sidebar (Ctrl+\)"><span data-icon="sidebar"></span></button>
       <span class="brand mobile-brand" style="padding:0"><span class="logo" data-icon="play"></span></span>
       <button class="btn ghost sm" id="backBtn" type="button" hidden><span data-icon="back"></span>All reels</button>
       <h1 id="pageTitle">Clip → Reel</h1>
@@ -619,7 +677,7 @@ html { scroll-behavior: smooth; }
       <!-- shared: progress and review move into whichever mode is using them -->
       <div class="card prog" id="progress" hidden>
         <div class="prog-head">
-          <div class="ring" aria-hidden="true"><svg viewBox="0 0 100 100"><circle class="trk" cx="50" cy="50" r="44" fill="none" stroke-width="7"/><circle class="arc" id="ringArc" cx="50" cy="50" r="44" fill="none" stroke-width="7" stroke-dasharray="276.46" stroke-dashoffset="276.46"/></svg><b id="ringPct">0%</b></div>
+          <div class="ring" aria-hidden="true"><svg viewBox="0 0 100 100"><circle class="trk" cx="50" cy="50" r="44" fill="none" stroke-width="7"/><defs><linearGradient id="ringGrad" x1="0" y1="0" x2="1" y2="1"><stop class="g1" offset="0"/><stop class="g2" offset=".55"/><stop class="g3" offset="1"/></linearGradient></defs><circle class="arc" id="ringArc" cx="50" cy="50" r="44" fill="none" stroke-width="7" stroke-dasharray="276.46" stroke-dashoffset="276.46"/></svg><b id="ringPct">0%</b></div>
           <div><div class="eyebrow" id="progStep">Starting</div><h2 id="progTitle">Creating your reel</h2></div>
           <button class="btn ghost" id="cancelBtn" type="button">Cancel</button>
         </div>
@@ -826,6 +884,7 @@ const P_ = {
   hook: '<path d="M13 2 4 14h7l-1 8 9-12h-7z"/>',
   stop: '<rect x="7" y="7" width="10" height="10" rx="1.5" fill="currentColor" stroke="none"/>',
   check: '<path d="m5 12.5 4.5 4.5L19 7.5"/>',
+  sidebar: '<rect x="3.5" y="4.5" width="17" height="15" rx="3"/><path d="M9.5 4.5v15M5.8 8.5h1.6M5.8 11.5h1.6"/>',
   film: '<rect x="3.5" y="3.5" width="17" height="17" rx="3"/><path d="M8 3.5v17M16 3.5v17M3.5 8.5H8M3.5 15.5H8M16 8.5h4.5M16 15.5h4.5"/>',
   search: '<circle cx="11" cy="11" r="6.5"/><path d="m20 20-4.2-4.2"/>',
   edit: '<path d="M4 20h4L19 9l-4-4L4 16z"/><path d="m13.5 6.5 4 4"/>',
@@ -860,22 +919,31 @@ if (!SET) { // carry over choices from the earlier version
 const save = () => store.set('settings', SET);
 const corrections = () => SET.speech.corrections ?? E.DEFAULT_CORRECTIONS ?? '';
 
-const ACCENTS = { ember: ['#FF9A3C', '#FF5E3A', 'Ember'], ocean: ['#3BA0FF', '#3D63FF', 'Ocean'], violet: ['#A07BFF', '#6E50FF', 'Violet'], mint: ['#35D6A4', '#10A894', 'Mint'],
-  rose: ['#FF6F9C', '#FF4566', 'Rose'], gold: ['#FFC94A', '#F29E1D', 'Gold'], mono: ['#E9ECF2', '#B5BCC9', 'Mono'] };
+// Soft accents: [main, deeper, companion]. The companion is a neighbouring hue, so gradients shift color, not just shade.
+const ACCENTS = { ember: ['#FFAE85', '#FF8C7A', 'Peach', '#F6A8C8'], ocean: ['#8CC2FF', '#7C93FF', 'Sky', '#B7A4FF'], violet: ['#BBA8FF', '#9C8BFF', 'Lavender', '#F3A6D9'],
+  mint: ['#8FE3C6', '#5FCDBB', 'Mint', '#93CCFF'], rose: ['#FFA6BF', '#FF8AA3', 'Blush', '#FFC59E'], gold: ['#FFD58F', '#F6BA6A', 'Honey', '#FFA08A'], mono: ['#E7EAF0', '#C6CCD7', 'Pearl', '#AEB7C6'] };
 const CAP_COLORS = [['#FFFFFF', 'White'], ['#FFF3D6', 'Cream'], ['#FFE14D', 'Yellow'], ['#111111', 'Black']];
 const HL_COLORS = [['#FFC94A', 'Gold'], ['#FF9A3C', 'Orange'], ['#FF5E6C', 'Red'], ['#FF6FD8', 'Pink'], ['#4DD8FF', 'Cyan'], ['#7CF06B', 'Lime'], ['#B79BFF', 'Lilac'], ['#D6B06C', 'Brass']];
 function hexRgb(h) { const n = parseInt(h.replace('#', ''), 16); return [n >> 16 & 255, n >> 8 & 255, n & 255]; }
 function lum(h) { const [r, g, b] = hexRgb(h).map(v => { v /= 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); }); return 0.2126 * r + 0.7152 * g + 0.0722 * b; }
+function hsl(h) { let [r, g, b] = hexRgb(h).map(v => v / 255); const mx = Math.max(r, g, b), mn = Math.min(r, g, b), l = (mx + mn) / 2; let hh = 0, ss = 0;
+  if (mx !== mn) { const d = mx - mn; ss = l > 0.5 ? d / (2 - mx - mn) : d / (mx + mn); hh = mx === r ? (g - b) / d + (g < b ? 6 : 0) : mx === g ? (b - r) / d + 2 : (r - g) / d + 4; hh *= 60; } return [hh, ss, l]; }
+function hslHex(hh, ss, l) { const f = n => { const k = (n + hh / 30) % 12, a = ss * Math.min(l, 1 - l); return Math.round(255 * (l - a * Math.max(-1, Math.min(k - 3, 9 - k, 1)))).toString(16).padStart(2, '0'); }; return '#' + f(0) + f(8) + f(4); }
 function shade(h, k) { return '#' + hexRgb(h).map(v => Math.round(Math.max(0, Math.min(255, v * k))).toString(16).padStart(2, '0')).join(''); }
 const mq = matchMedia('(prefers-color-scheme: light)');
 function applyTheme() {
   const light = SET.theme === 'light' || (SET.theme === 'system' && mq.matches), root = document.documentElement;
   root.dataset.theme = light ? 'light' : 'dark';
-  let [a, b] = SET.accent === 'custom' ? [SET.accentCustom, shade(SET.accentCustom, 0.78)] : (ACCENTS[SET.accent] || ACCENTS.ember);
-  if (SET.accent === 'mono' && light) [a, b] = ['#2A2F3A', '#11151E'];
-  root.style.setProperty('--acc', a); root.style.setProperty('--acc-2', b);
-  root.style.setProperty('--on-acc', lum(a) > 0.45 ? '#15110A' : '#FFFFFF');
-  root.style.setProperty('--acc-soft', `color-mix(in srgb, ${a} ${light ? 12 : 15}%, transparent)`);
+  let a, b, c;
+  if (SET.accent === 'custom') { const [hh, ss, l] = hsl(SET.accentCustom); a = SET.accentCustom; b = hslHex(hh, ss, Math.max(0.2, l - 0.08)); c = hslHex((hh + 34) % 360, ss, Math.min(0.85, l + 0.04)); }
+  else { const A = ACCENTS[SET.accent] || ACCENTS.ember; [a, b, c] = [A[0], A[1], A[3]]; }
+  if (SET.accent === 'mono' && light) [a, b, c] = ['#3A404C', '#1D222B', '#5A6272'];
+  // in light mode the soft tones are deepened a little so text and icons in the accent stay readable
+  const ink = light && SET.accent !== 'mono' ? (x => { const [hh, ss, l] = hsl(x); return hslHex(hh, Math.min(1, ss + 0.1), Math.min(l, 0.55)); }) : (x => x);
+  root.style.setProperty('--acc', ink(a)); root.style.setProperty('--acc-2', ink(b)); root.style.setProperty('--acc-3', ink(c));
+  root.style.setProperty('--acc-fill', a); root.style.setProperty('--acc-fill-2', b); root.style.setProperty('--acc-fill-3', c);
+  root.style.setProperty('--on-acc', lum(a) > 0.4 ? '#1A140F' : '#FFFFFF');
+  root.style.setProperty('--acc-soft', `color-mix(in srgb, ${a} ${light ? 18 : 14}%, transparent)`);
   root.style.setProperty('--hl', SET.cap.hl);
   $('meta[name="theme-color"]').content = light ? '#F3F4F7' : '#07090F';
   $$('#menuTheme button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.v === SET.theme)));
@@ -957,6 +1025,15 @@ function go(v, opts = {}) {
 }
 $$('[data-go]').forEach(b => b.addEventListener('click', () => { if (b.dataset.go === S.view && (!b.dataset.tab || b.dataset.tab === S.libTab)) return window.scrollTo({ top: 0 }); smooth(() => go(b.dataset.go, { tab: b.dataset.tab })); }));
 addEventListener('resize', () => { markNav(); moveTabInd(); });
+function setSide(open) {
+  document.documentElement.classList.toggle('side-closed', !open); store.set('sideOpen', open);
+  $('#sideOpen').setAttribute('aria-expanded', String(open)); $('#sideClose').setAttribute('aria-expanded', String(open));
+  setTimeout(() => { markNav(); moveTabInd(); }, 460);
+}
+$('#sideClose').onclick = () => { setSide(false); $('#sideOpen').focus(); };
+$('#sideOpen').onclick = () => setSide(true);
+addEventListener('keydown', e => { if ((e.ctrlKey || e.metaKey) && e.key === '\\') { e.preventDefault(); setSide(document.documentElement.classList.contains('side-closed')); } });
+setSide(store.get('sideOpen', true));
 function hideShared() { $('#progress').hidden = true; $('#review').hidden = true; $('#backBtn').hidden = true; }
 function place(el, container) { if (el.parentElement !== container) container.appendChild(el); el.hidden = false; }
 function updateBusy() {
@@ -991,7 +1068,7 @@ function renderProfile() {
 // ---------------------------------------------------------- control builders
 function seg(options, get, set, label) {
   const el = h(`<div class="seg" role="group" aria-label="${esc(label || '')}">${options.map(([v, t]) => `<button type="button" data-v="${esc(v)}" aria-pressed="${String(get() === v)}">${esc(t)}</button>`).join('')}</div>`);
-  el.querySelectorAll('button').forEach(b => b.onclick = () => { set(b.dataset.v); save(); refresh(); });
+  el.querySelectorAll('button').forEach(b => b.onclick = () => { const y = scrollY; set(b.dataset.v); save(); refresh(); if (Math.abs(scrollY - y) > 1) scrollTo(0, y); });
   return el;
 }
 function sw(title, sub, get, set) {
@@ -1075,18 +1152,25 @@ const VAL = {
 };
 const ROWS = { reels: ['hook', 'Reels'], captions: ['cap', 'Captions'], visuals: ['image', 'Visuals'], music: ['note', 'Music'], editing: ['cut', 'Editing'] };
 const openRows = { clipStyle: null, batchStyle: 'reels' };
+const typing = el => { const a = document.activeElement; return !!(a && el.contains(a) && (a.tagName === 'TEXTAREA' || (a.tagName === 'INPUT' && /^(text|search|email)$/.test(a.type)))); };
 function accordion(el, keys) {
+  if (typing(el)) { el.querySelectorAll('.acc-head').forEach(b => { const v = b.querySelector('.val'); if (v) v.innerHTML = VAL[b.dataset.k](); }); return; }   // never rebuild a field you're typing in
   const open = openRows[el.id];
   el.innerHTML = keys.map(k => `<div class="acc-row"><button class="acc-head" type="button" data-k="${k}" aria-expanded="${String(open === k)}"><span class="ic">${icon(ROWS[k][0])}</span><b>${ROWS[k][1]}</b><span class="val">${VAL[k]()}</span><i class="chev"></i></button>
     <div class="acc-body"><div class="acc-in"><div data-body="${k}"></div></div></div></div>`).join('');
-  el.querySelectorAll('.acc-head').forEach(b => b.onclick = () => { openRows[el.id] = openRows[el.id] === b.dataset.k ? null : b.dataset.k; accordion(el, keys); });
+  el.querySelectorAll('.acc-head').forEach(b => b.onclick = () => {
+    const was = openRows[el.id], k = b.dataset.k; openRows[el.id] = was === k ? null : k;
+    // open and close smoothly: build the new body, then let the rows animate
+    el.querySelectorAll('.acc-head').forEach(x => { x.setAttribute('aria-expanded', 'false'); x.nextElementSibling.inert = true; });
+    if (openRows[el.id]) { const body = b.nextElementSibling.querySelector('[data-body]'); body.innerHTML = ''; body.append(ctl[k]()); if (k === 'captions') body.append(ctl.captionsMore()); b.nextElementSibling.inert = false; requestAnimationFrame(() => b.setAttribute('aria-expanded', 'true')); }
+  });
   el.querySelectorAll('[data-body]').forEach(c => { const k = c.dataset.body; if (k !== open) { c.closest('.acc-body').inert = true; return; } c.append(ctl[k]()); if (k === 'captions') c.append(ctl.captionsMore()); });
 }
 function refresh() {
   applyTheme(); renderProfile();
   accordion($('#clipStyle'), ['captions', 'visuals', 'music', 'editing']);
   accordion($('#batchStyle'), ['reels', 'captions', 'visuals', 'music', 'editing']);
-  if (S.view === 'settings') renderSettings();
+  if (S.view === 'settings' && !typing($('#setBody'))) renderSettings();
   if (S.view === 'library') renderLib();
   if (S.P && !$('#review').hidden) renderReelMusic();
   notes();
