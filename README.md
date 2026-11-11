@@ -1,17 +1,21 @@
 # Reel Studio
 
-Turn a talking-head take into a finished vertical reel, right in the browser: pauses trimmed, retakes cut at a clap, captions, clips and photo cards, music, and a 1080×1920 export. Your video never leaves your device.
+Reel editing in the browser. Your videos never leave your device.
+
+- **Clip → Reel**: one take in, one finished vertical reel out. Pauses and clap-marked retakes trimmed, captions, clips and photo cards matched to the meaning and feel of each line, music, 1080×1920 export.
+- **Long form → Reels**: a long video in, a batch of reels out. Every line is scored as a hook (question, contrarian, curiosity, number, result, story…), the best self-contained stretches are picked, and the strongest line can be moved to the front.
 
 Live at https://reeleditapp.com
 
 ## Files
 
 ```
-index.html     the app            engine.js    the editor
-stock/         free stock clips and photos (Mixkit Free License) + manifest.json
-models/        face detector (YuNet, MIT)
-icons/, manifest.webmanifest      Home Screen icon
-tools/, .github/workflows/        optional stock fetcher (Pexels / Pixabay)
+index.html       the app                 engine.js     the editor
+stock/           free stock clips and photos (Mixkit Free License) + manifest.json
+models/          face detector (YuNet, MIT)
+trends.json      hook weights and trending topics (refreshed daily by .github/workflows/refresh-trends.yml)
+icons/, manifest.webmanifest              app icon
+tools/, .github/workflows/                stock fetcher (Pexels / Pixabay) and trends refresh
 ```
 
 To run it locally, serve the folder over http (for example `npx serve .`).

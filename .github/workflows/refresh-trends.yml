@@ -1,0 +1,24 @@
+name: Refresh trends
+on:
+  schedule:
+    - cron: '37 10 * * *'
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with: { ref: main }
+      - uses: actions/setup-node@v4
+        with: { node-version: 20 }
+      - run: node tools/refresh-trends.mjs
+      - name: Commit
+        run: |
+          git config user.name "trends-bot"
+          git config user.email "trends-bot@users.noreply.github.com"
+          git add trends.json
+          git diff --cached --quiet || git commit -m "Refresh trends"
+          git push origin HEAD:main HEAD:gh-pages

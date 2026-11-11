@@ -19,10 +19,10 @@ function defaults() {
     nr: 12, lufs: -14,
     deadzone: 0.04, smooth: 0.35, faceY: 0.38,
     zoom: { minGap: 6.5, window: 2.5, cut: 1.12, push: 1.10, ramp: 3.0, maxHold: 4.5 },
-    broll: { min: 1.8, target: 2.0, max: 2.4, maxFrac: 0.25, autoMinStart: 1.5, gap: 2.8 },
-    cap: { size: 86, accent: '#D6B06C', baseline: 0.70, baselineUp: 0.468, maxWords: 4, side: 150 },
+    broll: { min: 1.8, target: 2.0, max: 2.4, maxFrac: 0.25, autoMinStart: 1.5, gap: 2.8, amount: 1 },
+    cap: { size: 86, accent: '#D6B06C', color: '#FFFFFF', style: 'outline', upper: false, baseline: 0.70, baselineUp: 0.468, maxWords: 4, side: 150 },
     pop: { on: true, x: 140, y: 985, w: 800, h: 520, radius: 28, min: 1.8, max: 2.4, gap: 2.8, inF: 13, outF: 11 },
-    music: { mode: 'auto', mood: 'warm', level: -10 },
+    music: { mode: 'generated', genre: 'chill', level: -10 },
     videoBitrate: 12_000_000,
   };
 }
@@ -361,6 +361,26 @@ function buildKeep(speech, removed, total, cfg, restored = []) {
   return { keep: frames, trimmed: tr };
 }
 
+function keepFor(speech, removed, total, cfg, restored, range, hook) {
+  const [a, b] = range || [0, total];
+  const sp = speech.map(([s, e]) => [Math.max(s, a), Math.min(e, b)]).filter(([s, e]) => e - s > 0.04);
+  const r = buildKeep(sp, removed, total, cfg, restored);
+  const fa = Math.ceil(a * FPS), fb = Math.floor(b * FPS);
+  let keep = r.keep.map(([f0, f1]) => [Math.max(f0, fa), Math.min(f1, fb)]).filter(([f0, f1]) => f1 - f0 >= 3);
+  const trimmed = r.trimmed.filter(t => t[0] >= a - 0.01 && t[1] <= b + 0.01);
+  if (hook && hook[0] > a + 0.3) {
+    const h0 = Math.floor(hook[0] * FPS), h1 = Math.ceil(hook[1] * FPS), front = [], rest = [];
+    for (const [f0, f1] of keep) {
+      const x0 = Math.max(f0, h0), x1 = Math.min(f1, h1);
+      if (x1 - x0 >= 3) front.push([x0, x1]);
+      if (Math.min(f1, h0) - f0 >= 3) rest.push([f0, Math.min(f1, h0)]);
+      if (f1 - Math.max(f0, h1) >= 3) rest.push([Math.max(f0, h1), f1]);
+    }
+    if (front.length && rest.length) keep = [...front, ...rest];
+  }
+  return { keep, trimmed };
+}
+
 class TimeMap {
   constructor(keep) {
     this.keep = keep; this.starts = []; let o = 0;
@@ -368,13 +388,13 @@ class TimeMap {
     this.nOut = o;
   }
   rawToOut(t) {
-    const f = t * FPS;
+    const f = t * FPS; let next = -1;
     for (let i = 0; i < this.keep.length; i++) {
       const [f0, f1] = this.keep[i];
-      if (f < f0) return this.starts[i] / FPS;
-      if (f < f1) return (this.starts[i] + f - f0) / FPS;
+      if (f >= f0 && f < f1) return (this.starts[i] + f - f0) / FPS;
+      if (f0 > f && (next < 0 || f0 < this.keep[next][0])) next = i;
     }
-    return this.nOut / FPS;
+    return next >= 0 ? this.starts[next] / FPS : this.nOut / FPS;
   }
   outToRawFrame(oi) { // output frame index -> raw frame index
     let lo = 0, hi = this.keep.length - 1;
@@ -386,13 +406,13 @@ class TimeMap {
   cutPoints() { return this.starts.slice(1).map(o => o / FPS); }
 }
 
-function cutAudio(a, keep) {
+function cutAudio(a, keep, base = 0) {
   const fade = Math.round(0.004 * SR); let n = 0;
   for (const [f0, f1] of keep) n += (f1 - f0) * SPF;
   const out = new Float32Array(n); let o = 0;
   for (const [f0, f1] of keep) {
     const len = (f1 - f0) * SPF;
-    out.set(a.subarray(f0 * SPF, Math.min(a.length, f1 * SPF)), o);
+    out.set(a.subarray(Math.max(0, f0 * SPF - base), Math.max(0, Math.min(a.length, f1 * SPF - base))), o);
     for (let i = 0; i < fade; i++) { const g = i / fade; out[o + i] *= g; out[o + len - 1 - i] *= g; }
     o += len;
   }
@@ -410,6 +430,7 @@ function mapWords(words, tmap) {
     const s = Math.max(w.s, f0 / FPS), e = Math.min(w.e, f1 / FPS);
     out.push({ w: w.w, s: +((tmap.starts[k] + s * FPS - f0) / FPS).toFixed(3), e: +((tmap.starts[k] + e * FPS - f0) / FPS).toFixed(3) });
   }
+  out.sort((a, b) => a.s - b.s);
   for (let i = 1; i < out.length; i++) { out[i].s = Math.max(out[i].s, out[i - 1].s); out[i].e = Math.max(out[i].e, out[i].s + 0.05); }
   return out;
 }
@@ -603,17 +624,46 @@ async function embed(texts) {
 }
 const dot = (a, b) => { let s = 0; for (let i = 0; i < a.length; i++) s += a[i] * b[i]; return s; };
 function itemText(it) { return `${it.subject || ''}. ${(it.tags || []).join(', ')}. ${String(it.category || '').replace('_', ' ')}`; }
-/** Meaning similarity of every line (with a little context) to every clip and photo: Map "a-b" -> Map(id -> similarity). */
-async function meaningSims(words, items) {
-  const ph = phrases(words, 10);
-  const lineV = await embed(ph.map(p => p.text));
-  const ctxV = await embed(ph.map(p => words.slice(Math.max(0, p.a - 6), Math.min(words.length, p.b + 7)).map(w => w.w).join(' ')));
-  const itemV = await embed(items.map(itemText));
-  const out = new Map();
-  ph.forEach((p, k) => { const m = new Map(); items.forEach((it, j) => m.set(it.id, 0.7 * dot(lineV[k], itemV[j]) + 0.3 * dot(ctxV[k], itemV[j]))); out.set(`${p.a}-${p.b}`, m); });
-  return out;
+/** The feel of a line or a shot, as a mix of these. Lines and visuals are placed in the same space by the sentence model,
+ *  so a quiet line about patience lands near a slow ocean shot even when no word matches. */
+const VIBES = {
+  calm: ['be patient with yourself', 'slow down and breathe', 'calm, quiet, peaceful nature', 'trust the process, it takes time', 'rest and recover', 'zoom out and get perspective'],
+  grind: ['hard work and sweat', 'push through when it gets hard', 'train hard, heavy weights', 'discipline and effort every day', 'the grind'],
+  triumph: ['you did it, feeling proud', 'getting stronger, real progress', 'confidence and winning', 'the results paid off', 'feeling unstoppable'],
+  warmth: ['my kids and my family', 'love and connection', 'grateful for the people around me', 'being there for the ones you love', 'home and togetherness'],
+  struggle: ['stressed and overwhelmed', 'exhausted, burned out', 'doubting yourself, wanting to quit', 'feeling stuck and frustrated', 'it hurts and it is hard'],
+  hype: ['influencers showing off', 'expensive gear and fancy gyms', 'quick fixes and shortcuts', 'social media fitness hype', 'perfect abs and flashy promises'],
+  practical: ['what to eat and how to cook it', 'a simple daily routine', 'step by step how to do it', 'track it and write it down', 'meals, protein and groceries'],
+  hope: ['a fresh start', 'a new morning, a new day', 'it is never too late to begin', 'looking forward to the future', 'possibility and new beginnings'],
+  play: ['that is funny', 'just having fun with it', 'joking around, lighthearted', 'laughing at myself', 'playful and silly'],
+};
+const VIBE_ENERGY = { calm: -1, warmth: -0.5, hope: -0.3, practical: 0, play: 0.3, struggle: 0.1, triumph: 0.7, grind: 1, hype: 1 };
+const VIBE_LABEL = { calm: 'calm', grind: 'effort', triumph: 'strong', warmth: 'warm', struggle: 'struggle', hype: 'hype', practical: 'everyday', hope: 'hopeful', play: 'light' };
+function softmax(xs, T) { const m = Math.max(...xs), e = xs.map(x => Math.exp((x - m) * T)), z = e.reduce((a, b) => a + b, 0); return e.map(x => x / z); }
+function cosv(a, b) { let d = 0, x = 0, y = 0; for (let i = 0; i < a.length; i++) { d += a[i] * b[i]; x += a[i] * a[i]; y += b[i] * b[i]; } return d / Math.sqrt(x * y + 1e-12); }
+/** For each line: what it means (the line, and the whole thought around it) and how it feels; same for every visual. */
+async function vibeContext(words, items) {
+  const ph = phrases(words, 10), names = Object.keys(VIBES);
+  const sentStart = i => { while (i > 0 && !(/[.?!]["')]*$/.test(words[i - 1].w))) i--; return i; };
+  const sentEnd = i => { while (i < words.length - 1 && !/[.?!]["')]*$/.test(words[i].w)) i++; return i; };
+  const thoughts = ph.map(p => { const a = sentStart(p.a); let b = sentEnd(p.b); if (b - a < 10 && b + 1 < words.length) b = sentEnd(b + 1); return words.slice(a, Math.min(b + 1, a + 45)).map(w => w.w).join(' '); });
+  const protos = names.flatMap(k => VIBES[k].map(t => [k, t])), pV = await embed(protos.map(x => x[1]));
+  const [lineV, thV, itV] = [await embed(ph.map(p => p.text)), await embed(thoughts), await embed(items.map(itemText))];
+  const vbs = v => names.map(k => { const xs = protos.map((x, i) => x[0] === k ? dot(v, pV[i]) : -1).filter(x => x > -1).sort((a, b) => b - a); return 0.7 * xs[0] + 0.3 * xs[1]; });
+  const itemVibe = itV.map(v => softmax(vbs(v), 14));
+  const lines = new Map();
+  ph.forEach((p, k) => {
+    const wl = p.b - p.a < 7 ? 0.65 : 0.45;                                        // a short line carries its own feel
+    const lv = vbs(lineV[k]), tv = vbs(thV[k]), vib = softmax(lv.map((x, i) => wl * x + (1 - wl) * tv[i]), 14);
+    const sem = new Float32Array(items.length); items.forEach((_, j) => { sem[j] = 0.55 * dot(lineV[k], itV[j]) + 0.45 * dot(thV[k], itV[j]); });
+    lines.set(`${p.a}-${p.b}`, { vib, sem, energy: vib.reduce((a, x, i) => a + x * VIBE_ENERGY[names[i]], 0), top: names[vib.indexOf(Math.max(...vib))] });
+  });
+  const index = new Map(items.map((it, j) => [it.id, j]));
+  const itemInfo = items.map((it, j) => ({ vib: itemVibe[j], top: names[itemVibe[j].indexOf(Math.max(...itemVibe[j]))],
+    energy: (it.energy === 'high' ? 0.8 : it.energy === 'low' ? -0.8 : 0) * 0.5 + 0.5 * itemVibe[j].reduce((a, x, i) => a + x * VIBE_ENERGY[names[i]], 0) }));
+  return { lines, index, itemInfo, names };
 }
-function targetVisuals(total) { return total < 9 ? 0 : clamp(Math.round(total / 7), 1, 9); }
+function targetVisuals(total, amount = 1) { return total < 9 ? 0 : clamp(Math.round(total / 7 * amount), 1, 12); }
 function popAlpha(oi, p, cfg) {
   const f0 = Math.round(p.s * FPS), f1 = Math.round(p.e * FPS);
   if (oi < f0 || oi >= f1) return null;
@@ -688,7 +738,7 @@ function planVisuals(words, items, photos, notes, tmap, total, cfg, aiPicks, ctx
     const dur0 = it.kind === 'still' ? 2.6 : it.duration;
     if (auto && dur0 < B.min - 0.05) return 'clip is shorter than 2 s';
     const r = when(s, dur0, auto); if (typeof r === 'string') return r;
-    if (broll.filter(p => !p.off).reduce((a, p) => a + p.e - p.s, 0) + (r.e - r.s) > budget) return 'would push full-screen B-roll past 25% of the reel';
+    if (broll.filter(p => !p.off).reduce((a, p) => a + p.e - p.s, 0) + (r.e - r.s) > budget) return `would push full-screen clips past ${Math.round(B.maxFrac * 100)}% of the reel`;
     const clipIn = it.kind === 'still' ? 0 : Math.max(0, (it.duration - (r.e - r.s)) / 2);
     broll.push({ id: it.id, item: it, s: r.s, e: r.e, clipIn: +clipIn.toFixed(3), why, text });
     if (it.shirtless) shirtless = true;
@@ -744,26 +794,65 @@ const CUES = {
   contrast: ['influencer', 'influencers', 'fancy', 'hype', 'bro', 'bros', 'supplements', 'supplement', 'shortcut', 'hack', 'hacks', 'instagram', 'program', 'expensive', 'magic', 'ripped', 'shredded'],
   mood: ['honestly', 'truth', 'real', 'hard', 'quit', 'doubt', 'feel', 'feeling', 'think', 'remember', 'proud', 'alone', 'start', 'again'],
 };
-/** Fill the reel to a natural rhythm with visuals that relate to the line, clip or photo by the same scoring:
- *  what he names, the feeling of the line (cue words), his own footage first. Slots over a jump cut come first. */
+/** Fill the reel to a natural rhythm with visuals that fit what you're saying and how it feels.
+ *  Each line is scored against every clip and photo by: meaning (the line and the whole thought), feel (calm, effort,
+ *  warm, hopeful...), energy (how you're saying it against how busy the shot is), and only lightly by matching words.
+ *  Visuals go where they fit best, spaced out, never over the opening or closing line. */
 function fillVisuals(words, items, photos, add, all, cuts, total, cfg, log, firstEnd, lastSentence, ctx = {}) {
-  const want = targetVisuals(total), B = cfg.broll;
+  const B = cfg.broll, want = targetVisuals(total, B.amount || 1);
   if (all().length >= want || !words.length) return;
   const pool = [
     ...items.filter(it => !it.others_visible && it.kind !== 'photo' && (it.kind === 'still' || (it.duration || 0) >= B.min - 0.05)).map(it => ({ it, type: 'clip' })),
     ...(cfg.pop.on ? photos.filter(it => !it.others_visible).map(it => ({ it, type: 'photo' })) : []),
   ];
   if (!pool.length) return;
-  const ph = phrases(words, 10);
+  const ph = phrases(words, 10), V = ctx.vibe;
   const terms = pool.map(({ it }) => { const t = itemTerms(it); String(it.subject || '').toLowerCase().split(/[^a-z']+/).forEach(x => { if (x.length >= 4 && !STOP.has(x)) t.words.push(stem(x)); }); return [...new Set(t.words)]; });
   const df = {}; for (const t of terms) for (const w of t) df[w] = (df[w] || 0) + 1;
   const idf = w => Math.log((pool.length + 1) / ((df[w] || 0) + 0.5));
   const cueSets = Object.fromEntries(Object.entries(CUES).map(([k, v]) => [k, new Set(v.map(stem))]));
+  const THR = V ? 1.6 : 2.1;
+  function scoreAll(sl) {
+    const key = `${sl.a}-${sl.b}`, L = V && V.lines.get(key), dv = ctx.delivery && ctx.delivery.get(key);
+    const inSlot = new Set(words.slice(sl.a, sl.b + 1).map(w => stem(w.w))), near = new Set(words.slice(Math.max(0, sl.a - 6), Math.min(words.length, sl.b + 7)).map(w => stem(w.w)));
+    const cueHit = k => !cueSets[k] ? 0 : [...cueSets[k]].filter(c => inSlot.has(c)).length + 0.4 * [...cueSets[k]].filter(c => near.has(c) && !inSlot.has(c)).length;
+    const prev = all().filter(p => p.e <= sl.s).sort((a, b) => b.e - a.e)[0];
+    const said = t => { const w = words.slice(sl.a, sl.b + 1).find(x => stem(x.w) === t); return w ? norm(w.w) : t; };
+    const lineEnergy = (L ? L.energy : 0) + (dv ? clamp(dv.loud / 4, -0.6, 0.6) + (dv.emphatic ? 0.3 : 0) - (dv.slow ? 0.3 : 0) : 0);
+    return pool.map(({ it, type }, k) => {
+      if (all().some(p => p.id === it.id)) return null;
+      const hit = terms[k].filter(t => inSlot.has(t)), hitNear = terms[k].filter(t => near.has(t) && !inSlot.has(t));
+      const lex = Math.min(1.6, hit.reduce((a, t) => a + idf(t), 0) * 0.35 + hitNear.reduce((a, t) => a + idf(t), 0) * 0.12);
+      const cat = it.category; let sc, why, vtop = null;
+      if (L) {
+        const j = V.index.get(it.id), I = V.itemInfo[j], sem = L.sem[j], vm = cosv(L.vib, I.vib);
+        const conf = clamp((Math.max(...L.vib) - 0.14) / 0.22, 0.2, 1);                   // a vague line can't lean on feel alone
+        sc = 5 * Math.max(-0.1, sem - 0.16) + 2.6 * (vm - 0.45) * conf + lex - 0.45 * Math.abs(lineEnergy - I.energy);
+        if (I.top === 'hype' && L.vib[V.names.indexOf('hype')] < 0.16) sc -= 2;              // flashy shots only when you're talking about that
+        if (prev && prev.vibeTop && prev.vibeTop === I.top) sc -= 0.3;
+        why = hit.length ? `fits "${hit.slice(0, 2).map(said).join('", "')}"` : sem > 0.35 ? 'matches what you mean' : `${VIBE_LABEL[L.top]} feel`;
+        if (cueSets[cat]) sc += Math.min(0.9, cueHit(cat) * 0.45);                     // feeling words that fit this kind of shot
+        vtop = I.top;
+      } else {
+        sc = hit.reduce((a, t) => a + idf(t), 0) * (type === 'photo' ? 1 : 0.8) + hitNear.reduce((a, t) => a + idf(t), 0) * 0.35;
+        if (cueSets[cat]) sc += cueHit(cat) * 1.6;
+        if (cat === 'contrast' || it.energy === 'high') sc += cueHit('contrast') > 0.9 ? 1 : -4;
+        why = hit.length ? `fits "${hit.slice(0, 2).map(said).join('", "')}"` : `${String(cat).replace('_', ' ')} shot`;
+      }
+      if (it.source !== 'stock') sc += 0.5;                                                  // your own footage first
+      if (dv && dv.emphatic) sc += type === 'photo' ? 0.35 : -0.35;                          // you're punching the line: stay on camera
+      if (prev && prev.item.category === cat) sc -= 0.35;
+      if (prev && (prev.item.kind === 'photo') === (type === 'photo')) sc -= 0.15;           // gently alternate clips and photos
+      sc += ((k * 2654435761 + Math.round(sl.s * 10)) % 97) / 600;
+      return { it, type, sc, why, vibeTop: vtop };
+    }).filter(Boolean).sort((a, b) => b.sc - a.sc);
+  }
   const slots = ph.filter(p => p.s >= Math.max(B.autoMinStart, firstEnd - 0.1) && p.s < lastSentence - 0.4 && p.e - p.s >= 0.6).map(p => {
     let sc = 0; const d = p.e - p.s;
-    if (cuts.some(c => c >= p.s - 0.15 && c <= p.s + Math.min(2.4, d))) sc += 3;
-    if (d >= 1.2 && d <= 3.6) sc += 1;
-    return { ...p, base: sc };
+    if (cuts.some(c => c >= p.s - 0.15 && c <= p.s + Math.min(2.4, d))) sc += 2.2;            // covers a jump cut
+    if (d >= 1.2 && d <= 3.6) sc += 0.8;
+    const r = scoreAll(p); const best = r.length ? r[0].sc : -9;
+    return { ...p, base: sc + 1.4 * clamp(best - THR, -1, 2) };                               // go where something really fits
   });
   let guard = 0;
   while (all().length < want && slots.length && guard++ < 40) {
@@ -771,34 +860,11 @@ function fillVisuals(words, items, photos, add, all, cuts, total, cfg, log, firs
     slots.forEach(sl => { const c = (sl.s + sl.e) / 2, d = centers.length ? Math.min(...centers.map(x => Math.abs(x - c))) : total / 2; sl.score = sl.base + Math.min(4, d / Math.max(2, total / (want + 1)) * 3) - (d < 3.5 ? 6 : 0); });
     slots.sort((a, b) => b.score - a.score);
     const sl = slots.shift(); if (sl.score < -2) break;
-    const inSlot = new Set(words.slice(sl.a, sl.b + 1).map(w => stem(w.w))), near = new Set(words.slice(Math.max(0, sl.a - 6), Math.min(words.length, sl.b + 7)).map(w => stem(w.w)));
-    const cueHit = k => !cueSets[k] ? 0 : [...cueSets[k]].filter(c => inSlot.has(c)).length + 0.4 * [...cueSets[k]].filter(c => near.has(c) && !inSlot.has(c)).length;
-    const lineMood = Object.keys(CUES).map(k => [k, cueHit(k)]).sort((a, b) => b[1] - a[1])[0];
-    const prev = all().filter(p => p.e <= sl.s).sort((a, b) => b.e - a.e)[0];
-    const ranked = pool.map(({ it, type }, k) => {
-      if (all().some(p => p.id === it.id)) return null;
-      const hit = terms[k].filter(t => inSlot.has(t)), hitNear = terms[k].filter(t => near.has(t) && !inSlot.has(t));
-      const lw = it.source === 'stock' ? (hit.length >= 2 ? 0.75 : 0.4) : 1.2;
-      let sc = hit.reduce((a, t) => a + idf(t), 0) * (type === 'photo' ? lw + 0.3 : lw) + hitNear.reduce((a, t) => a + idf(t), 0) * 0.35;
-      const cat = it.category;
-      if (cueSets[cat]) sc += cueHit(cat) * 1.6;
-      if (lineMood && lineMood[1] >= 1 && cat === lineMood[0]) sc += 0.6;                  // matches the feeling of the line overall
-      if (cat === 'contrast' || it.energy === 'high') sc += cueHit('contrast') > 0.9 ? 1 : -4;
-      if (it.source !== 'stock') sc += 0.8; else if (cat === 'nature') sc += 0.5;
-      const key = `${sl.a}-${sl.b}`, sim = ctx.sims && ctx.sims.get(key) ? ctx.sims.get(key).get(it.id) : null;
-      if (sim != null) sc += Math.max(0, sim - 0.25) * 5;                           // a 0.5 meaning match adds ~1.25
-      const dv = ctx.delivery && ctx.delivery.get(key);
-      if (dv && dv.emphatic) sc += type === 'photo' ? 0.6 : -0.6;                   // you're punching the line: stay on camera
-      if (dv && (dv.slow || dv.pause > 0.6) && dv.loud < 0 && cat === 'nature') sc += 0.6; // a quiet, slowed line can hold on a calm shot
-      if (prev && prev.item.category === cat) sc -= 0.6;
-      if (prev && (prev.item.kind === 'photo') === (type === 'photo')) sc -= 0.2;      // gently alternate clips and photos
-      sc += ((k * 2654435761 + Math.round(sl.s * 10)) % 97) / 400;
-      return { it, type, sc, why: hit.length ? `fits "${hit.slice(0, 2).join('", "')}"` : cueSets[cat] && cueHit(cat) >= 1 ? `${String(cat).replace('_', ' ')} feel for this line` : sim != null && sim > 0.4 ? 'matches what you mean' : `${String(cat).replace('_', ' ')} shot` };
-    }).filter(c => c && c.sc >= 2.1).sort((a, b) => b.sc - a.sc);
+    const ranked = scoreAll(sl).filter(c => c.sc >= THR);
     for (const c of ranked.slice(0, 6)) {
       const err = add(c.type, c.it, sl.s, c.why, sl.text, true);
-      if (!err) break;
-      if (/past 25%/.test(err)) continue;
+      if (!err) { const last = all().find(p => p.id === c.it.id); if (last) last.vibeTop = c.vibeTop; break; }
+      if (/past \d+%/.test(err)) continue;
       if (/too close|closing|opening|no room/.test(err)) break;
     }
   }
@@ -929,18 +995,24 @@ function drawCaption(ctx, chunk, cfg, t, next, lift = null) {
   if (a <= 0.01) return;
   ctx.save(); ctx.globalAlpha = a; ctx.translate(0, rise);
   ctx.font = capFont(cfg); ctx.textBaseline = 'alphabetic'; ctx.lineJoin = 'round'; ctx.miterLimit = 2;
-  const sp = ctx.measureText(' ').width + 0.5;
-  const ws = chunk.words.map(w => ({ w, wd: ctx.measureText(w).width }));
+  const sp = ctx.measureText(' ').width + 0.5, C = cfg.cap, style = C.style || 'outline';
+  const ws = chunk.words.map(w => { w = C.upper ? w.toUpperCase() : w; return { w, wd: ctx.measureText(w).width }; });
   const total = ws.reduce((a, b) => a + b.wd, 0) + sp * (ws.length - 1);
   const lf = lift == null ? (chunk.up ? 1 : 0) : lift;
   const y = Math.round(OUT_H * (cfg.cap.baseline + (cfg.cap.baselineUp - cfg.cap.baseline) * lf)); let x = OUT_W / 2 - total / 2;
   const pos = ws.map(w => { const p = x; x += w.wd + sp; return p; });
-  // soft drop shadow, then dark outline, then fill
-  ctx.fillStyle = 'rgba(0,0,0,0.45)'; ctx.strokeStyle = 'rgba(0,0,0,0.45)'; ctx.lineWidth = 6.4;
-  ws.forEach((w, k) => { ctx.strokeText(w.w, pos[k] + 2.2, y + 2.2); ctx.fillText(w.w, pos[k] + 2.2, y + 2.2); });
-  ctx.strokeStyle = 'rgba(20,20,20,0.70)'; ctx.lineWidth = 6.4;
-  ws.forEach((w, k) => ctx.strokeText(w.w, pos[k], y));
-  ws.forEach((w, k) => { ctx.fillStyle = k === chunk.hl ? cfg.cap.accent : '#FFFFFF'; ctx.fillText(w.w, pos[k], y); });
+  const fs = Math.round(C.size / 1.21);
+  if (style === 'box') {
+    ctx.fillStyle = 'rgba(0,0,0,0.62)'; roundRect(ctx, pos[0] - 0.34 * fs, y - 0.92 * fs, total + 0.68 * fs, 1.24 * fs, 0.24 * fs); ctx.fill();
+  } else if (style === 'shadow') {
+    ctx.shadowColor = 'rgba(0,0,0,0.75)'; ctx.shadowBlur = 14; ctx.shadowOffsetY = 3;
+  } else { // soft drop shadow, then dark outline
+    ctx.fillStyle = 'rgba(0,0,0,0.45)'; ctx.strokeStyle = 'rgba(0,0,0,0.45)'; ctx.lineWidth = 6.4;
+    ws.forEach((w, k) => { ctx.strokeText(w.w, pos[k] + 2.2, y + 2.2); ctx.fillText(w.w, pos[k] + 2.2, y + 2.2); });
+    ctx.strokeStyle = 'rgba(20,20,20,0.70)'; ctx.lineWidth = 6.4;
+    ws.forEach((w, k) => ctx.strokeText(w.w, pos[k], y));
+  }
+  ws.forEach((w, k) => { ctx.fillStyle = k === chunk.hl ? C.accent : (C.color || '#FFFFFF'); ctx.fillText(w.w, pos[k], y); });
   ctx.restore();
 }
 
@@ -1067,6 +1139,9 @@ class VideoSource {
     }
   }
   async frameAt(t) {
+    const last = this.lastT == null ? 0 : this.lastT;
+    if (t < last - 0.5 / FPS || t > last + 3) this.seek(t);
+    this.lastT = t;
     const lim = (t + 0.25 / FPS) * 1e6;
     for (let guard = 0; guard < 100000; guard++) {
       if (this.err) throw this.err;
@@ -1237,13 +1312,49 @@ async function transcribe(audio48, onProgress, signal, which = 'small') {
     }
     return ws;
   };
+  const speech = vad(audio48), redo = [];
+  const spoken = (a, b) => speech.reduce((x, [s, e]) => x + Math.max(0, Math.min(b, e) - Math.max(a, s)), 0);
+  const covered = (ws, a, b) => speech.reduce((x, [s, e]) => { const lo = Math.max(a, s), hi = Math.min(b, e); if (hi <= lo) return x;
+    let c = 0, cur = lo; for (const w of ws) { const ws0 = Math.max(cur, w.s - 0.2), we = Math.min(hi, w.e + 0.2); if (we > ws0) { c += we - ws0; cur = we; } } return x + c; }, 0);
+  // Whisper sometimes loops ("I was going to say that I was going to say that...") or skips a stretch.
+  // Spot both, and transcribe that piece again in two halves.
+  const broken = (ws, a, b) => {
+    const sp = spoken(a, b); if (sp < 1) return false;
+    let stacked = 0; for (let i = 1; i < ws.length; i++) if (ws[i].s - ws[i - 1].s < 0.02) stacked++;
+    const grams = new Map(); let rep = 0;
+    for (let i = 0; i + 4 <= ws.length; i++) { const g = ws.slice(i, i + 4).map(w => norm(w.w)).join(' '); const c = (grams.get(g) || 0) + 1; grams.set(g, c); if (c > 2) rep++; }
+    return ws.length / Math.max(1, b - a) > 5.5 || stacked > 6 || rep > 2 || covered(ws, a, b) / sp < 0.55;
+  };
+  const splitAt = (a, b) => { let best = (a + b) / 2, bv = Infinity; for (let t = a + (b - a) * 0.3; t <= a + (b - a) * 0.7; t += 0.01) { const i = Math.round(t * 100); let m = -Infinity; for (let k = -15; k <= 15; k++) m = Math.max(m, db[clamp(i + k, 0, db.length - 1)]); if (m < bv) { bv = m; best = t; } } return best; };
+  const fixLoops = ws => {
+    const o = [];
+    for (const w of ws) {
+      if (o.length >= 2 && w.s - o[o.length - 1].s < 0.02 && o[o.length - 1].s - o[o.length - 2].s < 0.02) continue;   // words stacked on one instant
+      o.push(w);
+      for (let n = 1; n <= 6; n++) {                                                  // the same n words three times in a row: keep one
+        if (o.length < 3 * n) break;
+        const g = k => o.slice(o.length - k * n, o.length - (k - 1) * n).map(x => norm(x.w)).join(' ');
+        if (g(1) === g(2) && g(2) === g(3)) { o.splice(o.length - 2 * n, 2 * n); break; }
+      }
+    }
+    return o;
+  };
+  DIAG.asrRetries = [];
+  const asrSafe = async (a, b, depth = 0) => {
+    let ws = await asrRange(a, b);
+    if (depth < 2 && b - a > 6 && broken(ws, a, b)) {
+      DIAG.asrRetries.push([+a.toFixed(1), +b.toFixed(1)]);
+      const m = splitAt(a, b), both = [...await asrSafe(a, m, depth + 1), ...await asrSafe(m, b, depth + 1)];
+      if (!broken(both, a, b) || covered(both, a, b) >= covered(ws, a, b)) ws = both;
+    }
+    return fixLoops(ws);
+  };
   for (let k = 0; k < segs.length; k++) {
     check(signal);
     onProgress && onProgress(0.58 + 0.36 * k / segs.length, segs.length > 1 ? `Transcribing what you said (part ${k + 1} of ${segs.length})` : 'Transcribing what you said');
-    out.push(...await asrRange(segs[k][0], segs[k][1]));
+    out.push(...await asrSafe(segs[k][0], segs[k][1]));
   }
   // Safety net: any stretch of clear speech that came back with no words gets transcribed again on its own.
-  const speech = vad(audio48), redo = [];
   for (const [s, e] of speech) if (e - s > 1.2 && !out.some(w => w.e > s - 0.2 && w.s < e + 0.2)) redo.push([Math.max(0, s - 0.3), Math.min(total, e + 0.3)]);
   for (const [s, e] of redo.slice(0, 6)) {
     check(signal); const ws = (await asrRange(s, e)).filter(w => !out.some(o => o.e > w.s + 0.05 && o.s < w.e - 0.05));
@@ -1358,73 +1469,145 @@ function cropRect(i, tr, z, W, H, cfg) {
 
 // ------------------------------------------------------------------ music
 function rng(seed) { let s = seed >>> 0 || 1; return () => { s ^= s << 13; s >>>= 0; s ^= s >> 17; s ^= s << 5; s >>>= 0; return s / 4294967296; }; }
-const MOODS = {
-  warm:       { bpm: 76, prog: [[0, 4, 7, 11], [9, 12, 16, 19], [5, 9, 12, 16], [7, 11, 14, 17]], label: 'Warm' },
-  steady:     { bpm: 84, prog: [[9, 12, 16, 19], [5, 9, 12, 16], [0, 4, 7, 11], [7, 11, 14, 17]], label: 'Steady', pulse: true },
-  reflective: { bpm: 66, prog: [[0, 4, 7, 11, 14], [5, 9, 12, 16], [9, 12, 16, 19], [5, 9, 12, 14]], label: 'Reflective' },
+const GENRES = {
+  lofi:      { label: 'Lo-fi', bpm: 78, prog: [[2, 5, 9, 12], [7, 11, 14, 17], [0, 4, 7, 11], [9, 12, 16, 19]], bars: 1, keys: 'rhodes', drums: 'lofi', swing: 0.16, bass: 'round', lp: 2600, crackle: true, about: 'Dusty keys, lazy drums' },
+  chill:     { label: 'Chill', bpm: 84, prog: [[0, 4, 7, 11], [9, 12, 16, 19], [5, 9, 12, 16], [7, 11, 14, 17]], bars: 2, pad: 'warm', keys: 'piano', density: 0.35, drums: 'pulse', bass: 'sine', about: 'Soft pads, a gentle pulse' },
+  piano:     { label: 'Piano', bpm: 68, prog: [[0, 4, 7, 11, 14], [5, 9, 12, 16], [9, 12, 16, 19], [5, 9, 12, 14]], bars: 2, pad: 'soft', keys: 'piano', density: 0.5, bass: 'sine', about: 'Felt piano, slow and thoughtful' },
+  cinematic: { label: 'Cinematic', bpm: 72, minor: true, prog: [[0, 3, 7], [8, 12, 15], [3, 7, 10], [10, 14, 17]], bars: 2, pad: 'strings', keys: 'ostinato', drums: 'cinematic', bass: 'sine', about: 'Strings and big low hits' },
+  acoustic:  { label: 'Acoustic', bpm: 96, prog: [[0, 4, 7], [7, 11, 14], [9, 12, 16], [5, 9, 12]], bars: 1, keys: 'guitar', drums: 'acoustic', bass: 'round', about: 'Strummed guitar, light percussion' },
+  upbeat:    { label: 'Upbeat', bpm: 112, prog: [[0, 4, 7], [7, 11, 14], [9, 12, 16], [5, 9, 12]], bars: 1, pad: 'soft', keys: 'pluck', drums: 'pop', bass: 'eighths', about: 'Bright plucks, four-on-the-floor' },
+  hiphop:    { label: 'Hip-hop', bpm: 88, minor: true, prog: [[0, 3, 7, 10], [8, 12, 15], [3, 7, 10, 14], [10, 14, 17]], bars: 1, keys: 'stabs', drums: 'boombap', swing: 0.1, bass: 'sub', about: 'Boom-bap drums, dark keys' },
 };
-async function composeMusic(seconds, mood = 'warm', seed = Date.now()) {
-  const m = MOODS[mood] || MOODS.warm, r = rng(seed);
-  const key = [0, 2, 3, 5, 7, 9][Math.floor(r() * 6)] + 48; // C3..A3 roots
-  const beat = 60 / m.bpm, bar = beat * 4, chordLen = bar * 2, len = Math.ceil((seconds + 1) * SR);
+const GENRE_ALIAS = { warm: 'chill', steady: 'lofi', reflective: 'piano', generated: 'chill' };
+const MOODS = GENRES;
+const DRUMS = { // 16 steps a bar
+  lofi:      { k: [0, 7, 10], s: [4, 12], h: [0, 2, 4, 6, 8, 10, 12, 14] },
+  boombap:   { k: [0, 3, 10], s: [4, 12], h: [0, 2, 4, 6, 8, 10, 12, 14], oh: [14] },
+  pop:       { k: [0, 4, 8, 12], c: [4, 12], h: [2, 6, 10, 14], sh: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15] },
+  acoustic:  { k: [0, 8], r: [4, 12], sh: [0, 2, 4, 6, 8, 10, 12, 14] },
+  pulse:     { p: [0, 8] },
+  cinematic: { t: [0, 10] },
+};
+/** An original instrumental, written to the exact length of the reel, in the chosen genre. */
+async function composeMusic(seconds, genre = 'chill', seed = Date.now()) {
+  genre = GENRE_ALIAS[genre] || genre;
+  const G = GENRES[genre] || GENRES.chill, r = rng(seed);
+  const roots = [0, 2, 3, 5, 7, 9], key = roots[Math.floor(r() * roots.length)] + 48;
+  const beat = 60 / G.bpm, bar = beat * 4, step = beat / 4, chordLen = bar * G.bars, len = Math.ceil((seconds + 1.5) * SR);
   const ac = new OfflineAudioContext(2, len, SR);
-  const master = ac.createGain(); master.gain.value = 0.9;
-  // room: synthetic stereo reverb
-  const ir = ac.createBuffer(2, Math.round(2.6 * SR), SR);
+  const bus = ac.createGain(); bus.gain.value = 0.8;
+  if (G.lp) { const f = ac.createBiquadFilter(); f.type = 'lowpass'; f.frequency.value = G.lp; f.Q.value = 0.5; bus.connect(f).connect(ac.destination); }
+  else bus.connect(ac.destination);
+  const ir = ac.createBuffer(2, Math.round(2.4 * SR), SR);
   for (let c = 0; c < 2; c++) { const d = ir.getChannelData(c); for (let i = 0; i < d.length; i++) d[i] = (r() * 2 - 1) * Math.pow(1 - i / d.length, 3.2) * 0.6; }
-  const verb = ac.createConvolver(); verb.buffer = ir; const wet = ac.createGain(); wet.gain.value = 0.32;
-  verb.connect(wet).connect(master); master.connect(ac.destination);
-  const dry = ac.createGain(); dry.gain.value = 0.85; dry.connect(master); dry.connect(verb);
+  const verb = ac.createConvolver(); verb.buffer = ir; const wet = ac.createGain(); wet.gain.value = genre === 'cinematic' ? 0.42 : 0.26;
+  verb.connect(wet).connect(bus);
+  const dry = ac.createGain(); dry.gain.value = 0.85; dry.connect(bus);
+  const send = ac.createGain(); send.gain.value = 1; send.connect(verb); dry.connect(send);
+  const drumBus = ac.createGain(); drumBus.gain.value = 0.9; drumBus.connect(bus); const drumSend = ac.createGain(); drumSend.gain.value = 0.12; drumBus.connect(drumSend).connect(verb);
   const hz = n => 440 * Math.pow(2, (n - 69) / 12);
-  const nChords = Math.ceil(seconds / chordLen) + 1;
-  for (let ci = 0; ci < nChords; ci++) {
-    const t0 = ci * chordLen, chord = m.prog[ci % m.prog.length];
-    // pad: detuned saws through a soft low-pass
-    const lp = ac.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 900; lp.Q.value = 0.6;
-    lp.frequency.setValueAtTime(700, t0); lp.frequency.linearRampToValueAtTime(1150, t0 + chordLen * 0.6); lp.frequency.linearRampToValueAtTime(800, t0 + chordLen + 1.2);
-    const pg = ac.createGain(); pg.gain.setValueAtTime(0, t0); pg.gain.linearRampToValueAtTime(0.055, t0 + 1.4);
-    pg.gain.setValueAtTime(0.055, t0 + chordLen - 0.2); pg.gain.linearRampToValueAtTime(0, t0 + chordLen + 1.4);
+  const noise = ac.createBuffer(1, SR * 2, SR); { const d = noise.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = r() * 2 - 1; }
+  const panTo = (node, p, dest) => { const pn = ac.createStereoPanner(); pn.pan.value = clamp(p, -1, 1); node.connect(pn).connect(dest || dry); };
+  const envG = (t, a, peak, d, hold = 0) => { const g = ac.createGain(); g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(peak, t + a); if (hold) g.gain.setValueAtTime(peak, t + a + hold); g.gain.exponentialRampToValueAtTime(0.0005, t + a + hold + d); return g; };
+  const noiseHit = (t, vel, type, f, q, d, dest = drumBus, a = 0.001) => { const n = ac.createBufferSource(); n.buffer = noise; n.playbackRate.value = 0.9 + r() * 0.2; const bf = ac.createBiquadFilter(); bf.type = type; bf.frequency.value = f; bf.Q.value = q; const g = envG(t, a, vel, d); n.connect(bf).connect(g).connect(dest); n.start(t, r() * 1.5); n.stop(t + a + d + 0.05); return g; };
+  const kick = (t, vel, low = 48) => { const o = ac.createOscillator(); o.frequency.setValueAtTime(140, t); o.frequency.exponentialRampToValueAtTime(low, t + 0.11); const g = envG(t, 0.003, vel, 0.42); o.connect(g).connect(drumBus); o.start(t); o.stop(t + 0.5); };
+  const snare = (t, vel) => { noiseHit(t, vel * 0.8, 'bandpass', 1900, 0.7, 0.17); const o = ac.createOscillator(); o.type = 'triangle'; o.frequency.setValueAtTime(200, t); o.frequency.exponentialRampToValueAtTime(150, t + 0.08); const g = envG(t, 0.002, vel * 0.5, 0.09); o.connect(g).connect(drumBus); o.start(t); o.stop(t + 0.15); };
+  const hat = (t, vel, open) => noiseHit(t, vel, 'highpass', 7500, 0.7, open ? 0.24 : 0.035);
+  const clap = (t, vel) => { for (let i = 0; i < 3; i++) noiseHit(t + i * 0.011, vel * (i === 2 ? 1 : 0.6), 'bandpass', 1300, 1.1, i === 2 ? 0.14 : 0.012); };
+  const shaker = (t, vel) => noiseHit(t, vel, 'highpass', 5200, 0.6, 0.05, drumBus, 0.012);
+  const rim = (t, vel) => { const o = ac.createOscillator(); o.type = 'triangle'; o.frequency.value = 820; const g = envG(t, 0.001, vel, 0.035); o.connect(g).connect(drumBus); o.start(t); o.stop(t + 0.06); };
+  const tom = (t, vel) => { kick(t, vel, 38); noiseHit(t, vel * 0.25, 'lowpass', 300, 0.5, 0.9); };
+  const piano = (t, note, vel, d = 1.6) => {
+    const o1 = ac.createOscillator(), o2 = ac.createOscillator(), f = ac.createBiquadFilter(), g = envG(t, 0.006, vel, d);
+    o1.type = 'triangle'; o2.type = 'sine'; o1.frequency.value = hz(note); o2.frequency.value = hz(note) * 2.001; f.type = 'lowpass'; f.frequency.value = 2400;
+    const g2 = ac.createGain(); g2.gain.value = 0.25; o2.connect(g2).connect(f); o1.connect(f); f.connect(g); panTo(g, (r() - 0.5) * 0.6);
+    o1.start(t); o2.start(t); o1.stop(t + d + 0.1); o2.stop(t + d + 0.1);
+  };
+  const rhodes = (t, note, vel, d) => {
+    const o1 = ac.createOscillator(), o2 = ac.createOscillator(), g = envG(t, 0.01, vel, d), trem = ac.createOscillator(), tg = ac.createGain(), am = ac.createGain();
+    o1.frequency.value = hz(note); o2.frequency.value = hz(note) * 3.0; const b = ac.createGain(); b.gain.value = 0.12; o2.connect(b).connect(g); o1.connect(g);
+    trem.frequency.value = 4.5; tg.gain.value = 0.18; am.gain.value = 0.82; trem.connect(tg).connect(am.gain); g.connect(am); panTo(am, (note % 7 - 3) * 0.08);
+    [o1, o2, trem].forEach(o => { o.start(t); o.stop(t + d + 0.1); });
+  };
+  const pluck = (t, note, vel) => {
+    const o = ac.createOscillator(), f = ac.createBiquadFilter(), g = envG(t, 0.003, vel, 0.28); o.type = 'square'; o.frequency.value = hz(note);
+    f.type = 'lowpass'; f.Q.value = 2; f.frequency.setValueAtTime(3800, t); f.frequency.exponentialRampToValueAtTime(500, t + 0.18);
+    o.connect(f).connect(g); panTo(g, (r() - 0.5) * 0.7); o.start(t); o.stop(t + 0.35);
+  };
+  const ks = new Map();
+  const guitar = (t, note, vel) => {
+    if (!ks.has(note)) {
+      const n = Math.round(2.2 * SR), N = Math.max(2, Math.round(SR / hz(note))), buf = ac.createBuffer(1, n, SR), d = buf.getChannelData(0), ring = new Float32Array(N);
+      for (let i = 0; i < N; i++) ring[i] = r() * 2 - 1;
+      for (let i = 0, k = 0; i < n; i++) { const nx = (k + 1) % N, v = ring[k]; d[i] = v; ring[k] = 0.4985 * (v + ring[nx]); k = nx; }
+      ks.set(note, buf);
+    }
+    const src = ac.createBufferSource(), f = ac.createBiquadFilter(), g = ac.createGain(); src.buffer = ks.get(note);
+    f.type = 'lowpass'; f.frequency.value = 3200; g.gain.value = vel; src.connect(f).connect(g); panTo(g, (note % 12 - 6) * 0.05); src.start(t); src.stop(t + 2.2);
+  };
+  const pad = (t0, dur, notes, level, type, lpHz) => {
+    const lp = ac.createBiquadFilter(); lp.type = 'lowpass'; lp.Q.value = 0.6;
+    lp.frequency.setValueAtTime(lpHz * 0.75, t0); lp.frequency.linearRampToValueAtTime(lpHz * 1.2, t0 + dur * 0.6); lp.frequency.linearRampToValueAtTime(lpHz * 0.85, t0 + dur + 1.2);
+    const atk = type === 'strings' ? Math.min(2, dur * 0.4) : 1.2;
+    const pg = ac.createGain(); pg.gain.setValueAtTime(0, t0); pg.gain.linearRampToValueAtTime(level, t0 + atk); pg.gain.setValueAtTime(level, t0 + dur - 0.2); pg.gain.linearRampToValueAtTime(0, t0 + dur + 1.4);
     lp.connect(pg).connect(dry);
-    chord.slice(0, 4).forEach((iv, vi) => {
-      for (const det of [-6, 7]) {
-        const o = ac.createOscillator(); o.type = 'sawtooth'; o.frequency.value = hz(key + 12 + iv); o.detune.value = det * 0.6 + (r() - 0.5) * 1.5;
-        const pan = ac.createStereoPanner(); pan.pan.value = (vi - 1.5) * 0.25 + det / 40;
-        o.connect(pan).connect(lp); o.start(t0); o.stop(t0 + chordLen + 1.5);
+    notes.forEach((n, vi) => { for (const det of [-6, 7]) {
+      const o = ac.createOscillator(); o.type = 'sawtooth'; o.frequency.value = hz(n); o.detune.value = det * 0.6 + (r() - 0.5) * 1.5;
+      const pn = ac.createStereoPanner(); pn.pan.value = clamp((vi - 1.5) * 0.25 + det / 40, -1, 1); o.connect(pn).connect(lp); o.start(t0); o.stop(t0 + dur + 1.5);
+    } });
+  };
+  const nChords = Math.ceil(seconds / chordLen) + 1, total = seconds + 1;
+  const dr = DRUMS[G.drums] || null, drumsFrom = seconds > 9 ? bar : 0, drumsTo = seconds - bar * 0.5;
+  for (let ci = 0; ci < nChords; ci++) {
+    const t0 = ci * chordLen, chord = G.prog[ci % G.prog.length]; if (t0 > total) break;
+    const tones = chord.map(iv => key + 12 + iv);
+    if (G.pad) pad(t0, chordLen, tones.slice(0, 4), G.pad === 'strings' ? 0.05 : G.pad === 'soft' ? 0.028 : 0.05, G.pad, G.pad === 'strings' ? 1300 : 950);
+    if (G.pad === 'strings') pad(t0, chordLen, [key + chord[0]], 0.035, 'strings', 600);
+    for (let b = 0; b < G.bars; b++) {
+      const tb = t0 + b * bar;
+      // bass
+      const root = key - 12 + (chord[0] % 12);
+      const bassNote = (t, d, vel, wave = 'sine', lpf = 0) => { const o = ac.createOscillator(); o.type = wave; o.frequency.value = hz(root); const g = envG(t, 0.02, vel, d); if (lpf) { const f = ac.createBiquadFilter(); f.type = 'lowpass'; f.frequency.value = lpf; o.connect(f).connect(g); } else o.connect(g); g.connect(dry); o.start(t); o.stop(t + d + 0.1); };
+      if (G.bass === 'sine') bassNote(tb, bar * 0.95, 0.16);
+      else if (G.bass === 'round') { bassNote(tb, beat * 1.6, 0.2, 'triangle', 420); bassNote(tb + 2 * beat, beat * 1.6, 0.16, 'triangle', 420); }
+      else if (G.bass === 'eighths') for (let e = 0; e < 8; e++) bassNote(tb + e * beat / 2, beat * 0.42, e % 2 ? 0.11 : 0.15, 'sawtooth', 520);
+      else if (G.bass === 'sub') for (const st of (dr ? dr.k : [0])) bassNote(tb + st * step, beat * 1.2, 0.24);
+      // keys
+      if (G.keys === 'piano') for (let e8 = 0; e8 < 8; e8++) { if (r() > G.density) continue; piano(Math.max(0, tb + e8 * beat / 2 + (r() - 0.5) * 0.012), key + 24 + [...chord, chord[0] + 12][Math.floor(r() * (chord.length + 1))], 0.05 + r() * 0.035); }
+      else if (G.keys === 'rhodes') { const sw = st => st * step + (st % 4 === 2 ? G.swing * beat : 0); tones.forEach(n => rhodes(tb, n, 0.035, beat * 2.2)); if (r() < 0.6) tones.forEach(n => rhodes(tb + sw(10), n, 0.025, beat * 1.2)); }
+      else if (G.keys === 'ostinato') for (let e = 0; e < 8; e++) piano(tb + e * beat / 2, key + 24 + chord[[0, 1, 2, 1][e % 4] % chord.length], e % 4 === 0 ? 0.045 : 0.03, 0.8);
+      else if (G.keys === 'pluck') for (let e = 0; e < 8; e++) pluck(tb + e * beat / 2, key + 24 + [...chord, chord[0] + 12][[0, 1, 2, 3, 2, 1, 2, 3][e] % (chord.length + 1)], e % 2 ? 0.028 : 0.04);
+      else if (G.keys === 'stabs') for (const st of [0, 6, 10]) tones.forEach(n => piano(tb + st * step, n, 0.03, 0.45));
+      else if (G.keys === 'guitar') {
+        const strum = [key + chord[0], ...tones, key + 24 + chord[0]];
+        [[0, 1], [4, 0.6], [6, -0.7], [10, -0.8], [12, 0.8], [14, -0.6]].forEach(([st, dir]) => {
+          const order = dir > 0 ? strum : [...strum].reverse(), vel = 0.07 * Math.abs(dir);
+          order.forEach((n, i) => guitar(tb + st * step + i * 0.012, n, vel * (0.8 + r() * 0.4)));
+        });
       }
-    });
-    // bass: soft sine on the root, each bar
-    for (let b = 0; b < 2; b++) {
-      const tb = t0 + b * bar, o = ac.createOscillator(), g = ac.createGain();
-      o.type = 'sine'; o.frequency.value = hz(key - 12 + chord[0] % 12);
-      g.gain.setValueAtTime(0, tb); g.gain.linearRampToValueAtTime(0.16, tb + 0.08); g.gain.exponentialRampToValueAtTime(0.03, tb + bar * 0.95); g.gain.linearRampToValueAtTime(0, tb + bar);
-      o.connect(g).connect(dry); o.start(tb); o.stop(tb + bar + 0.05);
-    }
-    // felt-piano arpeggio: sparse eighths
-    const tones = [...chord, chord[0] + 12, chord[1] + 12];
-    for (let e8 = 0; e8 < 16; e8++) {
-      if (r() < (mood === 'reflective' ? 0.55 : 0.35)) continue;
-      const te = Math.max(0, t0 + e8 * beat / 2 + (r() - 0.5) * 0.012), note = key + 24 + tones[Math.floor(r() * tones.length)];
-      const vel = 0.05 + r() * 0.035, o1 = ac.createOscillator(), o2 = ac.createOscillator(), g = ac.createGain(), f = ac.createBiquadFilter();
-      o1.type = 'triangle'; o2.type = 'sine'; o1.frequency.value = hz(note); o2.frequency.value = hz(note) * 2.001;
-      f.type = 'lowpass'; f.frequency.value = 2400;
-      const g2 = ac.createGain(); g2.gain.value = 0.25; o2.connect(g2).connect(f); o1.connect(f); f.connect(g);
-      g.gain.setValueAtTime(0, te); g.gain.linearRampToValueAtTime(vel, te + 0.006); g.gain.exponentialRampToValueAtTime(0.0008, te + 1.6);
-      const pan = ac.createStereoPanner(); pan.pan.value = (r() - 0.5) * 0.6; g.connect(pan).connect(dry);
-      o1.start(te); o2.start(te); o1.stop(te + 1.7); o2.stop(te + 1.7);
-    }
-    if (m.pulse) for (let b = 0; b < 8; b += 2) { // a soft heartbeat on 1 and 3
-      const tb = t0 + b * beat, o = ac.createOscillator(), g = ac.createGain();
-      o.frequency.setValueAtTime(70, tb); o.frequency.exponentialRampToValueAtTime(42, tb + 0.18);
-      g.gain.setValueAtTime(0, tb); g.gain.linearRampToValueAtTime(0.12, tb + 0.01); g.gain.exponentialRampToValueAtTime(0.001, tb + 0.35);
-      o.connect(g).connect(dry); o.start(tb); o.stop(tb + 0.4);
+      // drums
+      if (dr && tb >= drumsFrom && tb < drumsTo) {
+        const sw = st => tb + st * step + (G.swing && st % 4 === 2 ? G.swing * beat : 0) + (r() - 0.5) * 0.006;
+        (dr.k || []).forEach(st => kick(sw(st), 0.5));
+        (dr.s || []).forEach(st => snare(sw(st), 0.32));
+        (dr.c || []).forEach(st => clap(sw(st), 0.3));
+        (dr.h || []).forEach(st => hat(sw(st), 0.06 + r() * 0.04, false));
+        (dr.oh || []).forEach(st => { if (r() < 0.5) hat(sw(st), 0.05, true); });
+        (dr.sh || []).forEach(st => shaker(sw(st), st % 2 ? 0.025 : 0.04));
+        (dr.r || []).forEach(st => rim(sw(st), 0.12));
+        (dr.p || []).forEach(st => kick(sw(st), 0.24, 42));
+        if (dr.t && (b === 0)) dr.t.forEach(st => tom(sw(st), st ? 0.28 : 0.45));
+      }
     }
   }
-  // gentle air
-  const nb = ac.createBuffer(2, len, SR); for (let c = 0; c < 2; c++) { const d = nb.getChannelData(c); for (let i = 0; i < len; i++) d[i] = (r() * 2 - 1) * 0.006; }
-  const ns = ac.createBufferSource(); ns.buffer = nb; const nf = ac.createBiquadFilter(); nf.type = 'bandpass'; nf.frequency.value = 3000; nf.Q.value = 0.4;
+  // air, and vinyl crackle for lo-fi
+  const nb = ac.createBuffer(2, len, SR);
+  for (let c = 0; c < 2; c++) { const d = nb.getChannelData(c); for (let i = 0; i < len; i++) d[i] = (r() * 2 - 1) * 0.005 + (G.crackle && r() < 0.0004 ? (r() - 0.5) * 0.5 : 0); }
+  const ns = ac.createBufferSource(); ns.buffer = nb; const nf = ac.createBiquadFilter(); nf.type = 'bandpass'; nf.frequency.value = G.crackle ? 2200 : 3000; nf.Q.value = 0.4;
   ns.connect(nf).connect(dry); ns.start(0);
   const buf = await ac.startRendering();
-  return { chs: [buf.getChannelData(0), buf.getChannelData(1)], name: `Original · ${m.label} · ${['C', 'D', 'E♭', 'F', 'G', 'A'][[0, 2, 3, 5, 7, 9].indexOf(key - 48)]} · ${m.bpm} bpm` };
+  const names = ['C', 'D', 'E♭', 'F', 'G', 'A'];
+  return { chs: [buf.getChannelData(0), buf.getChannelData(1)], genre, name: `${G.label} · ${names[roots.indexOf(key - 48)]}${G.minor ? 'm' : ''} · ${G.bpm} bpm` };
 }
 async function decodeTrack(url) {
   const blob = await (await fetch(url)).blob();
@@ -1471,79 +1654,196 @@ function mixMusic(voice, music, speech, levelLU) {
   return [L, R];
 }
 
+// ------------------------------------------------------------------ long form: find the best reels and their hooks
+/** Hook formats that hold attention on short-form video. Weights can be refreshed from trends.json. */
+const HOOK_WEIGHTS = { question: 0.55, contrarian: 0.8, curiosity: 0.75, number: 0.6, conditional: 0.6, story: 0.5, result: 0.65, bold: 0.4, you: 0.35 };
+const HOOK_RX = {
+  question: /\?["')]*$|^(why|how|what|when|who|which|do you|did you|are you|is it|have you|ever|can you|should you|would you)\b/i,
+  contrarian: /\b(stop|don'?t|never|nobody|no one|wrong|myths?|lies?|lied|overrated|mistakes?|truth|quit|worst|waste\w*|ruin\w*|unpopular|forget)\b/i,
+  curiosity: /\b(secret|here'?s (why|how|what|the)|the reason|nobody tells|no one tells|what (nobody|no one)|this is (why|how|what)|the one thing|most people|the real|turns out|i wish i|what happens|nobody talks)\b/i,
+  number: /\b(\d+|one|two|three|four|five|six|seven|eight|nine|ten)\s+(things?|ways?|reasons?|mistakes?|tips?|rules?|steps?|habits?|exercises?|minutes?|days?|weeks?|months?|years?|pounds?|lbs|reps?|sets?|percent)\b/i,
+  conditional: /^(if you|if your|when you|whether you|unless you|anyone who|for anyone)\b/i,
+  story: /\b(i used to|when i was|years ago|last (week|year|month)|the day i|i remember|my (first|biggest)|i finally|i almost|i never thought)\b/i,
+  result: /\b(lost|gained|dropped|doubled|tripled|changed my|transformed|went from|in \d+ (days|weeks|months))\b/i,
+  bold: /\b(best|biggest|only|easiest|fastest|simplest|most important|every single|always|guaranteed|game.?changer|nobody)\b/i,
+};
+const HOOK_LABEL = { question: 'Question', contrarian: 'Contrarian', curiosity: 'Curiosity', number: 'Number', conditional: 'Speaks to "you if…"', story: 'Story', result: 'Result', bold: 'Bold claim', you: 'Talks to the viewer', topic: 'Your topic', trend: 'Trending topic' };
+const WEAK_START = /^(and|but|so|or|because|um+|uh+|like|yeah|okay|ok|alright|anyway|also|then|well|plus)\b/i;
+const BACKREF = /^(that|it|they|those|these|which|he|she|them|this)\b(?!\s+(is|was|'s)\s+(why|how|what|the))/i;
+const FILLER = /^(um+|uh+|erm|hmm+|mm+)[,.]?$/i;
+const TRANSITION = /^(so,? anyway|anyway|now,? (a lot|let'?s|another|the next)|let'?s (talk|move|switch|get into)|moving on|next up|okay,? so|alright,? (so|that'?s)|the (next|other) thing|speaking of|on (that|a different) note|which brings me)\b|\blet'?s talk about\b/i;
+const PAYOFF = /\b(that'?s (why|it|how|the)|remember|the point|bottom line|trust me|do this|try this|that'?s all|simple as that|so stop|so start|start today|you got this|let'?s go)\b/i;
+function sentencesOf(words) {
+  const out = []; let a = 0;
+  for (let i = 0; i < words.length; i++) {
+    const end = /[.?!]["')]*$/.test(words[i].w) || i === words.length - 1 || (words[i + 1].s - words[i].e > 0.9) || i - a >= 40;
+    if (end) { out.push({ a, b: i, s: words[a].s, e: words[i].e, text: words.slice(a, i + 1).map(w => w.w).join(' ') }); a = i + 1; }
+  }
+  return out;
+}
+function hookScore(text, W, topics, trends, loud = 0) {
+  const t = text.trim(), lower = t.toLowerCase(), n = t.split(/\s+/).length, hits = [];
+  for (const k of Object.keys(HOOK_RX)) if (HOOK_RX[k].test(t)) hits.push(k);
+  if (/\b(you|your|you'?re|you'?ll)\b/i.test(t.split(/\s+/).slice(0, 8).join(' '))) hits.push('you');
+  const ws = hits.map(k => W[k] ?? HOOK_WEIGHTS[k] ?? 0.3).sort((a, b) => b - a);
+  let sc = ws.reduce((a, w, i) => a + w * Math.pow(0.5, i), 0);
+  const has = list => (list || []).find(x => x && new RegExp(`\\b${x.toLowerCase().replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`, 'i').test(lower));
+  const tp = has(topics), tr = has(trends);
+  if (tp) { sc += 0.3; hits.push('topic'); }
+  if (tr) { sc += 0.25; hits.push('trend'); }
+  if (n < 4) sc *= 0.5; else if (n > 22) sc *= 22 / n;
+  if (WEAK_START.test(t)) sc -= 0.35;
+  if (BACKREF.test(t)) sc -= 0.3;
+  sc += clamp(loud / 8, -0.15, 0.2);
+  return { score: clamp(sc / 1.3, 0, 1), tags: hits };
+}
+/** Read a long video's transcript and pick the stretches that work best as reels on their own:
+ *  a strong opening line (or a strong line moved to the front), a complete thought, a payoff, and good pace. */
+async function findReels(prep, opts = {}, onStage, signal) {
+  const words = prep.words, total = prep.total;
+  const minLen = opts.minLen || 20, maxLen = opts.maxLen || 45, target = (minLen + maxLen) / 2;
+  const W = Object.assign({}, HOOK_WEIGHTS, (opts.trends && opts.trends.hooks) || {});
+  const topics = (opts.topics || []).map(x => x.trim()).filter(Boolean), trends = opts.useTrends === false ? [] : ((opts.trends && opts.trends.topics) || []);
+  const sents = sentencesOf(words); if (!sents.length) return [];
+  onStage && onStage('score', 0.1, 'Reading every line');
+  const raw = prep.raw, rms = (s, e) => { const a = Math.floor(s * SR), b = Math.min(raw.length, Math.max(a + 1, Math.floor(e * SR))); let x = 0, c = 0; for (let i = a; i < b; i += 4) { x += raw[i] * raw[i]; c++; } return 10 * Math.log10(x / Math.max(1, c) + 1e-10); };
+  sents.forEach(z => { z.db = rms(z.s, z.e); z.n = z.b - z.a + 1; z.wps = z.n / Math.max(0.5, z.e - z.s); z.fill = words.slice(z.a, z.b + 1).filter(w => FILLER.test(w.w)).length; });
+  const mdb = median(sents.map(z => z.db)), mwps = median(sents.map(z => z.wps));
+  sents.forEach(z => { Object.assign(z, { hook: hookScore(z.text, W, topics, trends, z.db - mdb) }); });
+  let vecs = null;
+  try { onStage && onStage('score', 0.3, 'Following the topic'); vecs = await embed(sents.map(z => z.text)); } catch (e) { if (e instanceof Cancelled) throw e; }
+  check(signal);
+  const cands = [];
+  for (let i = 0; i < sents.length; i++) {
+    for (let j = i; j < sents.length; j++) {
+      const d = sents[j].e - sents[i].s; if (d > maxLen) break; if (d < minLen) continue;
+      const span = sents.slice(i, j + 1), first = sents[i], last = sents[j];
+      // a hook later in the stretch can open the reel (a cold open), if it's clearly stronger and short
+      let hk = first.hook.score, hookAt = i, cold = null;
+      if (opts.coldOpen !== false) for (let k = i + 1; k <= j; k++) { const z = sents[k]; if (z.e - z.s <= 7 && z.n >= 4 && z.hook.score > hk + 0.18 && z.hook.score > first.hook.score * 1.3) { hk = z.hook.score * 0.92; hookAt = k; } }
+      if (hookAt !== i) { const z = sents[hookAt], pw = words[z.a - 1], nw = words[z.b + 1]; cold = [Math.max(z.s - 0.08, pw ? pw.e + 0.02 : 0), Math.min(z.e + 0.12, nw ? nw.s - 0.02 : z.e + 0.12)]; }
+      const standalone = clamp(1 - (WEAK_START.test(first.text) ? 0.5 : 0) - (BACKREF.test(first.text) ? 0.4 : 0) + (/[.?!]["')]*$/.test(last.text) ? 0.1 : -0.2), 0, 1);
+      const payoff = clamp((PAYOFF.test(last.text) ? 0.85 : 0.4) + (last.n <= 12 ? 0.15 : 0) + (last.hook.tags.includes('contrarian') || last.hook.tags.includes('bold') ? 0.1 : 0), 0, 1);
+      const nW = span.reduce((a, z) => a + z.n, 0), fill = span.reduce((a, z) => a + z.fill, 0), wps = nW / Math.max(1, d);
+      const gaps = span.slice(1).reduce((a, z, k) => a + Math.max(0, z.s - span[k].e - 0.4), 0);
+      const pace = clamp(0.55 + (wps - mwps) / (2 * mwps) - 4 * fill / Math.max(1, nW) - gaps / d, 0, 1);
+      let flow = 0.6;
+      if (vecs && span.length > 1) { const dim = vecs[0].length, c = new Float32Array(dim); span.forEach((_, k) => { const v = vecs[i + k]; for (let q = 0; q < dim; q++) c[q] += v[q]; }); flow = clamp((span.reduce((a, _, k) => a + cosv(vecs[i + k], c), 0) / span.length - 0.38) / 0.32, 0, 1); }
+      const fit = clamp(1 - Math.abs(d - target) / Math.max(10, maxLen - minLen), 0, 1);
+      const crosses = span.slice(1).some(z => TRANSITION.test(z.text));                 // runs into the next topic
+      const score = 0.42 * hk + 0.18 * standalone + 0.14 * flow + 0.12 * payoff + 0.08 * pace + 0.06 * fit - (crosses ? 0.22 : 0) - (TRANSITION.test(last.text) ? 0.15 : 0);
+      let f0 = first.a; while (f0 < Math.min(first.a + 3, first.b) && /^(and|so|but|um+|uh+|like|yeah|okay|ok|alright|well|anyway)[,.]?$/i.test(words[f0].w)) f0++;   // drop a leading "and um,"
+      const pw = words[f0 - 1], nw = words[last.b + 1];
+      cands.push({ a: Math.max(0, words[f0].s - 0.15, pw ? pw.e + 0.02 : 0), b: Math.min(total, last.e + 0.35, nw ? nw.s - 0.02 : total), i, j, d, score, hookAt, hook: cold,
+        hookText: sents[hookAt].text, firstText: first.text, text: span.map(z => z.text).join(' '), tags: sents[hookAt].hook.tags,
+        parts: { hook: hk, standalone, flow, payoff, pace } });
+    }
+  }
+  cands.sort((x, y) => y.score - x.score);
+  const want = opts.count === 'auto' || !opts.count ? 10 : +opts.count, pick = [];
+  for (const c of cands) {
+    if (pick.length >= want) break;
+    if (pick.some(p => c.a < p.b - 1 && c.b > p.a + 1)) continue;
+    if (opts.count === 'auto' || !opts.count) { if (pick.length && c.score < 0.42) break; }
+    pick.push(c);
+  }
+  onStage && onStage('score', 1);
+  return pick.map((c, k) => ({ ...c, rank: k + 1, why: c.tags.map(t => HOOK_LABEL[t]).filter(Boolean) }));
+}
+
 // ------------------------------------------------------------------ analysis: everything before the render
-async function analyze({ file, items, notes, cfg, onStage, signal, photos, model }) {
+function cleanVoice(raw, cfg, signal) {
+  return denoise(highpass4(raw, 80), cfg.nr, signal).then(p => compress(filt(filt(filt(p, biquad('peak', 220, 1.0, -2.5)), biquad('peak', 450, 1.4, -1.5)), biquad('peak', 3200, 1.0, 1.5))));
+}
+/** Read the video, find claps, clean the sound (short clips) and transcribe it. Long videos skip the whole-file cleanup;
+ *  each reel cleans only its own stretch. */
+async function prepareTake({ file, cfg, onStage, signal, model, long = false }) {
   cfg = cfg || defaults();
   const stage = (id, pct, msg) => onStage && onStage(id, pct, msg);
   const t00 = performance.now(), times = {};
   const mark = k => { times[k] = Math.round((performance.now() - t00) / 100) / 10; };
-
-  stage('read', 0, 'Reading your take');
+  stage('read', 0, 'Reading your video');
   const movie = await openMovie(file);
   const nFrames = Math.floor(movie.duration * FPS), total = nFrames / FPS;
   let raw = await decodeAudioTrack(movie, signal);
-  if (!raw) throw new Error('This take has no audio track.');
+  if (!raw) throw new Error('This video has no sound.');
   const off = Math.round(movie.audioOffset * SR), need = nFrames * SPF, aligned = new Float32Array(need);
   for (let i = 0; i < need; i++) { const j = i - off; aligned[i] = j >= 0 && j < raw.length ? raw[j] : 0; }
   raw = aligned; mark('read'); stage('read', 1);
 
   stage('claps', 0, 'Listening for claps');
-  const { claps, near } = detectClaps(raw, cfg); await tick(); check(signal);
-  stage('claps', 0.4, 'Cleaning up the audio');
-  let proc = await denoise(highpass4(raw, 80), cfg.nr, signal);
-  proc = filt(filt(filt(proc, biquad('peak', 220, 1.0, -2.5)), biquad('peak', 450, 1.4, -1.5)), biquad('peak', 3200, 1.0, 1.5));
-  proc = compress(proc); mark('audio'); stage('claps', 1);
+  const { claps, near } = cfg.clap.off ? { claps: [], near: [] } : detectClaps(raw, cfg); await tick(); check(signal);
+  let proc = null;
+  if (!long) { stage('claps', 0.4, 'Cleaning up the sound'); proc = await cleanVoice(raw, cfg, signal); }
+  mark('audio'); stage('claps', 1);
 
   stage('transcribe', 0, 'Loading the speech model');
-  const words = await transcribe(proc, (p, msg) => stage('transcribe', p, msg || undefined), signal, model || 'small');
-  const rawTiming = refineTiming(words, proc);                    // fix word times before they decide what counts as dead air
+  const words = await transcribe(proc || raw, (p, msg) => stage('transcribe', p, msg || undefined), signal, model || 'small');
+  refineTiming(words, proc || raw);
+  applyCorrections(words, parseCorrections(cfg.corrections ?? DEFAULT_CORRECTIONS));
   mark('transcribe'); check(signal);
-
-  stage('cut', 0, 'Cutting claps and dead air');
-  const speech = addMissedWords(vad(proc), words);
+  return { movie, total, raw, proc, words, claps, near, times, model: words.model, long };
+}
+/** Build one reel from the take (or from a stretch of it, with an optional hook line moved to the front). */
+async function buildReel(prep, { items, photos, notes, cfg, onStage, signal, range, hook }) {
+  cfg = cfg || defaults();
+  const stage = (id, pct, msg) => onStage && onStage(id, pct, msg);
+  const { movie, total } = prep;
+  const [ra, rb] = range ? [Math.max(0, range[0]), Math.min(total, range[1])] : [0, total];
+  const base = Math.round(ra * FPS) * SPF, a0 = base / SR;
+  let raw = prep.raw, proc = prep.proc;
+  if (range || !proc) {
+    stage('cut', 0, 'Cleaning up the sound');
+    raw = prep.raw.slice(base, Math.min(prep.raw.length, Math.round(rb * FPS) * SPF));
+    proc = cfg.cleanup === false ? Float32Array.from(raw) : await cleanVoice(raw, cfg, signal);
+  }
+  const words = prep.words.filter(w => w.s >= ra - 0.05 && w.e <= rb + 0.05).map(w => ({ ...w }));
+  stage('cut', 0.3, 'Trimming pauses and retakes');
+  const speech = addMissedWords(vad(proc).map(([s, e]) => [s + a0, e + a0]), words);
+  const claps = prep.claps.filter(c => c.start >= ra && c.end <= rb), near = (prep.near || []).filter(c => c.t >= ra && c.t <= rb);
   const flubs = flubRegions(claps, speech, words, cfg);
-  DIAG.claps = { found: claps.map(c => `${c.t}s L${c.level} R${c.rise} I${c.iso}`), cuts: flubs.map(f => `${f.cut[0].toFixed(2)}-${f.cut[1].toFixed(2)} ${f.method}`), near: near.slice(0, 3).map(c => `${c.t}s L${c.level} R${c.rise} I${c.iso}`) };
-  const { keep, trimmed } = buildKeep(speech, flubs.map(f => f.cut), total, cfg);
-  if (!keep.length) throw new Error("Couldn't hear any speech in this take.");
+  DIAG.claps = { found: claps.map(c => `${c.t}s L${c.level} R${c.rise} I${c.iso}`), cuts: flubs.map(f => `${f.cut[0].toFixed(2)}-${f.cut[1].toFixed(2)} ${f.method}`) };
+  const { keep, trimmed } = keepFor(speech, flubs.map(f => f.cut), total, cfg, [], range ? [ra, rb] : null, hook);
+  if (!keep.length) throw new Error("Couldn't hear any speech in this video.");
   const tmap = new TimeMap(keep), outDur = tmap.nOut / FPS;
   flubs.forEach(f => { f.outJoin = tmap.rawToOut(f.cut[1]); });
-  let voice = cutAudio(proc, keep);
+  const voice = cutAudio(proc, keep, base);
   const inLufs = loudness([voice]);
   const g = Math.pow(10, ((cfg.lufs - 3) - inLufs) / 20); // -17 LUFS mono = -14 LUFS once doubled to stereo
   for (let i = 0; i < voice.length; i++) voice[i] *= g;
-  let outWords = mapWords(words, tmap);
-  const timing = Object.assign(refineTiming(outWords, voice), { rawShifted: rawTiming.shifted });
+  const outWords = mapWords(words, tmap);
+  const timing = refineTiming(outWords, voice);
   addEmphasis(outWords, voice);
-  const proof = { applied: applyCorrections(outWords, parseCorrections(cfg.corrections ?? DEFAULT_CORRECTIONS)), note: null };
-  check(signal);
-  mark('cut'); stage('cut', 1);
+  check(signal); stage('cut', 1);
 
   stage('plan', 0, 'Choosing clips and photos');
-  const ctx = { delivery: deliveryRows(outWords, voice, phrases(outWords, 10)) }; let aiNote = null;
+  const ctx = { delivery: deliveryRows(outWords, voice, phrases(outWords, 10)) };
   if (cfg.meaning !== false && ((items || []).length || (photos || []).length)) {
-    try { stage('plan', 0.2, 'Matching visuals to what you mean'); ctx.sims = await meaningSims(outWords, [...(items || []), ...(photos || [])]); aiNote = 'Meaning matching: on (MiniLM, running on this device).'; }
-    catch (e) { if (e instanceof Cancelled) throw e; aiNote = `Meaning matching unavailable (${e.message || e}); matched by words and feeling.`; }
+    try { stage('plan', 0.2, 'Matching visuals to the feel of each line'); ctx.vibe = await vibeContext(outWords, [...(items || []), ...(photos || [])]); }
+    catch (e) { if (e instanceof Cancelled) throw e; DIAG.vibeError = String(e.message || e); }
   }
   const { broll, pops, log: brollLog, mode: brollMode } = planVisuals(outWords, items || [], photos || [], notes, tmap, outDur, cfg, null, ctx);
-  if (aiNote) brollLog.unshift(aiNote);
-  const popLog = [];
-  const zooms = planZooms(outWords, tmap.cutPoints(), broll, outDur, cfg);
+  const zooms = cfg.zoom.off ? [] : planZooms(outWords, tmap.cutPoints(), broll, outDur, cfg);
   const zc = zoomCurve(zooms, tmap.nOut, cfg);
-  mark('plan'); stage('plan', 1);
+  stage('plan', 1);
 
-  stage('face', 0, 'Finding your face');
+  stage('face', 0, 'Framing you');
   const track = await faceTrack(movie, tmap, broll, cfg, p => stage('face', p), signal);
-  mark('face'); stage('face', 1);
+  stage('face', 1);
   // everything below lets each edit be undone later without redoing the whole analysis
   const surv = outWords.map(w => {   // back to take time; a word never spans a cut (its end stays in the piece its start is in)
     const k = tmap.segIndex(Math.floor(w.s * FPS)), segEnd = tmap.keep[k][1] / FPS, s0 = tmap.outToRaw(w.s);
     return { ...w, s: +s0.toFixed(3), e: +Math.min(segEnd, Math.max(s0 + 0.05, tmap.outToRaw(Math.max(w.s, w.e - 0.001)))).toFixed(3) };
   });
-  const cutWords = words.filter(w => !surv.some(o => o.e > w.s + 0.02 && o.s < w.e - 0.02)).map(w => ({ ...w, cut: true }));  // e.g. the flubbed take, for if it's put back
-  const keepRaw = { proc, raw, speech, rawWords: [...surv, ...cutWords].sort((x, y) => x.s - y.s) };
-
+  const cutWords = words.filter(w => !surv.some(o => o.e > w.s + 0.02 && o.s < w.e - 0.02)).map(w => ({ ...w, cut: true }));
   return { movie, cfg, total, outDur, claps, near, flubs, keep, trimmed, tmap, words, outWords, voice, inLufs,
-    speechOut: vad(voice), broll, brollLog, brollMode, pops, popLog, zooms, timing, proof, model: words.model, zc, track, times, chunks: null, music: null, notes, ...keepRaw, cleanup: true, capsOff: false };
+    speechOut: vad(voice), broll, brollLog, brollMode, pops, popLog: [], zooms, timing, proof: { applied: [] }, model: prep.model, zc, track, times: prep.times, chunks: null, music: null, notes,
+    proc, raw, speech, rawWords: [...surv, ...cutWords].sort((x, y) => x.s - y.s), audioBase: base, range: range ? [ra, rb] : null, hook: hook || null, cleanup: cfg.cleanup !== false, capsOff: false };
+}
+async function analyze({ file, items, notes, cfg, onStage, signal, photos, model }) {
+  cfg = cfg || defaults();
+  const prep = await prepareTake({ file, cfg, onStage, signal, model });
+  return buildReel(prep, { items, photos, notes, cfg, onStage, signal });
 }
 
 
@@ -1554,7 +1854,7 @@ async function retime(P, onStage, signal) {
   stage('cut', 0, 'Rebuilding the cut');
   const restored = P.trimmed.filter(t => t.off).map(t => [t[0], t[1]]);
   const removed = [...P.flubs.filter(f => !f.off).map(f => f.cut), ...(P.manual || []).filter(m => !m.off).map(m => m.range)].sort((a, b) => a[0] - b[0]);
-  const { keep, trimmed } = buildKeep(P.speech, removed, P.total, cfg, restored);
+  const { keep, trimmed } = keepFor(P.speech, removed, P.total, cfg, restored, P.range, P.hook);
   if (!keep.length) throw new Error('Nothing left to show with these edits removed.');
   const tmap = new TimeMap(keep), outDur = tmap.nOut / FPS;
   const move = t => tmap.rawToOut(old.outToRaw(t));
@@ -1564,7 +1864,7 @@ async function retime(P, onStage, signal) {
   P.flubs.forEach(f => { f.outJoin = tmap.rawToOut(f.off ? f.cut[0] : f.cut[1]); });
   (P.manual || []).forEach(m => { m.outJoin = tmap.rawToOut(m.off ? m.range[0] : m.range[1]); });
   // voice
-  let voice = cutAudio(P.cleanup ? P.proc : P.raw, keep);
+  let voice = cutAudio(P.cleanup ? P.proc : P.raw, keep, P.audioBase || 0);
   const g = Math.pow(10, ((cfg.lufs - 3) - loudness([voice])) / 20); for (let i = 0; i < voice.length; i++) voice[i] *= g;
   // words follow their raw times; caption fixes are kept by the raw time of each line's first word
   const outWords = [];
@@ -1575,6 +1875,7 @@ async function retime(P, onStage, signal) {
     const s = tmap.rawToOut(w.s), e = Math.max(s + 0.05, tmap.rawToOut(w.e));
     outWords.push({ ...w, s: +s.toFixed(3), e: +e.toFixed(3), rawS: w.s });
   }
+  outWords.sort((x, y) => x.s - y.s);
   // visuals and zooms keep their length and follow their words
   const shift = p => { const d = p.e - p.s; p.s = Math.round(move(p.s) * FPS) / FPS; p.e = Math.min(outDur - 0.1, Math.round((p.s + d) * FPS) / FPS); };
   P.broll.forEach(shift); (P.pops || []).forEach(shift);
@@ -1601,7 +1902,7 @@ function setZooms(P) { P.zc = zoomCurve(P.zooms.filter(z => !z.off), P.tmap.nOut
 async function buildCaptions(P) {
   try { await document.fonts.load(capFont(P.cfg)); } catch (e) { /* fallback fonts are fine */ }
   const c = new OffscreenCanvas(8, 8).getContext('2d'); c.font = capFont(P.cfg);
-  P.chunks = chunkWords(P.outWords, s => c.measureText(s).width, OUT_W - 2 * P.cfg.cap.side - 20, P.cfg);
+  P.chunks = chunkWords(P.outWords, s => c.measureText(P.cfg.cap.upper ? s.toUpperCase() : s).width, OUT_W - 2 * P.cfg.cap.side - 20 - (P.cfg.cap.style === 'box' ? 0.7 * P.cfg.cap.size : 0), P.cfg);
   if (P.tmap) for (const ch of P.chunks) ch.rawS = +P.tmap.outToRaw(ch.w0).toFixed(3);
   // how much of the speech has a caption on screen (should be ~100%)
   const sp = P.speechOut || [], tot = sp.reduce((a, [s, e]) => a + e - s, 0);
@@ -1613,21 +1914,22 @@ async function buildCaptions(P) {
 async function buildAudio(P, musicOpts, onStage, signal) {
   const M = Object.assign({}, P.cfg.music, musicOpts || {});
   let music = null, chosen = { kind: 'none', name: 'No music' };
-  const mine = (M.tracks || []).filter(t => !M.mood || !t.mood || t.mood === M.mood);
   try {
-    if (M.mode === 'mine' || (M.mode === 'auto' && mine.length)) {
-      const pool = M.mode === 'mine' ? (M.tracks || []) : mine;
-      if (pool.length) {
-        const pick = M.trackId ? pool.find(t => t.id === M.trackId) || pool[0] : pool[Math.floor(Math.random() * pool.length)];
+    if (M.mode === 'mine') {
+      const pool = M.tracks || [];
+      const pick = (M.trackId && pool.find(t => t.id === M.trackId)) || pool[Math.floor(Math.random() * pool.length)];
+      if (pick) {
         onStage && onStage('music', 0.3, `Fitting "${pick.name}"`);
-        try { music = fitTrack(await decodeTrack(pick.url), P.outDur); chosen = { kind: 'track', name: pick.name, id: pick.id }; }
-        catch (e) { DIAG.trackError = String(e.message || e); music = null; M.fellBack = `couldn't read "${pick.name}"`; }
-      }
+        try { music = fitTrack(await decodeTrack(pick.url), P.outDur); chosen = { kind: 'track', name: pick.name, id: pick.id, any: !M.trackId }; }
+        catch (e) { DIAG.trackError = String(e.message || e); M.fellBack = `couldn't read "${pick.name}"`; }
+      } else M.fellBack = 'no tracks added yet';
+      if (!music) M.mode = 'generated';
     }
     if (!music && M.mode !== 'off') {
-      onStage && onStage('music', 0.3, 'Composing an original bed');
+      onStage && onStage('music', 0.3, 'Writing the music');
       const seed = M.seed || Math.floor(Math.random() * 1e9);
-      const g = await composeMusic(P.outDur, M.mood, seed); music = g.chs; chosen = { kind: 'generated', name: g.name + (M.fellBack ? ` (${M.fellBack})` : ''), seed };
+      const g = await composeMusic(P.outDur, M.genre || M.mood || 'chill', seed); music = g.chs;
+      chosen = { kind: 'generated', name: g.name + (M.fellBack ? ` (${M.fellBack})` : ''), seed, genre: g.genre };
     }
   } catch (e) { if (e instanceof Cancelled) throw e; console.warn(e); music = null; chosen = { kind: 'none', name: 'No music (' + e.message + ')' }; }
   check(signal);
@@ -1637,7 +1939,7 @@ async function buildAudio(P, musicOpts, onStage, signal) {
   const lu = loudness([L, R]), gg = Math.pow(10, (P.cfg.lufs - lu) / 20);
   for (let i = 0; i < L.length; i++) { L[i] *= gg; R[i] *= gg; }
   limit([L, R], -1.2);
-  P.mix = [L, R]; P.music = Object.assign(chosen, { mood: M.mood, level: M.level });
+  P.mix = [L, R]; P.music = Object.assign(chosen, { level: M.level });
   P.finalLufs = loudness([L, R]);
   onStage && onStage('music', 1);
   return P.mix;
@@ -1809,7 +2111,7 @@ function editLog(P) {
   return L.join('\n');
 }
 
-root.ReelEngine = { DEFAULT_CORRECTIONS, retime, rebuildCaptions, setZooms, transcribe, MODELS, popAlpha, snapEnd, stem, isStop: w => STOP.has(norm(w)), norm, phrases, catalogLine, decodeAudioTrack, sanitizeAsc, decodeTrack, DIAG, verifyAudio, ensureMuxer, toWav, audioToM4a, drawRotated, defaults, analyze, buildCaptions, buildAudio, render, editLog, toSrt, composeMusic, openMovie, VideoSource,
+root.ReelEngine = { GENRES, VIBES, prepareTake, buildReel, findReels, hookScore, sentencesOf, HOOK_LABEL, DEFAULT_CORRECTIONS, retime, rebuildCaptions, setZooms, transcribe, MODELS, popAlpha, snapEnd, stem, isStop: w => STOP.has(norm(w)), norm, phrases, catalogLine, decodeAudioTrack, sanitizeAsc, decodeTrack, DIAG, verifyAudio, ensureMuxer, toWav, audioToM4a, drawRotated, defaults, analyze, buildCaptions, buildAudio, render, editLog, toSrt, composeMusic, openMovie, VideoSource,
   decodeTrack, loudness, drawCaption, capFont, fmt, pickHighlight, FPS, OUT_W, OUT_H, SR, MOODS, Cancelled,
-  _t: { refineTiming, applyCorrections, parseCorrections, rhythmStart, planVisuals, deliveryRows, meaningSims, captionLift, detectClaps, vad, buildKeep, flubRegions, planZooms, chunkWords, parseNotes, findPhrase, mapWords, TimeMap, denoise, compress, limit, resample, highpass4, filt, biquad, addEmphasis, fitTrack, mixMusic, ratio } };
+  _t: { refineTiming, applyCorrections, parseCorrections, rhythmStart, planVisuals, deliveryRows, vibeContext, captionLift, detectClaps, vad, buildKeep, flubRegions, planZooms, chunkWords, parseNotes, findPhrase, mapWords, TimeMap, denoise, compress, limit, resample, highpass4, filt, biquad, addEmphasis, fitTrack, mixMusic, ratio } };
 })(typeof window !== 'undefined' ? window : globalThis);
