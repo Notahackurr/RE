@@ -10,8 +10,8 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Reel Studio">
-<link rel="apple-touch-icon" href="icons/icon-180.png">
-<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-180.png?v=3">
+<link rel="icon" href="icons/icon-192.png?v=3">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -23,7 +23,7 @@
   --fg: #ECEFF5; --muted: #98A1B3; --faint: #626B7E;
   --acc: #FF9A3C; --acc-2: #FF5E3A; --on-acc: #1C0E04; --acc-soft: rgba(255, 154, 60, 0.14);
   --ok: #3DD68C; --bad: #FF6474; --bad-soft: rgba(255, 100, 116, 0.12);
-  --acc-3: #F6A8C8; --acc-fill: var(--acc); --acc-fill-2: var(--acc-2); --acc-fill-3: var(--acc-3);
+  --acc: #FF9E7A; --acc-2: #7C8BFF; --acc-3: #5FD6FF; --acc-fill: var(--acc); --acc-fill-2: var(--acc-2); --acc-fill-3: var(--acc-3);
   --grad: linear-gradient(115deg, var(--acc-fill) 0%, var(--acc-fill-2) 48%, var(--acc-fill-3) 100%);
   --grad-soft: linear-gradient(120deg, color-mix(in srgb, var(--acc-fill) 22%, transparent), color-mix(in srgb, var(--acc-fill-3) 16%, transparent));
   --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 12px 32px rgba(0, 0, 0, 0.28);
@@ -275,7 +275,7 @@ input[type="range"] { width: 100%; accent-color: var(--acc); }
 .edit .ed-main:disabled { cursor: default; opacity: 1; }
 .ed-type { font: 600 10.5px/1 var(--ui); letter-spacing: .06em; text-transform: uppercase; padding: 5px 7px; border-radius: 6px; background: var(--raise); color: var(--muted); }
 .edit[data-t="cut"] .ed-type { background: rgba(255, 106, 76, .16); color: #FF8F72; }
-.edit[data-t="pause"] .ed-type { background: rgba(80, 140, 255, .16); color: #7FAAFF; }
+.edit[data-t="pause"] .ed-type { background: rgba(255, 110, 190, .16); color: #FF7FC4; }
 .edit[data-t="broll"] .ed-type { background: rgba(255, 180, 60, .16); color: #F0A93A; }
 .edit[data-t="photo"] .ed-type { background: rgba(60, 214, 140, .15); color: #34C47F; }
 .edit[data-t="sound"] .ed-type, .edit[data-t="caps"] .ed-type { background: rgba(170, 130, 255, .15); color: #A88BFF; }
@@ -910,8 +910,9 @@ const save = () => store.set('settings', SET);
 const corrections = () => SET.speech.corrections ?? E.DEFAULT_CORRECTIONS ?? '';
 
 // Soft accents: [main, deeper, companion]. The companion is a neighbouring hue, so gradients shift color, not just shade.
-const ACCENTS = { ember: ['#FF9E7A', '#FF6F8E', 'Peach', '#FF6BD8'], ocean: ['#6FD0FF', '#6A86FF', 'Sky', '#A774FF'], violet: ['#B596FF', '#8C6CFF', 'Lavender', '#FF7BE5'],
-  mint: ['#5CF2C4', '#2FD9C2', 'Mint', '#5CC6FF'], rose: ['#FF8DBA', '#FF5F96', 'Blush', '#FFAE5C'], gold: ['#FFD95C', '#FFA94D', 'Honey', '#FF6F8A'], mono: ['#E7EAF0', '#C6CCD7', 'Pearl', '#AEB7C6'] };
+// pinks and blues trade places: the default runs peach into periwinkle and cyan
+const ACCENTS = { ember: ['#FF9E7A', '#7C8BFF', 'Sunset', '#5FD6FF'], ocean: ['#FF7FCF', '#FF6A8A', 'Candy', '#A774FF'], violet: ['#B596FF', '#8C6CFF', 'Lavender', '#6FD8FF'],
+  mint: ['#5CF2C4', '#2FD9C2', 'Mint', '#FF6FC8'], rose: ['#8DB8FF', '#5F86FF', 'Ice', '#FFAE5C'], gold: ['#FFD95C', '#FFA94D', 'Honey', '#6F8CFF'], mono: ['#E7EAF0', '#C6CCD7', 'Pearl', '#AEB7C6'] };
 const CAP_COLORS = [['#FFFFFF', 'White'], ['#FFF3D6', 'Cream'], ['#FFE14D', 'Yellow'], ['#111111', 'Black']];
 const HL_COLORS = [['#FFC94A', 'Gold'], ['#FF9A3C', 'Orange'], ['#FF5E6C', 'Red'], ['#FF6FD8', 'Pink'], ['#4DD8FF', 'Cyan'], ['#7CF06B', 'Lime'], ['#B79BFF', 'Lilac'], ['#D6B06C', 'Brass']];
 function hexRgb(h) { const n = parseInt(h.replace('#', ''), 16); return [n >> 16 & 255, n >> 8 & 255, n & 255]; }
