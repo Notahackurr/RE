@@ -153,8 +153,9 @@ input[type="range"] { width: 100%; accent-color: var(--acc); }
 .sw { width: 32px; height: 32px; border-radius: 50%; border: 0; padding: 0; box-shadow: inset 0 0 0 1px rgba(127, 127, 127, 0.35); transition: transform .15s var(--ease), box-shadow .15s; }
 .sw:hover { transform: scale(1.08); }
 .sw[aria-pressed="true"] { box-shadow: 0 0 0 2px var(--panel), 0 0 0 4px var(--fg); }
-.sw.custom { position: relative; overflow: hidden; background: conic-gradient(#ff5e5e, #ffd05e, #5eff8a, #5ec8ff, #9b5eff, #ff5ec8, #ff5e5e); }
-.sw.custom input { position: absolute; inset: -8px; width: 48px; height: 48px; opacity: 0; cursor: pointer; }
+.sw.custom { position: relative; overflow: hidden; cursor: pointer; display: inline-block; background: conic-gradient(#ff5e5e, #ffd05e, #5eff8a, #5ec8ff, #9b5eff, #ff5ec8, #ff5e5e); }
+.sw.custom.picked { background: radial-gradient(circle, var(--pick) 0 52%, transparent 54%), conic-gradient(#ff5e5e, #ffd05e, #5eff8a, #5ec8ff, #9b5eff, #ff5ec8, #ff5e5e); box-shadow: 0 0 0 2px var(--panel), 0 0 0 4px var(--fg); }
+.sw.custom input { position: absolute; inset: 0; width: 100%; height: 100%; padding: 0; border: 0; margin: 0; opacity: 0; cursor: pointer; -webkit-appearance: none; appearance: none; }
 .chip { border: 1px solid var(--line-2); background: var(--panel-2); border-radius: 999px; padding: 5px 12px; font-size: 13px; font-weight: 600; color: var(--muted); min-height: 32px; }
 .chip:hover { color: var(--fg); }
 .chip[aria-pressed="true"] { background: var(--fg); border-color: var(--fg); color: var(--bg); }
@@ -210,6 +211,9 @@ input[type="range"] { width: 100%; accent-color: var(--acc); }
 .cap-prev span.l { font: 800 26px/1.1 var(--ui); color: #fff; padding: 2px 6px; text-shadow: 0 0 2px #111, 0 0 2px #111, 1px 2px 4px rgba(0, 0, 0, .6); }
 .cap-prev[data-style="shadow"] span.l { text-shadow: 0 3px 12px rgba(0, 0, 0, .85); }
 .cap-prev[data-style="box"] span.l { text-shadow: none; background: rgba(0, 0, 0, .62); border-radius: 8px; padding: 6px 12px; }
+.cap-prev[data-dark] span.l { text-shadow: 0 0 2px rgba(255,255,255,.9), 0 0 2px rgba(255,255,255,.9), 1px 2px 4px rgba(255,255,255,.4); }
+.cap-prev[data-dark][data-style="shadow"] span.l { text-shadow: 0 2px 10px rgba(255,255,255,.9); }
+.cap-prev[data-dark][data-style="box"] span.l { text-shadow: none; background: rgba(255, 255, 255, .88); }
 .cap-prev[data-pos="middle"] { place-items: center; } .cap-prev[data-pos="lower"] { place-items: end center; padding-bottom: 22px; }
 
 /* music picker */
@@ -219,6 +223,9 @@ input[type="range"] { width: 100%; accent-color: var(--acc); }
 .mtile[aria-pressed="true"] { border-color: var(--acc); background: color-mix(in srgb, var(--acc) 9%, var(--panel-2)); box-shadow: inset 0 0 0 1px var(--acc); }
 .mtile b { font-size: 14px; font-weight: 650; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .mtile small { grid-column: 1; font-size: 12px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.play { width: 34px; height: 34px; border-radius: 50%; border: 1px solid var(--line-2); background: var(--panel); display: grid; place-items: center; padding: 0; color: var(--fg); flex: none; }
+.play svg.i { width: 14px; height: 14px; }
+.play.on { background: var(--acc); color: var(--on-acc); border-color: transparent; }
 .mtile .play { grid-column: 2; grid-row: 1 / span 2; width: 32px; height: 32px; border-radius: 50%; border: 1px solid var(--line-2); background: var(--panel); display: grid; place-items: center; padding: 0; color: var(--fg); }
 .mtile .play svg.i { width: 14px; height: 14px; }
 .mtile .play.on { background: var(--acc); color: var(--on-acc); border-color: transparent; }
@@ -359,10 +366,24 @@ input[type="range"] { width: 100%; accent-color: var(--acc); }
 .set-row > label, .set-row > .lbl { font-weight: 600; font-size: 14px; padding-top: 6px; }
 .set-row > .lbl small, .set-row > label small { display: block; font-weight: 400; font-size: 12.5px; color: var(--muted); margin-top: 2px; }
 @media (max-width: 640px) { .set-row { grid-template-columns: 1fr; gap: 8px; } .set-row > label, .set-row > .lbl { padding-top: 0; } }
-.theme-cards { display: flex; gap: 10px; flex-wrap: wrap; }
-.theme-card { display: grid; gap: 6px; justify-items: center; border: 0; background: none; font-size: 13px; font-weight: 600; color: var(--muted); padding: 0; }
-.theme-card i { width: 84px; height: 56px; border-radius: 12px; border: 1px solid var(--line-2); display: block; }
-.theme-card[aria-pressed="true"] { color: var(--fg); } .theme-card[aria-pressed="true"] i { box-shadow: 0 0 0 2px var(--panel), 0 0 0 4px var(--acc); }
+.theme-cards { display: flex; gap: 14px; flex-wrap: wrap; }
+.theme-card { display: grid; gap: 8px; justify-items: center; border: 0; background: none; font-size: 13px; font-weight: 600; color: var(--muted); padding: 0; }
+.theme-card[aria-pressed="true"] { color: var(--fg); }
+.mock { position: relative; display: block; width: 104px; height: 68px; border-radius: 12px; overflow: hidden; box-shadow: inset 0 0 0 1px var(--line-2); }
+.theme-card[aria-pressed="true"] .mock { box-shadow: 0 0 0 2px var(--panel), 0 0 0 4px var(--acc); }
+.mock .pane { position: absolute; inset: 0; }
+.mock .pane.d { background: #0E121B; --side: #161B27; --bar: #2B3243; }
+.mock .pane.l { background: #F3F4F7; --side: #FFFFFF; --bar: #D9DDE5; }
+.mock .pane.half { clip-path: inset(0 0 0 50%); }
+.mock .pane b { position: absolute; left: 0; top: 0; bottom: 0; width: 26px; background: var(--side); box-shadow: 1px 0 0 rgba(127, 127, 127, .18); }
+.mock .pane i { position: absolute; left: 34px; height: 6px; border-radius: 3px; background: var(--bar); }
+.mock .pane i:nth-of-type(1) { top: 12px; width: 44px; background: var(--acc); }
+.mock .pane i:nth-of-type(2) { top: 26px; width: 58px; } .mock .pane i:nth-of-type(3) { top: 38px; width: 40px; }
+.mock .pane u { position: absolute; left: 6px; top: 10px; width: 14px; height: 4px; border-radius: 2px; background: var(--bar); box-shadow: 0 10px 0 var(--bar), 0 20px 0 var(--bar); text-decoration: none; }
+.mock .split { position: absolute; left: 50%; top: 0; bottom: 0; width: 1px; background: rgba(127, 127, 127, .45); }
+.menu .theme-row { display: grid; grid-template-columns: 18px 1fr; gap: 8px 10px; align-items: center; padding: 8px 10px; font-size: 14px; }
+.menu .theme-row svg.i { width: 18px; height: 18px; color: var(--muted); }
+.menu .theme-row .seg { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(3, 1fr); flex-wrap: nowrap; } .menu .theme-row .seg button { padding: 5px 6px; min-height: 32px; font-size: 13px; }
 
 /* sheets */
 .sheet { position: fixed; inset: 0; z-index: 50; display: grid; place-items: center; padding: 16px; background: rgba(4, 6, 10, 0.55); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); animation: fade .2s; }
@@ -414,7 +435,7 @@ input[type="range"] { width: 100%; accent-color: var(--acc); }
           <hr>
           <button role="menuitem" data-menu="account"><span data-icon="user"></span>Profile and account</button>
           <button role="menuitem" data-menu="settings"><span data-icon="gear"></span>Settings</button>
-          <button role="menuitem" data-menu="theme"><span data-icon="moon"></span><span id="menuTheme">Light mode</span></button>
+          <div class="theme-row"><span data-icon="moon"></span>Theme<div class="seg" role="group" aria-label="Theme" id="menuTheme"><button type="button" data-v="dark">Dark</button><button type="button" data-v="light">Light</button><button type="button" data-v="system">Auto</button></div></div>
           <button role="menuitem" data-menu="install" id="menuInstall"><span data-icon="download"></span>Install app</button>
           <button role="menuitem" data-menu="help"><span data-icon="help"></span>Tips</button>
           <hr>
@@ -735,7 +756,7 @@ function applyTheme() {
   root.style.setProperty('--acc-soft', `color-mix(in srgb, ${a} ${light ? 12 : 15}%, transparent)`);
   root.style.setProperty('--hl', SET.cap.hl);
   $('meta[name="theme-color"]').content = light ? '#F3F4F7' : '#07090F';
-  $('#menuTheme').textContent = light ? 'Dark mode' : 'Light mode';
+  $$('#menuTheme button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.v === SET.theme)));
 }
 mq.addEventListener && mq.addEventListener('change', () => { if (SET.theme === 'system') applyTheme(); });
 function cfgNow() {
@@ -814,11 +835,11 @@ $$('.sheet').forEach(sh => { sh.addEventListener('click', e => { if (e.target ==
 function closeMenu() { $('#acctMenu').hidden = true; $('#acctBtn').setAttribute('aria-expanded', 'false'); }
 $('#acctBtn').onclick = e => { e.stopPropagation(); const m = $('#acctMenu'); m.hidden = !m.hidden; $('#acctBtn').setAttribute('aria-expanded', String(!m.hidden)); };
 document.addEventListener('click', e => { if (!e.target.closest('.menu-wrap')) closeMenu(); });
+$$('#menuTheme button').forEach(b => b.onclick = e => { e.stopPropagation(); SET.theme = b.dataset.v; save(); refresh(); });
 $$('#acctMenu [data-menu]').forEach(b => b.onclick = () => {
   closeMenu(); const k = b.dataset.menu;
   if (k === 'account') go('settings', { section: 'account' });
   else if (k === 'settings') go('settings');
-  else if (k === 'theme') { SET.theme = document.documentElement.dataset.theme === 'light' ? 'dark' : 'light'; save(); applyTheme(); refresh(); }
   else if (k === 'install') { $('#homeSheet').hidden = false; }
   else if (k === 'help') { $('#helpSheet').hidden = false; }
 });
@@ -843,18 +864,34 @@ function sw(title, sub, get, set) {
   return el;
 }
 function swatches(list, get, set, label) {
-  const cur = get(), known = list.some(([c]) => c.toLowerCase() === cur.toLowerCase());
-  const el = h(`<div class="swatches" role="group" aria-label="${esc(label)}">${list.map(([c, n]) => `<button class="sw" type="button" style="background:${c}" title="${n}" aria-label="${n}" aria-pressed="${String(c.toLowerCase() === cur.toLowerCase())}" data-c="${c}"></button>`).join('')}
-    <label class="sw custom" title="Any color" aria-pressed="${String(!known)}" ${!known ? `style="background:${cur}"` : ''}><input type="color" value="${cur}" aria-label="Pick any color"></label></div>`);
-  el.querySelectorAll('button').forEach(b => b.onclick = () => { set(b.dataset.c); save(); refresh(); });
-  const ci = el.querySelector('input'); ci.oninput = () => { set(ci.value); save(); applyTheme(); }; ci.onchange = () => { set(ci.value); save(); refresh(); };
+  const cur = get(), known = list.some(([c]) => c.toLowerCase() === cur.toLowerCase()), group = 'g' + newId();
+  const el = h(`<div class="swatches" role="group" aria-label="${esc(label)}" data-group="${esc(label)}">${list.map(([c, n]) => `<button class="sw" type="button" style="background:${c}" title="${n}" aria-label="${n}" aria-pressed="${String(c.toLowerCase() === cur.toLowerCase())}" data-c="${c}"></button>`).join('')}
+    <label class="sw custom ${known ? '' : 'picked'}" title="Any color" aria-label="Any color"${known ? '' : ` style="--pick:${cur}"`}><input type="color" value="${/^#[0-9a-f]{6}$/i.test(cur) ? cur : '#ffffff'}" aria-label="Pick any color"></label></div>`);
+  const mark = v => {   // every copy of this control on the page (setup panel and settings) shows the same choice
+    $$(`.swatches[data-group="${CSS.escape(label)}"]`).forEach(g => {
+      let hit = false;
+      g.querySelectorAll('button.sw').forEach(b => { const on = b.dataset.c.toLowerCase() === v.toLowerCase(); b.setAttribute('aria-pressed', String(on)); hit = hit || on; });
+      const c = g.querySelector('.sw.custom'); c.classList.toggle('picked', !hit); if (!hit) c.style.setProperty('--pick', v); else c.style.removeProperty('--pick');
+      const inp = c.querySelector('input'); if (inp !== document.activeElement && /^#[0-9a-f]{6}$/i.test(v)) inp.value = v;
+    });
+  };
+  el.querySelectorAll('button.sw').forEach(b => b.onclick = () => { set(b.dataset.c); save(); mark(b.dataset.c); soft(); });
+  const ci = el.querySelector('input');
+  ci.oninput = () => { set(ci.value); mark(ci.value); soft(); };
+  ci.onchange = () => { set(ci.value); save(); mark(ci.value); soft(); };
   return el;
+}
+/** Light refresh after a color change: no rebuilding, so an open color picker stays open. */
+function soft() {
+  applyTheme(); save();
+  $$('.cap-prev').forEach(el => el.replaceWith(capPreview()));
+  $$('.acc-head').forEach(b => { const v = b.querySelector('.val'); if (v && VAL[b.dataset.k]) v.innerHTML = VAL[b.dataset.k](); });
 }
 const field = (title, child, sub) => { const el = h(`<div class="field"><span>${esc(title)}</span></div>`); el.append(child); if (sub) el.append(h(`<p class="hint">${esc(sub)}</p>`)); return el; };
 const frag = (...els) => { const f = document.createElement('div'); f.style.display = 'contents'; els.filter(Boolean).forEach(e => f.append(e)); return f; };
 function capPreview() {
   const c = SET.cap, up = s => c.upper ? s.toUpperCase() : s;
-  return h(`<div class="cap-prev" data-style="${c.style}" data-pos="${c.pos}"><span class="l" style="color:${c.color};font-size:${{ s: 22, m: 26, l: 31 }[c.size]}px">${esc(up('Do the'))} <span style="color:${c.hl}">${esc(up('boring'))}</span> ${esc(up('work'))}</span></div>`);
+  return h(`<div class="cap-prev" data-style="${c.style}" data-pos="${c.pos}"${lum(c.color) < 0.3 ? ' data-dark' : ''}><span class="l" style="color:${c.color};font-size:${{ s: 22, m: 26, l: 31 }[c.size]}px">${esc(up('Do the'))} <span style="color:${c.hl}">${esc(up('boring'))}</span> ${esc(up('work'))}</span></div>`);
 }
 const ctl = {
   captions: () => frag(capPreview(),
@@ -920,26 +957,34 @@ function notes() {
 }
 
 // ---------------------------------------------------------- music: one choice, a built-in genre or your own track
-let playing = null, actx = null, playingKey = null;
+// Sound plays through one <audio> element, unlocked by your tap, so it works even with the ring/silent switch on.
+try { if (navigator.audioSession) navigator.audioSession.type = 'playback'; } catch (e) { /* not supported */ }
+let playingKey = null;
+const player = new Audio(); player.preload = 'auto'; player.setAttribute('playsinline', ''); player.setAttribute('webkit-playsinline', '');
+const SILENT = URL.createObjectURL(E.toWav([new Float32Array(2400), new Float32Array(2400)]));
 const previewCache = new Map();
-function unlockAudio() { try { if (!actx) actx = new (window.AudioContext || window.webkitAudioContext)(); if (actx.state !== 'running') actx.resume(); } catch (e) { actx = null; } return actx; }
-function stopPlaying() { if (playing) { try { playing.stop(); } catch (e) { /* already stopped */ } playing = null; } playingKey = null; $$('.play.on').forEach(b => { b.classList.remove('on'); b.innerHTML = icon('play'); }); }
-async function playKey(key, btn) {
+function setPlayIcons() { $$('[data-play]').forEach(b => { const on = b.dataset.play === playingKey; b.classList.toggle('on', on); b.innerHTML = icon(on ? 'stop' : 'play'); }); }
+function stopPlaying() { try { player.pause(); } catch (e) { /* nothing playing */ } playingKey = null; setPlayIcons(); }
+player.onended = () => { if (player.src !== SILENT) stopPlaying(); };
+async function playKey(key) {
   if (playingKey === key) return stopPlaying();
-  stopPlaying(); const ctx = unlockAudio(); if (!ctx) return toast('Sound is blocked in this browser.');
-  playingKey = key; btn.classList.add('on'); btn.innerHTML = icon('stop');
+  stopPlaying(); $('#reelVideo').pause();
+  playingKey = key; setPlayIcons();
+  player.src = SILENT; player.play().catch(() => {});                           // unlock while we still have your tap
   try {
-    let chs = previewCache.get(key);
-    if (!chs) {
+    let url = previewCache.get(key);
+    if (!url) {
+      let chs;
       if (key.startsWith('genre:')) chs = (await E.composeMusic(16, key.slice(6), 11)).chs;
-      else { const t = S.tracks.find(x => 'mine:' + x.docId === key); chs = await E.decodeTrack(t.url); }
-      previewCache.set(key, chs);
+      else { const t = S.tracks.find(x => 'mine:' + x.docId === key); if (!t) throw new Error('track not found'); chs = await E.decodeTrack(t.url); }
+      let pk = 0; for (const c of chs) for (let i = 0; i < c.length; i += 3) pk = Math.max(pk, Math.abs(c[i]));
+      const k = pk > 0 ? 0.85 / pk : 1, n = Math.min(chs[0].length, 48000 * 20);
+      url = URL.createObjectURL(E.toWav(chs.map(c => { const o = new Float32Array(n); for (let i = 0; i < n; i++) o[i] = c[i] * k * Math.min(1, i / 4800, (n - i) / 9600); return o; })));
+      previewCache.set(key, url);
     }
     if (playingKey !== key) return;
-    const buf = ctx.createBuffer(2, chs[0].length, 48000); buf.copyToChannel(chs[0], 0); buf.copyToChannel(chs[1], 1);
-    const src = ctx.createBufferSource(); src.buffer = buf; const g = ctx.createGain(); g.gain.value = key.startsWith('genre:') ? 2.2 : 1; src.connect(g).connect(ctx.destination); src.start();
-    playing = src; src.onended = () => { if (playing === src) stopPlaying(); };
-  } catch (e) { stopPlaying(); toast(`Couldn't play that: ${e.message}`); }
+    player.src = url; player.currentTime = 0; await player.play();
+  } catch (e) { if (playingKey === key) { stopPlaying(); toast(e && e.name === 'NotAllowedError' ? 'Tap play again to hear it.' : `Couldn't play that: ${e.message}`); } }
 }
 function musicName(v) {
   if (v === 'none') return 'No music';
@@ -958,23 +1003,23 @@ function musicPicker({ value, level, onPick, onLevel }) {
     <label class="field" ${value === 'none' ? 'hidden' : ''}>Music volume<input type="range" min="-22" max="-4" step="1" value="${level}"><div class="range-labels"><span>Quiet</span><span>Loud</span></div></label>
     ${S.tracks.length ? '' : '<p class="hint">Want your own songs? Add them in Library → Music.</p>'}</div>`);
   el.querySelectorAll('[data-v]').forEach(t => { const pick = e => { if (e.target.closest('[data-play]')) return; onPick(t.dataset.v); }; t.onclick = pick; t.onkeydown = e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onPick(t.dataset.v); } }; });
-  el.querySelectorAll('[data-play]').forEach(b => b.onclick = e => { e.stopPropagation(); playKey(b.dataset.play, b); });
+  el.querySelectorAll('[data-play]').forEach(b => b.onclick = e => { e.stopPropagation(); playKey(b.dataset.play); });
   const r = el.querySelector('input[type=range]'); r.onchange = () => onLevel(+r.value);
   return el;
 }
 function renderGenres() {
   $('#genreList').innerHTML = Object.entries(E.GENRES).map(([k, g]) => `<div class="mtile" data-k="${k}"><b>${g.label}</b><small>${g.about} · ${g.bpm} bpm</small><button class="play ${playingKey === 'genre:' + k ? 'on' : ''}" type="button" data-play="genre:${k}" aria-label="Hear ${g.label}">${icon(playingKey === 'genre:' + k ? 'stop' : 'play')}</button></div>`).join('');
-  $$('#genreList [data-play]').forEach(b => b.onclick = () => playKey(b.dataset.play, b));
+  $$('#genreList [data-play]').forEach(b => b.onclick = () => playKey(b.dataset.play));
 }
 function renderTracks() {
   const l = $('#trackList');
   l.innerHTML = S.tracks.length ? S.tracks.map(t => `<div class="item"><div class="ph">${icon('note')}</div><div><b>${esc(t.name)}</b><span>${clock(t.duration)}</span></div>
-      <div class="row" style="gap:4px"><button class="play btn sm" type="button" data-play="mine:${esc(t.docId)}" aria-label="Play">${icon('play')}</button><button class="btn ghost sm" type="button" data-del="${esc(t.docId)}">Remove</button></div></div>`).join('')
+      <div class="row" style="gap:4px"><button class="play" type="button" data-play="mine:${esc(t.docId)}" aria-label="Play">${icon(playingKey === 'mine:' + t.docId ? 'stop' : 'play')}</button><button class="btn ghost sm" type="button" data-del="${esc(t.docId)}">Remove</button></div></div>`).join('')
     : '<div class="empty">No tracks yet. Reels use the built-in music until you add some.</div>';
-  $$('#trackList [data-play]').forEach(b => b.onclick = () => playKey(b.dataset.play, b));
+  $$('#trackList [data-play]').forEach(b => b.onclick = () => playKey(b.dataset.play));
   $$('#trackList [data-del]').forEach(b => b.onclick = async () => {
     if (b.dataset.confirm !== '1') { b.dataset.confirm = '1'; b.textContent = 'Tap again'; setTimeout(() => { b.dataset.confirm = ''; b.textContent = 'Remove'; }, 3000); return; }
-    try { await IDB.del('tracks', b.dataset.del); previewCache.delete('mine:' + b.dataset.del); await loadDeviceLibrary(); toast('Track removed'); } catch (e) { toast(`Couldn't remove: ${e.message}`); }
+    try { await IDB.del('tracks', b.dataset.del); if (playingKey === 'mine:' + b.dataset.del) stopPlaying(); previewCache.delete('mine:' + b.dataset.del); await loadDeviceLibrary(); toast('Track removed'); } catch (e) { toast(`Couldn't remove: ${e.message}`); }
   });
 }
 $('#addTracks').addEventListener('change', async e => {
@@ -1269,10 +1314,12 @@ function previewCand(c) {
   $('#prevTitle').textContent = `Reel #${c.rank}`; $('#prevNote').textContent = c.hook ? 'Plays the hook first, then the reel from the start, the way it will be cut.' : 'Before trimming, captions and music.';
   $('#prevSheet').hidden = false; stopPreview();
   let k = 0;
-  const go2 = () => { v.currentTime = segs[k][0]; v.play().catch(() => {}); };
-  prevStop = () => { if (v.currentTime >= segs[k][1]) { if (++k < segs.length) go2(); else stopPreview(); } };
+  const seekTo = () => { try { v.currentTime = segs[k][0]; } catch (e) { /* not ready yet */ } };
+  prevStop = () => { if (v.currentTime < segs[k][0] - 0.5 || v.seeking) return; if (v.currentTime >= segs[k][1]) { if (++k < segs.length) seekTo(); else stopPreview(); } };
   v.addEventListener('timeupdate', prevStop);
-  if (v.readyState >= 1) go2(); else v.addEventListener('loadedmetadata', go2, { once: true });
+  stopPlaying();
+  if (v.readyState >= 1) seekTo(); else v.addEventListener('loadedmetadata', seekTo, { once: true });
+  v.play().catch(() => { $('#prevNote').textContent = 'Tap play on the video to start the preview.'; });
 }
 function restartBatch() {
   const B = S.batch; if (S.busy === 'batch') return;
@@ -1349,6 +1396,7 @@ function openReview(where, idx) {
   updateBar();
 }
 let videoUrl = null;
+$('#reelVideo').addEventListener('play', () => { if (playingKey) stopPlaying(); });
 function loadReview() {
   const P = S.P, v = $('#reelVideo');
   if (videoUrl) URL.revokeObjectURL(videoUrl); videoUrl = URL.createObjectURL(S.blob); v.src = videoUrl;
@@ -1615,11 +1663,12 @@ function renderSettings() {
   $('#setNav').innerHTML = SECTIONS.map(([k, t]) => `<button class="chip" type="button" data-sec="${k}">${t}</button>`).join('');
   $$('#setNav [data-sec]').forEach(b => b.onclick = () => document.getElementById('set-' + b.dataset.sec).scrollIntoView({ behavior: 'smooth', block: 'start' }));
   const body = $('#setBody'); body.innerHTML = '';
-  const themes = h(`<div class="theme-cards">${[['dark', 'Dark', 'linear-gradient(135deg,#0E121B 50%,#191F2D 50%)'], ['light', 'Light', 'linear-gradient(135deg,#FFFFFF 50%,#EDEFF3 50%)'], ['system', 'Match device', 'linear-gradient(135deg,#0E121B 50%,#FFFFFF 50%)']].map(([v, l, bg]) => `<button class="theme-card" type="button" data-v="${v}" aria-pressed="${SET.theme === v}"><i style="background:${bg}"></i>${l}</button>`).join('')}</div>`);
+  const pane = c => `<span class="pane ${c}"><b></b><u></u><i></i><i></i><i></i></span>`;
+  const themes = h(`<div class="theme-cards">${[['dark', 'Dark', pane('d')], ['light', 'Light', pane('l')], ['system', 'Automatic', pane('d') + pane('l half') + '<span class="split"></span>']].map(([v, l, m]) => `<button class="theme-card" type="button" data-v="${v}" aria-pressed="${SET.theme === v}"><span class="mock">${m}</span>${l}</button>`).join('')}</div>`);
   themes.querySelectorAll('button').forEach(b => b.onclick = () => { SET.theme = b.dataset.v; save(); refresh(); });
   const accents = swatches(Object.values(ACCENTS).map(([a, , n]) => [a, n]), () => SET.accent === 'custom' ? SET.accentCustom : ACCENTS[SET.accent][0],
     v => { const k = Object.keys(ACCENTS).find(x => ACCENTS[x][0].toLowerCase() === v.toLowerCase()); if (k) SET.accent = k; else { SET.accent = 'custom'; SET.accentCustom = v; } }, 'Accent color');
-  body.append(section('appearance', 'Appearance', [setRow('Theme', '', themes), setRow('Accent color', 'Buttons, highlights and progress.', accents)]));
+  body.append(section('appearance', 'Appearance', [setRow('Theme', 'Automatic follows your device’s light or dark setting.', themes), setRow('Accent color', 'Buttons, highlights and progress.', accents)]));
   body.append(section('captions', 'Captions', [setRow('Look', 'Used for every new reel.', ctl.captions()), setRow('Layout', '', ctl.captionsMore())]));
   body.append(section('music', 'Music', [setRow('Default music', 'Change it per reel after it’s made.', ctl.music())]));
   body.append(section('visuals', 'Clips and photos', [setRow('Cutaways', '', ctl.visuals())]));
@@ -1643,7 +1692,7 @@ function renderSettings() {
   const data = h('<div class="stack" style="gap:10px"></div>'); data.append(used);
   const btns = h('<div class="row"></div>');
   btns.append(confirmBtn('Remove my clips', 'Tap again to remove all', async () => { await IDB.clear('clips'); await loadDeviceLibrary(); toast('Your clips were removed'); }),
-    confirmBtn('Remove my music', 'Tap again to remove all', async () => { await IDB.clear('tracks'); previewCache.clear(); await loadDeviceLibrary(); toast('Your music was removed'); }),
+    confirmBtn('Remove my music', 'Tap again to remove all', async () => { await IDB.clear('tracks'); stopPlaying(); previewCache.clear(); await loadDeviceLibrary(); toast('Your music was removed'); }),
     confirmBtn('Reset settings', 'Tap again to reset', async () => { SET = merge(DEF, {}); save(); refresh(); toast('Settings reset'); }));
   data.append(btns);
   const inst = h(`<div class="row"><button class="btn" type="button">${icon('download')}Install app</button></div>`); inst.querySelector('button').onclick = () => { $('#homeSheet').hidden = false; };

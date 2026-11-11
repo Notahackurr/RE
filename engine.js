@@ -984,6 +984,7 @@ function srtTime(t) { const ms = Math.round(Math.max(0, t) * 1000); const p = (n
 function toSrt(chunks) { return chunks.map((c, k) => `${k + 1}\n${srtTime(c.s)} --> ${srtTime(c.e)}\n${c.words.join(' ')}\n`).join('\n'); }
 const CAP_FONT = '"Inter", "Helvetica Neue", Arial, sans-serif';
 function capFont(cfg) { return `800 ${Math.round(cfg.cap.size / 1.21)}px ${CAP_FONT}`; }
+function capLum(h) { const n = parseInt(String(h).replace('#', ''), 16); if (isNaN(n)) return 1; const f = v => { v /= 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); }; return 0.2126 * f(n >> 16 & 255) + 0.7152 * f(n >> 8 & 255) + 0.0722 * f(n & 255); }
 function drawCaption(ctx, chunk, cfg, t, next, lift = null) {
   if (!chunk) return;
   let a = 1, rise = 0;
@@ -1001,15 +1002,16 @@ function drawCaption(ctx, chunk, cfg, t, next, lift = null) {
   const lf = lift == null ? (chunk.up ? 1 : 0) : lift;
   const y = Math.round(OUT_H * (cfg.cap.baseline + (cfg.cap.baselineUp - cfg.cap.baseline) * lf)); let x = OUT_W / 2 - total / 2;
   const pos = ws.map(w => { const p = x; x += w.wd + sp; return p; });
-  const fs = Math.round(C.size / 1.21);
+  const fs = Math.round(C.size / 1.21), dark = capLum(C.color || '#FFFFFF') < 0.3;   // dark text gets a light outline / box
+  const edge = a => dark ? `rgba(255,255,255,${a})` : `rgba(0,0,0,${a})`;
   if (style === 'box') {
-    ctx.fillStyle = 'rgba(0,0,0,0.62)'; roundRect(ctx, pos[0] - 0.34 * fs, y - 0.92 * fs, total + 0.68 * fs, 1.24 * fs, 0.24 * fs); ctx.fill();
+    ctx.fillStyle = dark ? 'rgba(255,255,255,0.88)' : 'rgba(0,0,0,0.62)'; roundRect(ctx, pos[0] - 0.34 * fs, y - 0.92 * fs, total + 0.68 * fs, 1.24 * fs, 0.24 * fs); ctx.fill();
   } else if (style === 'shadow') {
-    ctx.shadowColor = 'rgba(0,0,0,0.75)'; ctx.shadowBlur = 14; ctx.shadowOffsetY = 3;
+    ctx.shadowColor = edge(0.8); ctx.shadowBlur = 14; ctx.shadowOffsetY = 3;
   } else { // soft drop shadow, then dark outline
-    ctx.fillStyle = 'rgba(0,0,0,0.45)'; ctx.strokeStyle = 'rgba(0,0,0,0.45)'; ctx.lineWidth = 6.4;
+    ctx.fillStyle = edge(0.45); ctx.strokeStyle = edge(0.45); ctx.lineWidth = 6.4;
     ws.forEach((w, k) => { ctx.strokeText(w.w, pos[k] + 2.2, y + 2.2); ctx.fillText(w.w, pos[k] + 2.2, y + 2.2); });
-    ctx.strokeStyle = 'rgba(20,20,20,0.70)'; ctx.lineWidth = 6.4;
+    ctx.strokeStyle = dark ? 'rgba(255,255,255,0.85)' : 'rgba(20,20,20,0.70)'; ctx.lineWidth = 6.4;
     ws.forEach((w, k) => ctx.strokeText(w.w, pos[k], y));
   }
   ws.forEach((w, k) => { ctx.fillStyle = k === chunk.hl ? C.accent : (C.color || '#FFFFFF'); ctx.fillText(w.w, pos[k], y); });
