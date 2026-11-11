@@ -1,0 +1,2 @@
+YuNet face detector (face_detection_yunet_2023mar.onnx) from OpenCV Zoo, MIT License.
+https://github.com/opencv/opencv_zoo/tree/main/models/face_detection_yunet

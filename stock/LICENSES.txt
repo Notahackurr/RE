@@ -1,0 +1,7 @@
+Free stock in this folder
+- stock_* clips and photo_* stills from Mixkit (mixkit.co), Mixkit Stock Video Free License:
+  free for commercial and personal projects including social media, no attribution required.
+  Each item's source page is listed in manifest.json ("source_page").
+- pexels_* items: Pexels License (pexels.com/license) — free to use, attribution appreciated; the edit log credits them.
+- pixabay_* items: Pixabay Content License (pixabay.com/service/license-summary).
+Not allowed under these licenses: selling the clips unaltered, or implying an identifiable person endorses you.

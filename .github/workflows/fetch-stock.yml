@@ -1,0 +1,47 @@
+# Adds free stock to the app from your phone or iPad: GitHub app or github.com -> Actions -> "Fetch free stock" -> Run workflow.
+# One-time setup: Settings -> Secrets and variables -> Actions -> New repository secret:
+#   PEXELS_API_KEY (free at pexels.com/api) and/or PIXABAY_API_KEY (free at pixabay.com/api/docs)
+name: Fetch free stock
+on:
+  workflow_dispatch:
+    inputs:
+      query: { description: "Search (e.g. ocean waves slow, man lifting weights)", required: true, default: "ocean waves slow" }
+      category:
+        description: Category
+        type: choice
+        options: [nature, training, home_gym, habits, food, family, lifestyle, mood, contrast]
+        default: nature
+      kind:
+        description: Clips or photos
+        type: choice
+        options: [clip, photo]
+        default: clip
+      count: { description: "How many (1-10)", default: "3" }
+      provider:
+        description: Source
+        type: choice
+        options: [pexels, pixabay]
+        default: pexels
+permissions:
+  contents: write
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 20 }
+      - run: sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg
+      - name: Fetch
+        env:
+          PEXELS_API_KEY: ${{ secrets.PEXELS_API_KEY }}
+          PIXABAY_API_KEY: ${{ secrets.PIXABAY_API_KEY }}
+        run: node tools/fetch-stock.mjs "${{ inputs.query }}" "${{ inputs.category }}" "${{ inputs.kind }}" "${{ inputs.count }}" "${{ inputs.provider }}"
+      - name: Commit the new stock
+        run: |
+          git config user.name "stock-bot"
+          git config user.email "stock-bot@users.noreply.github.com"
+          git add stock
+          git diff --cached --quiet || git commit -m "Add free stock: ${{ inputs.query }}"
+          git push
