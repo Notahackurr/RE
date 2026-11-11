@@ -1,6 +1,27 @@
 {
   "updated": "2026-11-11",
   "about": "Hook formats and their weights for picking reel openers. Topics refresh daily from Google's US trending searches.",
-  "hooks": { "question": 0.55, "contrarian": 0.8, "curiosity": 0.75, "number": 0.6, "conditional": 0.6, "story": 0.5, "result": 0.65, "bold": 0.4, "you": 0.35 },
-  "topics": []
+  "hooks": {
+    "question": 0.55,
+    "contrarian": 0.8,
+    "curiosity": 0.75,
+    "number": 0.6,
+    "conditional": 0.6,
+    "story": 0.5,
+    "result": 0.65,
+    "bold": 0.4,
+    "you": 0.35
+  },
+  "topics": [
+    "landfill",
+    "casper ruud",
+    "baseball",
+    "will scharf",
+    "applebees menu",
+    "russian ambassador to us",
+    "chipotle tattoo deal",
+    "vanguard",
+    "rex ryan",
+    "east texas a&amp;m basketball"
+  ]
 }
