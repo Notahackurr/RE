@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Your videos stay on your device: how Reel Studio handles your data</title>
+<meta name="description" content="Reel Studio edits your videos in your browser and never uploads them. Here's exactly what stays on your device, what is downloaded, and what is sent where.">
+<link rel="canonical" href="https://reeleditapp.com/data.html">
+<meta name="theme-color" content="#07090F">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Reel Studio">
+<meta property="og:url" content="https://reeleditapp.com/data.html">
+<meta property="og:title" content="Your videos stay on your device">
+<meta property="og:description" content="Reel Studio edits your videos in your browser and never uploads them. What stays on your device, and what is sent where.">
+<meta property="og:image" content="https://reeleditapp.com/site/img/og.jpg">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://reeleditapp.com/site/img/og.jpg">
+<link rel="icon" href="icons/icon-192.png?v=3">
+<link rel="apple-touch-icon" href="icons/icon-180.png?v=3">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@108..125,800&family=Inter:wght@400;500;600;700;800&display=swap">
+<link rel="stylesheet" href="site/site.css">
+</head>
+<body>
+<div class="glow" aria-hidden="true"></div>
+<header class="top">
+  <div class="wrap">
+    <a class="brand" href="./"><img src="icons/icon-192.png?v=3" alt="" width="30" height="30">Reel <span>Studio</span></a>
+    <nav aria-label="Main">
+      <a href="./#how">How it works</a>
+      <a href="pricing.html">Pricing</a>
+      <a href="./#faq">Questions</a>
+    </nav>
+    <a class="btn sm primary" href="app.html">Open the editor</a>
+  </div>
+</header>
+
+<main>
+  <section style="border:0">
+    <div class="wrap doc">
+      <span class="eyebrow">Your data</span>
+      <h1 style="font-size:clamp(32px,4.6vw,48px);margin-top:10px">Your videos stay on your device</h1>
+      <p class="lede" style="margin-top:16px">Reel Studio edits in your browser. Your videos are never uploaded to us or anyone else. This page lists everything that does leave your device, in plain words.</p>
+
+      <h2>Stays on your device</h2>
+      <ul>
+        <li><b>Your videos.</b> They're read, edited and saved by your browser. Nothing is uploaded.</li>
+        <li><b>Your library.</b> Clips, photos and songs you add are saved in your browser's storage on this device.</li>
+        <li><b>Your settings and monthly free count.</b> Saved in your browser.</li>
+        <li><b>The transcript.</b> Captions are written by a speech model running on your device.</li>
+      </ul>
+
+      <h2>Downloaded to your device</h2>
+      <ul>
+        <li><b>The editor itself</b> from reeleditapp.com, plus built-in stock clips and music when they're used.</li>
+        <li><b>The speech model</b> (Whisper, about 80 to 250 MB) and a small sentence model that helps match clips to what you say, from Hugging Face, once, then kept in your browser.</li>
+        <li><b>Code libraries</b> from jsDelivr, and <b>fonts</b> from Google Fonts. Like any website request, these services see your IP address.</li>
+      </ul>
+
+      <h2>Sent from your device, only when you use these</h2>
+      <ul>
+        <li><b>Your account</b> (once accounts open): your email address and password, to sign you in and keep your plan on every device. Handled by Supabase.</li>
+        <li><b>Premium checkout:</b> Lemon Squeezy handles payment and receipts. Reel Studio never sees your card details.</li>
+        <li><b>Free stock search</b> (if switched on in Settings): a few search words, like “coffee” or “city at night”, are sent to Reel Studio's server and Pexels to find matching clips. Never your video, and never your full transcript.</li>
+      </ul>
+
+      <h2>What Reel Studio doesn't do</h2>
+      <ul>
+        <li>No ads, and no analytics or tracking scripts.</li>
+        <li>Your videos, voice and transcript are never used to train anything.</li>
+      </ul>
+
+      <h2>Deleting things</h2>
+      <ul>
+        <li>Settings → Data and storage removes your clips, your music, or your settings from this device.</li>
+        <li>Settings → Account → Delete my account removes your account. Cancel any subscription first, with Manage in Plan and billing.</li>
+      </ul>
+      <p class="small muted" style="margin-top:36px">Last updated November 12, 2026.</p>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <a class="brand" href="./" style="font-size:16px"><img src="icons/icon-192.png?v=3" alt="" width="24" height="24">Reel <span>Studio</span></a>
+    <span class="sp"></span>
+    <a href="app.html">Editor</a><a href="pricing.html">Pricing</a><a href="data.html">Your data</a><a href="./#faq">Questions</a>
+  </div>
+</footer>
+</body>
+</html>
