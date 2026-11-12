@@ -1110,33 +1110,57 @@ function describe(movie, trak) {
   return undefined;
 }
 
-/** Sequential frame access by presentation time; frames are borrowed until the next call. */
+/** Sequential frame access by presentation time; frames are borrowed until the next call.
+ *  Survives decoder failures: a corrupt packet, a decoder the browser reclaimed (another tab, low memory),
+ *  or a hardware decoder that gives up. It rebuilds the decoder, switches to software decoding if the hardware
+ *  one keeps failing, skips a damaged stretch to the next keyframe, and holds the last good picture meanwhile. */
 class VideoSource {
   constructor(movie) {
     this.mv = movie; this.samples = movie.trakV.samples; this.ts = this.samples[0].timescale;
     this.fw = new FileWindow(movie.file);
     this.config = { codec: movie.v.codec, codedWidth: movie.codedW, codedHeight: movie.codedH, description: describe(movie, movie.trakV) };
+    this.fails = 0; this.software = false; this.hold = null;
   }
   async open() {
     if (!('VideoDecoder' in root)) throw new Error('This browser cannot decode video frames (WebCodecs missing).');
-    const sup = await VideoDecoder.isConfigSupported(this.config);
+    let sup = await VideoDecoder.isConfigSupported(this.config);
+    if (!sup.supported) { sup = await VideoDecoder.isConfigSupported({ ...this.config, hardwareAcceleration: 'prefer-software' }); if (sup.supported) this.software = true; }
     if (!sup.supported) throw new Error(`This device can't decode ${this.config.codec} video.`);
     this._make(); this.i = 0;
   }
   _make() {
-    this.out = []; this.cur = null; this.err = null; this.flushed = false;
-    this.dec = new VideoDecoder({ output: f => this.out.push(f), error: e => { this.err = e; } });
-    this.dec.configure(this.config);
+    this.out = []; this.cur = null; this.err = null; this.flushed = false; this.lastOut = performance.now();
+    this.dec = new VideoDecoder({ output: f => { this.out.push(f); this.lastOut = performance.now(); }, error: e => { this.err = e || new Error('decoder error'); } });
+    this.dec.configure(this.software ? { ...this.config, hardwareAcceleration: 'prefer-software' } : this.config);
   }
-  seek(t) {
+  _keyBefore(t) {
     const target = t * this.ts + this.mv.cts0; let k = 0;
     for (let i = 0; i < this.samples.length; i++) { if (this.samples[i].is_sync && this.samples[i].cts <= target) k = i; if (this.samples[i].cts > target + this.ts * 2) break; }
-    this.close(); this._make(); this.i = k;
+    return k;
+  }
+  _keyAfter(i) { for (let j = i + 1; j < this.samples.length; j++) if (this.samples[j].is_sync) return j; return this.samples.length; }
+  _drop() { try { this.out.forEach(f => f.close()); if (this.cur) this.cur.close(); } catch (e) { /* already closed */ } this.out = []; this.cur = null; try { if (this.dec && this.dec.state !== 'closed') this.dec.close(); } catch (e) { /* closed */ } }
+  seek(t) { this._drop(); this._make(); this.i = this._keyBefore(t); }
+  /** The decoder failed while working toward time t: rebuild it and carry on. */
+  async _recover(t) {
+    this.fails++;
+    const D = DIAG.videoRecover = DIAG.videoRecover || { count: 0, software: false, skipped: 0, last: '' };
+    D.count++; D.last = String(this.err && (this.err.name + ': ' + this.err.message) || 'stalled').slice(0, 120);
+    if (this.fails > 60) throw new Error("This video has too many damaged frames to read. Try exporting it again from your camera app.");
+    if (!this.software && this.fails >= 2 && this.swOk !== false) {   // the hardware decoder keeps failing: use the software one, if this browser has it
+      try { this.swOk = (await VideoDecoder.isConfigSupported({ ...this.config, hardwareAcceleration: 'prefer-software' })).supported; } catch (e) { this.swOk = false; }
+      if (this.swOk) { this.software = true; D.software = true; }
+    }
+    const from = this.badAt === this._keyBefore(t) ? this._keyAfter(this._keyBefore(t)) : this._keyBefore(t);   // failed here before: skip this stretch
+    if (from !== this._keyBefore(t)) D.skipped++;
+    this.badAt = this._keyBefore(t);
+    this._drop(); this._make(); this.i = from;
   }
   async _feed(n) {
     for (let c = 0; c < n && this.i < this.samples.length; c++) {
       const s = this.samples[this.i++];
       const data = await this.fw.read(s.offset, s.size);
+      if (this.err || this.dec.state !== 'configured') return;
       this.dec.decode(new EncodedVideoChunk({ type: s.is_sync ? 'key' : 'delta', timestamp: Math.round((s.cts - this.mv.cts0) / this.ts * 1e6), duration: Math.round(s.duration / this.ts * 1e6), data }));
     }
   }
@@ -1146,20 +1170,24 @@ class VideoSource {
     this.lastT = t;
     const lim = (t + 0.25 / FPS) * 1e6;
     for (let guard = 0; guard < 100000; guard++) {
-      if (this.err) throw this.err;
+      if (this.err || (this.dec && this.dec.state === 'closed')) { this.err = this.err || new Error('decoder closed'); await this._recover(t); continue; }
       this.out.sort((a, b) => a.timestamp - b.timestamp);
       while (this.out.length && this.out[0].timestamp <= lim) { if (this.cur) this.cur.close(); this.cur = this.out.shift(); }
       if (this.out.length) break;
       if (this.i >= this.samples.length) {
-        if (!this.flushed) { this.flushed = true; await this.dec.flush(); continue; }
+        if (!this.flushed) { this.flushed = true; try { await this.dec.flush(); } catch (e) { if (!this.err) this.err = e; } continue; }
         break;
       }
-      if (this.dec.decodeQueueSize < 8) await this._feed(4); else await sleep(1);
+      if (this.dec.decodeQueueSize < 8) await this._feed(4);
+      else if (performance.now() - this.lastOut > 8000) { this.err = new Error('decoder stalled'); continue; }   // fed but silent for 8 s
+      else await sleep(1);
       if (!this.out.length) await sleep(0);
     }
-    return this.cur || this.out[0] || null;
+    const f = this.cur || this.out[0] || null;
+    if (f) { this.fails = Math.max(0, this.fails - 0.02); if (this.hold) this.hold.close(); try { this.hold = f.clone(); } catch (e) { this.hold = null; } return f; }
+    return this.hold;   // a skipped stretch shows the last good picture instead of a black flash
   }
-  close() { try { this.out.forEach(f => f.close()); if (this.cur) this.cur.close(); this.out = []; this.cur = null; if (this.dec && this.dec.state !== 'closed') this.dec.close(); } catch (e) { /* already closed */ } }
+  close() { this._drop(); if (this.hold) { try { this.hold.close(); } catch (e) { /* closed */ } this.hold = null; } }
 }
 
 const AAC_RATES = [96000, 88200, 64000, 48000, 44100, 32000, 24000, 22050, 16000, 12000, 11025, 8000, 7350];
@@ -1204,29 +1232,46 @@ async function decodeAudioTrack(movie, signal, opts = {}) {
       // Place every decoded block at its own timestamp, at the rate the decoder actually reports.
       // Packets the decoder drops or merges then can't slide the rest of the voice out of sync.
       const ts = trak.samples[0].timescale, t0 = Math.round(Math.min(...trak.samples.slice(0, 16).map(x => x.cts)) / ts * 1e6);
-      const parts = []; let err = null, outSr = 0;
-      const dec = new AudioDecoder({ output: d => {
+      const parts = []; let err = null, outSr = 0, bad = 0, lastOutTs = -Infinity;
+      const onOut = d => {
         const n = d.numberOfFrames, nc = d.numberOfChannels, L = new Float32Array(n), R = new Float32Array(n), tmp = new Float32Array(n);
         if (!outSr) outSr = d.sampleRate || sr;
         if (opts.stereo) { d.copyTo(L, { planeIndex: 0, format: 'f32-planar' }); if (nc > 1) d.copyTo(R, { planeIndex: 1, format: 'f32-planar' }); else R.set(L); }
         else { for (let c = 0; c < nc; c++) { d.copyTo(tmp, { planeIndex: c, format: 'f32-planar' }); for (let i = 0; i < n; i++) L[i] += tmp[i] / nc; } }
-        parts.push({ ts: d.timestamp - t0, L, R: opts.stereo ? R : null }); d.close();
-      }, error: e => { err = e; } });
-      dec.configure(cfg);
+        parts.push({ ts: d.timestamp - t0, L, R: opts.stereo ? R : null }); lastOutTs = Math.max(lastOutTs, d.timestamp); d.close();
+      };
+      // A damaged packet (or a decoder the browser reclaims) shouldn't sink a long video: rebuild the decoder,
+      // leave that packet as a few milliseconds of silence, and keep going.
+      const make = () => { const d = new AudioDecoder({ output: onOut, error: e => { err = e || new Error('audio decoder error'); } }); d.configure(cfg); return d; };
+      let dec = make(), lastSent = -1, restartAt = -1;
+      const tsOf = k => Math.round(trak.samples[k].cts / ts * 1e6);
       const fw = new FileWindow(movie.file);
       for (let i = 0; i < trak.samples.length; i++) {
+        if (err || dec.state === 'closed') {
+          bad++; DIAG.audioRecover = { count: bad, last: String(err && err.message || 'closed').slice(0, 100) };
+          if (bad > 200 || (bad > 20 && bad > trak.samples.length * 0.05)) throw err || new Error('audio decoder kept failing');
+          try { if (dec.state !== 'closed') dec.close(); } catch (e) { /* closed */ }
+          err = null; dec = make();
+          let from = lastSent; while (from > 0 && tsOf(from - 1) > lastOutTs) from--;   // resume after the last packet that came out
+          if (from === restartAt) from++;                                               // failed at the same spot twice: skip that packet
+          restartAt = from; i = Math.max(0, from);
+          if (i >= trak.samples.length) break;
+        }
         const s = trak.samples[i];
         dec.decode(new EncodedAudioChunk({ type: 'key', timestamp: Math.round(s.cts / ts * 1e6), duration: Math.round(s.duration / ts * 1e6), data: await fw.read(s.offset, s.size) }));
-        if (dec.decodeQueueSize > 64) await sleep(1);
+        lastSent = i;
+        while (dec.decodeQueueSize > 64 && !err && dec.state !== 'closed') await sleep(1);
         if (i % 500 === 0) { check(signal); await tick(); }
       }
-      await dec.flush(); dec.close();
-      if (err) throw err;
+      try { await dec.flush(); } catch (e) { if (!err) err = e; }
+      try { if (dec.state !== 'closed') dec.close(); } catch (e) { /* closed */ }
+      if (err && !parts.length) throw err;
       if (!parts.length) throw new Error('the decoder returned no audio');
       outSr = outSr || sr;
       // timestamps are usable if they increase and roughly agree with the running sample count
       let run = parts[0].ts, tsOk = parts[0].ts >= 0 && parts[0].ts < 0.25e6;
-      for (let k = 1; k < parts.length && tsOk; k++) { run += parts[k - 1].L.length / outSr * 1e6; if (parts[k].ts < parts[k - 1].ts || Math.abs(parts[k].ts - run) > 0.25e6) { tsOk = false; break; } }
+      for (let k = 1; k < parts.length && tsOk; k++) { run += parts[k - 1].L.length / outSr * 1e6; if (bad && parts[k].ts > run && parts[k].ts - run < 3e6) run = parts[k].ts;   /* a skipped packet leaves a short gap */
+        if (parts[k].ts < parts[k - 1].ts || Math.abs(parts[k].ts - run) > 0.25e6) { tsOk = false; break; } }
       const lastEnd = tsOk ? parts[parts.length - 1].ts / 1e6 * outSr + parts[parts.length - 1].L.length : parts.reduce((a, p) => a + p.L.length, 0);
       const total = Math.ceil(lastEnd) + 8, outL = new Float32Array(total), outR = opts.stereo ? new Float32Array(total) : null;
       let o = 0;
@@ -1244,7 +1289,8 @@ async function decodeAudioTrack(movie, signal, opts = {}) {
     } catch (e) { if (e instanceof Cancelled) throw e; DIAG.takeDecoderError = String(e && e.message || e); pcm = null; if (opts.stereo) throw e; }
   }
   DIAG.takeAudio = { codec: a.codec, sr, usedSr: +sr2.toFixed(1), ch, path: pcm ? 'AudioDecoder' : 'decodeAudioData', samples: pcm ? pcm.length : 0, rmsDb: pcm ? rmsDb(pcm) : null };
-  if (!pcm) { // fallback: let the browser decode the whole file
+  if (!pcm) { // fallback: let the browser decode the whole file (only sensible for files that fit in memory)
+    if (movie.file.size > 400e6) throw new Error("Couldn't read the sound in this video. Try exporting it again from your camera or editing app, or trim it into shorter parts.");
     const ac = new OfflineAudioContext(1, 1, sr);
     const buf = await ac.decodeAudioData(await movie.file.arrayBuffer());
     pcm = new Float32Array(buf.length);
@@ -1279,7 +1325,7 @@ async function loadWhisper(onProgress, which = 'small') {
   return _whisperBy[which];
 }
 async function transcribe(audio48, onProgress, signal, which = 'small') {
-  let asr, used = which;
+  let asr, used = which;   // asr is reloaded if the model's memory gets corrupted
   try { asr = await loadWhisper(p => onProgress && onProgress(0.55 * p, p < 1 ? 'Loading the speech model' : null), which); }
   catch (e) {
     if (which === 'base' || e instanceof Cancelled) throw e;
@@ -1301,8 +1347,35 @@ async function transcribe(audio48, onProgress, signal, which = 'small') {
   }
   segs.push([pos, total]);
   const out = [];
-  const asrRange = async (t0, t1) => {
-    const res = await asr(a16.subarray(Math.round(t0 * R16), Math.round(t1 * R16)), { return_timestamps: 'word' });
+  DIAG.asrFailed = []; DIAG.asrRecovered = 0;
+  let calls = 0;
+  const runAsr = (x, o) => { if (root.__asrFault && ++calls % root.__asrFault === 0) return Promise.reject(new Error('test: injected model failure')); return asr(x, o); };
+  // The model can fail on a piece of audio: a word-timing step that trips over an odd segment, or its memory running
+  // out partway through a long video. One bad piece shouldn't sink the whole video, so each piece is retried, the model
+  // reloaded if its memory got corrupted, split in half, then read with sentence-level timing; only then is it skipped.
+  const asrRange = async (t0, t1, depth = 0) => {
+    const x = a16.subarray(Math.round(t0 * R16), Math.round(t1 * R16));
+    let res;
+    try { res = await runAsr(x, { return_timestamps: 'word' }); }
+    catch (e) {
+      if (e instanceof Cancelled) throw e;
+      const msg = String(e && e.message || e); DIAG.asrRecovered++; DIAG.asrLastError = msg.slice(0, 160);
+      if ((root.WebAssembly && e instanceof WebAssembly.RuntimeError) || /memory|out of bounds|abort|unreachable|OrtRun|session/i.test(msg)) {
+        delete _whisperBy[used]; try { asr = await loadWhisper(null, used); } catch (e2) { /* keep the old one and let the retries decide */ }
+      }
+      check(signal);
+      if (depth === 0) return asrRange(t0, t1, 1);
+      if (t1 - t0 > 4 && depth < 3) { const m = splitAt(t0, t1); return [...await asrRange(t0, m, depth + 1), ...await asrRange(m, t1, depth + 1)]; }
+      try {   // last try: sentence-level times, words spread across each sentence by length
+        const r2 = await runAsr(x, { return_timestamps: true }), ws = [];
+        for (const c of r2.chunks || []) {
+          let [cs, ce] = c.timestamp || [0, (t1 - t0)]; if (cs == null) cs = 0; if (ce == null) ce = Math.min(t1 - t0, cs + 2);
+          const words = String(c.text || '').trim().split(/\s+/).filter(Boolean), chars = words.reduce((a, w) => a + w.length + 1, 0) || 1; let at = cs;
+          for (const w of words) { const d = (ce - cs) * (w.length + 1) / chars; ws.push({ w, s: +(t0 + at).toFixed(3), e: +Math.min(t1, t0 + at + d).toFixed(3) }); at += d; }
+        }
+        return ws;
+      } catch (e2) { if (e2 instanceof Cancelled) throw e2; DIAG.asrFailed.push([+t0.toFixed(1), +t1.toFixed(1)]); return []; }
+    }
     const ws = [];
     for (const c of res.chunks || []) {
       const raw = c.text || '', txt = raw.trim();
@@ -1351,8 +1424,10 @@ async function transcribe(audio48, onProgress, signal, which = 'small') {
     }
     return fixLoops(ws);
   };
+  const lost = () => DIAG.asrFailed.reduce((a, [x, y]) => a + spoken(x, y), 0);
   for (let k = 0; k < segs.length; k++) {
     check(signal);
+    if (k >= 3 && lost() > 0.5 * spoken(0, segs[k][0])) throw new Error('The speech model keeps failing on this video. Try again, or switch Settings → Speech → "For long videos" to the other option.');
     onProgress && onProgress(0.58 + 0.36 * k / segs.length, segs.length > 1 ? `Transcribing what you said (part ${k + 1} of ${segs.length})` : 'Transcribing what you said');
     out.push(...await asrSafe(segs[k][0], segs[k][1]));
   }
@@ -1402,12 +1477,12 @@ async function faceTrack(movie, tmap, broll, cfg, onProgress, signal, cache = ne
   const fx = new Float32Array(n).fill(NaN), fy = new Float32Array(n).fill(NaN);
   const skip = new Uint8Array(n);
   for (const p of broll) for (let f = Math.floor(p.s * FPS); f < Math.min(n, Math.ceil(p.e * FPS)); f++) skip[f] = 1;
-  let detector = 'none';
+  let detector = 'none', src = null;
   try {
     const { ort, sess } = await loadYunet(); detector = 'YuNet';
     const cv = new OffscreenCanvas(640, 640), ctx = cv.getContext('2d', { willReadFrequently: true });
     const k = 640 / Math.max(W, H), input = new Float32Array(3 * 640 * 640);
-    const src = new VideoSource(movie); await src.open();
+    src = new VideoSource(movie); await src.open();
     let prev = null, done = 0; const total = Math.ceil(n / 3);
     for (let oi = 0; oi < n; oi += 3) {
       if (skip[oi]) continue;
@@ -1435,8 +1510,8 @@ async function faceTrack(movie, tmap, broll, cfg, onProgress, signal, cache = ne
       } else cache.set(rf, []);
       if (++done % 10 === 0) { onProgress && onProgress(done / total); check(signal); await tick(); }
     }
-    src.close();
   } catch (e) { if (e instanceof Cancelled) throw e; console.warn('face tracking failed', e); detector = 'none (' + e.message + ')'; }
+  finally { if (src) src.close(); }
   const valid = []; for (let i = 0; i < n; i++) if (!isNaN(fx[i])) valid.push(i);
   const sampled = Math.max(1, Math.ceil((n - skip.reduce((a, b) => a + b, 0)) / 3));
   let cx, cy;
@@ -2010,10 +2085,25 @@ async function audioToM4a(file) {
   await enc.flush(); enc.close(); if (err) throw err; mux.finalize();
   return { blob: new Blob([target.buffer], { type: 'video/mp4' }), duration: L.length / SR };
 }
+/** Render the reel. If the hardware video encoder fails partway (it happens on some devices, more on long jobs), try once more in software. */
 async function render(P, onProgress, signal) {
+  try { return await renderOnce(P, onProgress, signal, false); }
+  catch (e) {
+    if (e instanceof Cancelled) throw e;
+    const msg = String(e && (e.name + ' ' + e.message) || e);
+    if (!/encod|codec|closed|quota|operation|invalidstate/i.test(msg)) throw e;
+    const vcfg = { codec: 'avc1.640028', width: OUT_W, height: OUT_H, bitrate: P.cfg.videoBitrate, framerate: FPS, hardwareAcceleration: 'prefer-software' };
+    let ok = false; try { ok = (await VideoEncoder.isConfigSupported(vcfg)).supported; } catch (x) { ok = false; }
+    if (!ok) throw e;
+    DIAG.renderRetry = msg.slice(0, 160);
+    return renderOnce(P, onProgress, signal, true);
+  }
+}
+async function renderOnce(P, onProgress, signal, soft) {
   await ensureMuxer();
   const Mx = root.Mp4Muxer, cfg = P.cfg, n = P.tmap.nOut;
   const vcfg = { codec: 'avc1.640028', width: OUT_W, height: OUT_H, bitrate: cfg.videoBitrate, framerate: FPS, avc: { format: 'avc' } };
+  if (soft) vcfg.hardwareAcceleration = 'prefer-software';
   if (!(await VideoEncoder.isConfigSupported(vcfg)).supported) { delete vcfg.avc; }
   let acodec = 'aac', acfg = { codec: 'mp4a.40.2', sampleRate: SR, numberOfChannels: 2, bitrate: 192000 };
   if (!('AudioEncoder' in root) || !(await AudioEncoder.isConfigSupported(acfg)).supported) { acodec = 'opus'; acfg = { codec: 'opus', sampleRate: SR, numberOfChannels: 2, bitrate: 160000 }; }
@@ -2051,10 +2141,12 @@ async function render(P, onProgress, signal) {
       const t = oi / FPS;
       if (bAt.has(oi)) {
         const p = bAt.get(oi); bplace = p; bend = Math.round(p.e * FPS);
-        if (bsrc) { bsrc.close(); bsrc = null; } bimg = null;
-        const blob = await (await fetch(p.item.url)).blob();
-        if (p.item.kind === 'still') bimg = await createImageBitmap(blob);
-        else { const mv = await openMovie(blob); bsrc = new VideoSource(mv); bsrc.mv2 = mv; await bsrc.open(); if (p.clipIn > 0.05) bsrc.seek(p.clipIn); }
+        if (bsrc) { bsrc.close(); bsrc = null; } if (bimg) { bimg.close(); bimg = null; }
+        try {   // a clip that won't load (offline, removed) is left out rather than failing the reel
+          const r = await fetch(p.item.url); if (!r.ok) throw new Error('HTTP ' + r.status); const blob = await r.blob();
+          if (p.item.kind === 'still') bimg = await createImageBitmap(blob);
+          else { const mv = await openMovie(blob); bsrc = new VideoSource(mv); bsrc.mv2 = mv; await bsrc.open(); if (p.clipIn > 0.05) bsrc.seek(p.clipIn); }
+        } catch (e) { if (e instanceof Cancelled) throw e; (DIAG.brollSkipped = DIAG.brollSkipped || []).push(String(p.item.id || p.item.name || '') + ': ' + String(e.message || e).slice(0, 80)); bplace = null; bsrc = null; bimg = null; }
       }
       ctx.fillStyle = '#000'; ctx.fillRect(0, 0, OUT_W, OUT_H);
       const drawHead = async () => {
@@ -2078,7 +2170,7 @@ async function render(P, onProgress, signal) {
         }
         ctx.globalAlpha = 1;
       } else {
-        if (bplace) { bplace = null; if (bsrc) { bsrc.close(); bsrc = null; } bimg = null; }
+        if (bplace) { bplace = null; if (bsrc) { bsrc.close(); bsrc = null; } if (bimg) { bimg.close(); bimg = null; } }
         await drawHead();
       }
       for (const p of pops) { const st = popAlpha(oi, p, cfg); if (st && popImg.has(p)) drawPop(ctx, popImg.get(p), st, cfg); }
@@ -2089,7 +2181,7 @@ async function render(P, onProgress, signal) {
       if (oi % 15 === 0) { onProgress && onProgress(oi / n, oi / ((performance.now() - t0) / 1000)); check(signal); await tick(); }
     }
     await venc.flush();
-  } finally { src.close(); if (bsrc) bsrc.close(); if (venc.state !== 'closed') venc.close(); }
+  } finally { src.close(); if (bsrc) bsrc.close(); if (bimg) bimg.close(); popImg.forEach(b => b.close()); if (venc.state !== 'closed') venc.close(); }
   if (encErr) throw encErr;
   mux.finalize();
   onProgress && onProgress(1);

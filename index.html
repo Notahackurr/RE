@@ -20,7 +20,7 @@
 :root {
   --bg: #07090F; --panel: #0E121B; --panel-2: #121724; --raise: #191F2D; --sunk: #090C13;
   --line: rgba(255, 255, 255, 0.075); --line-2: rgba(255, 255, 255, 0.14);
-  --fg: #ECEFF5; --muted: #98A1B3; --faint: #626B7E;
+  --fg: #ECEFF5; --muted: #98A1B3; --faint: #8089A0;
   --acc: #FF9A3C; --acc-2: #FF5E3A; --on-acc: #1C0E04; --acc-soft: rgba(255, 154, 60, 0.14);
   --ok: #3DD68C; --bad: #FF6474; --bad-soft: rgba(255, 100, 116, 0.12);
   --acc: #FF9E7A; --acc-2: #7C8BFF; --acc-3: #5FD6FF; --acc-fill: var(--acc); --acc-fill-2: var(--acc-2); --acc-fill-3: var(--acc-3);
@@ -35,7 +35,7 @@
 :root[data-theme="light"] {
   --bg: #F3F4F7; --panel: #FFFFFF; --panel-2: #F7F8FA; --raise: #EDEFF3; --sunk: #ECEEF2;
   --line: rgba(16, 22, 36, 0.09); --line-2: rgba(16, 22, 36, 0.17);
-  --fg: #11151E; --muted: #586174; --faint: #8A92A3; --bad-soft: rgba(230, 60, 80, 0.10);
+  --fg: #11151E; --muted: #586174; --faint: #687083; --bad-soft: rgba(230, 60, 80, 0.10);
   --shadow: 0 1px 2px rgba(16, 22, 36, 0.06), 0 10px 28px rgba(16, 22, 36, 0.08);
   color-scheme: light;
 }
@@ -62,6 +62,7 @@ svg.i { width: 20px; height: 20px; flex: none; fill: none; stroke: currentColor;
 .nav-i[aria-current="page"] svg { color: var(--acc); }
 .nav-i b { font-weight: 600; font-size: 14.5px; }
 .nav-i small { grid-column: 2 / -1; font-size: 12px; color: var(--faint); margin-top: -2px; }
+.nav-i[aria-current="page"] small { color: var(--muted); }
 .nav-i { position: relative; }
 .nav-i .dot { position: absolute; right: 12px; top: 16px; width: 7px; height: 7px; border-radius: 50%; background: var(--acc); box-shadow: 0 0 10px var(--acc); }
 .side-label { font: 600 11px var(--ui); letter-spacing: .08em; text-transform: uppercase; color: var(--faint); padding: 14px 12px 4px; }
@@ -110,7 +111,7 @@ svg.i { width: 20px; height: 20px; flex: none; fill: none; stroke: currentColor;
 
 /* ---------- type & surfaces */
 h2 { margin: 0; font-size: 22px; font-weight: 700; letter-spacing: -0.015em; line-height: 1.2; }
-h3 { margin: 0; font-size: 15px; font-weight: 650; }
+h3, h2.h3 { margin: 0; font-size: 15px; font-weight: 650; letter-spacing: 0; line-height: 1.5; }
 .eyebrow { font: 600 11.5px var(--ui); letter-spacing: .08em; text-transform: uppercase; color: var(--acc); }
 .hint { margin: 0; font-size: 13.5px; color: var(--muted); line-height: 1.5; }
 .muted { color: var(--muted); }
@@ -161,7 +162,7 @@ input[type="range"] { width: 100%; accent-color: var(--acc); }
 .chip { border: 1px solid var(--line-2); background: var(--panel-2); border-radius: 999px; padding: 5px 12px; font-size: 13px; font-weight: 600; color: var(--muted); min-height: 32px; }
 .chip:hover { color: var(--fg); }
 .chip[aria-pressed="true"] { background: var(--fg); border-color: var(--fg); color: var(--bg); }
-.chip .n { opacity: .6; margin-left: 3px; font-weight: 500; }
+.chip .n { opacity: .85; margin-left: 3px; font-weight: 500; }
 .chips { display: flex; flex-wrap: wrap; gap: 6px; }
 .pill { display: inline-flex; align-items: center; gap: 4px; font-size: 11.5px; font-weight: 600; padding: 2px 8px; border-radius: 999px; background: var(--raise); color: var(--muted); white-space: nowrap; }
 .pill.acc { background: var(--acc-soft); color: var(--acc); }
@@ -222,7 +223,9 @@ input[type="range"] { width: 100%; accent-color: var(--acc); }
 .mgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; }
 .mtile { position: relative; display: grid; grid-template-columns: 1fr auto; gap: 1px 8px; align-items: center; text-align: left; padding: 11px 10px 11px 13px; min-height: 60px; border-radius: 13px; border: 1px solid var(--line-2); background: var(--panel-2); transition: border-color .2s, background .2s; }
 .mtile:hover { border-color: color-mix(in srgb, var(--acc) 45%, var(--line-2)); }
-.mtile[aria-pressed="true"] { border-color: var(--acc); background: color-mix(in srgb, var(--acc) 9%, var(--panel-2)); box-shadow: inset 0 0 0 1px var(--acc); }
+.mtile[aria-pressed="true"], .mtile[data-on="true"] { border-color: var(--acc); background: color-mix(in srgb, var(--acc) 9%, var(--panel-2)); box-shadow: inset 0 0 0 1px var(--acc); }
+.mtile .mpick { grid-column: 1; grid-row: 1 / span 2; display: grid; gap: 1px; min-width: 0; padding: 0; border: 0; background: none; color: inherit; font: inherit; text-align: left; cursor: pointer; }
+.mtile .mpick:focus-visible { outline: none; } .mtile:has(.mpick:focus-visible) { outline: 2px solid var(--acc); outline-offset: 2px; }
 .mtile b { font-size: 14px; font-weight: 650; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .mtile small { grid-column: 1; font-size: 12px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .play { width: 34px; height: 34px; border-radius: 50%; border: 1px solid var(--line-2); background: var(--panel); display: grid; place-items: center; padding: 0; color: var(--fg); flex: none; }
@@ -241,20 +244,27 @@ input[type="range"] { width: 100%; accent-color: var(--acc); }
 .mascot-ring > svg { position: absolute; inset: 0; width: 100%; height: 100%; transform: rotate(-90deg); overflow: visible; }
 .mascot-ring .trk { stroke: var(--raise); }
 .mascot-ring .arc { stroke-linecap: round; transition: stroke-dashoffset .6s var(--ease); }
-.mascot-stage { position: relative; display: block; overflow: hidden; border-radius: 50%; isolation: isolate; background: #0C1022;
-  box-shadow: 0 0 0 2.5px #8CCBFF, 0 0 14px 3px rgba(84, 170, 255, .75), 0 0 38px 8px rgba(84, 150, 255, .4), inset 0 0 18px rgba(30, 40, 120, .35);
-  animation: rsm-glow 2.8s ease-in-out infinite; }
-.mascot-stage::before { content: ""; position: absolute; inset: -30%; z-index: 0; pointer-events: none;
+/* The stage: a glowing blue ring (an opacity pulse, so the browser animates it off the main thread) around a clipped circle
+   holding the pulsing pink/blue backdrop and the mascot. The mascot plays as a small looping video, decoded off the main thread,
+   so he keeps moving while the editor is busy; the vector version underneath shows instantly and takes over if video can't play. */
+.mascot-stage { position: relative; display: block; border-radius: 50%; isolation: isolate;
+  box-shadow: 0 0 0 2.5px #8CCBFF, 0 0 12px 2px rgba(84, 170, 255, .65), 0 0 30px 6px rgba(84, 150, 255, .32); }
+.mascot-stage::after { content: ""; position: absolute; inset: 0; border-radius: 50%; pointer-events: none; opacity: 0; will-change: opacity;
+  box-shadow: 0 0 0 2.5px #A9DAFF, 0 0 20px 5px rgba(100, 185, 255, .9), 0 0 54px 14px rgba(84, 150, 255, .5); animation: rsm-glow 2.7s ease-in-out infinite; }
+.mascot-in { position: absolute; inset: 0; border-radius: 50%; overflow: hidden; isolation: isolate; background: #0C1022; -webkit-mask-image: -webkit-radial-gradient(white, black); }
+.mascot-bg { position: absolute; inset: -30%; z-index: 0; pointer-events: none; will-change: transform;
   background: radial-gradient(circle at 28% 26%, rgba(255, 92, 190, .85) 0%, transparent 46%), radial-gradient(circle at 74% 74%, rgba(64, 140, 255, .9) 0%, transparent 50%), radial-gradient(circle at 76% 22%, rgba(150, 110, 255, .55) 0%, transparent 38%), radial-gradient(circle at 50% 55%, #141A3A 0%, #0A0D1E 70%);
-  animation: rsm-bg 6s ease-in-out infinite; }
-.mascot-stage::after { content: ""; position: absolute; inset: 0; z-index: 2; border-radius: 50%; pointer-events: none; box-shadow: inset 0 0 0 1.5px rgba(255, 255, 255, .55), inset 0 0 26px rgba(20, 24, 80, .32); }
-.mascot-stage .rsm { z-index: 1; }
-@keyframes rsm-bg { 0%, 100% { transform: rotate(0) scale(1); filter: saturate(1) brightness(1); } 50% { transform: rotate(160deg) scale(1.15); filter: saturate(1.25) brightness(1.08); } }
-@keyframes rsm-glow { 0%, 100% { box-shadow: 0 0 0 2.5px #8CCBFF, 0 0 12px 2px rgba(84, 170, 255, .65), 0 0 30px 6px rgba(84, 150, 255, .32), inset 0 0 18px rgba(30, 40, 120, .35); }
-  50% { box-shadow: 0 0 0 2.5px #A9DAFF, 0 0 20px 5px rgba(100, 185, 255, .9), 0 0 54px 14px rgba(84, 150, 255, .5), inset 0 0 18px rgba(30, 40, 120, .35); } }
-.mascot-stage.paused, .mascot-stage.paused::before { animation-play-state: paused; }
+  animation: rsm-bg 5.4s ease-in-out infinite; }
+.mascot-vig { position: absolute; inset: 0; z-index: 3; border-radius: 50%; pointer-events: none; box-shadow: inset 0 0 0 1.5px rgba(255, 255, 255, .55), inset 0 0 26px rgba(20, 24, 80, .32); }
+.mascot-in .rsm { position: absolute; inset: 7%; width: 86%; height: 86%; z-index: 1; }
+.mascot-in video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: 2; opacity: 0; transition: opacity .3s; pointer-events: none; }
+.mascot-stage.vid video { opacity: 1; }
+.mascot-stage.vid .rsm, .mascot-stage.vid .mascot-bg { visibility: hidden; }
+.mascot-stage.vid .rsm *, .mascot-stage.vid .mascot-bg { animation-play-state: paused !important; }
+@keyframes rsm-bg { 0%, 100% { transform: rotate(0) scale(1); } 50% { transform: rotate(160deg) scale(1.15); } }
+@keyframes rsm-glow { 50% { opacity: 1; } }
+.mascot-stage.paused::after, .mascot-stage.paused .mascot-bg { animation-play-state: paused; }
 .mascot-ring .mascot-stage { position: absolute; inset: 8%; }
-.mascot-stage .rsm { position: absolute; inset: 7%; width: 86%; height: 86%; }
 .mascot-stage.sm { width: 96px; height: 96px; }
 .prog-hero .pct { font: 600 15px var(--mono); color: var(--muted); font-variant-numeric: tabular-nums; }
 .prog-hero h2 { max-width: 30ch; }
@@ -456,7 +466,7 @@ input[type="range"] { width: 100%; accent-color: var(--acc); }
 .stage[data-s="done"] .d { background: var(--grad); }
 .tabs button[aria-selected="true"]::after { background: var(--grad); }
 .ltabs .ind { background: linear-gradient(var(--panel), var(--panel)) padding-box, var(--grad) border-box; border: 1px solid transparent; box-shadow: 0 2px 10px color-mix(in srgb, var(--acc-fill) 20%, transparent); }
-.mtile[aria-pressed="true"], .edit.viewing { border-color: transparent; background: linear-gradient(var(--panel-2), var(--panel-2)) padding-box, var(--grad) border-box; box-shadow: none; }
+.mtile[aria-pressed="true"], .mtile[data-on="true"], .edit.viewing { border-color: transparent; background: linear-gradient(var(--panel-2), var(--panel-2)) padding-box, var(--grad) border-box; box-shadow: none; }
 .seg button[aria-pressed="true"] { box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2), inset 0 0 0 1px color-mix(in srgb, var(--acc) 35%, var(--line-2)); }
 .chip[aria-pressed="true"] { background: var(--grad); border-color: transparent; color: var(--on-acc); }
 .cand .score { background: conic-gradient(from 210deg, var(--acc-fill), var(--acc-fill-2), var(--acc-fill-3) calc(var(--p) * 1%), var(--raise) 0); }
@@ -667,28 +677,28 @@ a.btn { text-decoration: none; color: inherit; }
 .rsm .rsm-slate { fill: url(#rsm-rim); }
 .rsm .rsm-stripe { fill: #12162A; }
 .rsm .rsm-hinge { fill: #F4FBFF; }
-.rsm .rsm-floor { fill: var(--acc-fill-2, #7C8BFF); opacity: .45; filter: url(#rsm-glow); transform-origin: 100px 188px; animation: rsm-floor 1.6s ease-in-out infinite; }
+.rsm .rsm-floor { fill: var(--acc-fill-2, #7C8BFF); opacity: .45; filter: url(#rsm-glow); transform-origin: 100px 188px; animation: rsm-floor 1.8s ease-in-out infinite; }
 .rsm .rsm-spark { filter: url(#rsm-glow); }
 .rsm .s1 { transform: translate(30px, 66px); fill: var(--acc-fill-3, #5FD6FF); } .rsm .s2 { transform: translate(171px, 62px); fill: var(--acc-fill, #FF9E7A); }
 .rsm .s3 { transform: translate(170px, 150px); fill: var(--acc-fill-2, #7C8BFF); } .rsm .s4 { transform: translate(28px, 160px); fill: #F4FBFF; }
-.rsm .rsm-spark > * { transform-box: fill-box; transform-origin: center; animation: rsm-twinkle 2.8s ease-in-out infinite; }
+.rsm .rsm-spark > * { transform-box: fill-box; transform-origin: center; animation: rsm-twinkle 2.7s ease-in-out infinite; }
 .rsm .s2 > * { animation-delay: .7s; } .rsm .s3 > * { animation-delay: 1.4s; } .rsm .s4 > * { animation-delay: 2.1s; }
 /* motion: a springy bob, an occasional hop, the clapper snapping, blinking, glancing around, caption words lighting up in turn,
    a wave, and every so often he leans right up to the glass like it's a peephole and grins */
-.rsm .rsm-bob { animation: rsm-bob 1.6s ease-in-out infinite; }
+.rsm .rsm-bob { animation: rsm-bob 1.8s ease-in-out infinite; }
 .rsm .rsm-hop { transform-origin: 100px 188px; animation: rsm-hop 10.8s cubic-bezier(.3, .1, .3, 1) infinite; }
 .rsm .rsm-peek { transform-origin: 100px 97px; animation: rsm-peek 10.8s cubic-bezier(.45, 0, .25, 1) infinite; }
-.rsm .rsm-body { transform-origin: 100px 172px; animation: rsm-tilt 3.2s ease-in-out infinite; }
-.rsm .rsm-clap { transform-origin: 52px 38px; animation: rsm-clap 3.2s cubic-bezier(.5, 0, .2, 1) infinite; }
+.rsm .rsm-body { transform-origin: 100px 172px; animation: rsm-tilt 3.6s ease-in-out infinite; }
+.rsm .rsm-clap { transform-origin: 52px 38px; animation: rsm-clap 3.6s cubic-bezier(.5, 0, .2, 1) infinite; }
 .rsm .rsm-open { animation: rsm-open 10.8s linear infinite; }
 .rsm .rsm-happy { opacity: 0; animation: rsm-happy 10.8s linear infinite; }
-.rsm .rsm-eyes { transform-origin: 100px 90px; animation: rsm-blink 4.2s ease-in-out infinite; }
-.rsm .rsm-face { animation: rsm-look 7.2s ease-in-out infinite; }
+.rsm .rsm-eyes { transform-origin: 100px 90px; animation: rsm-blink 5.4s ease-in-out infinite; }
+.rsm .rsm-face { animation: rsm-look 10.8s ease-in-out infinite; }
 .rsm .rsm-mouth { transform-origin: 100px 108px; animation: rsm-grin 5.4s ease-in-out infinite; }
-.rsm .rsm-cap .k1 { animation: rsm-word 2.4s linear infinite; } .rsm .rsm-cap .k2 { animation: rsm-word 2.4s linear .8s infinite; } .rsm .rsm-cap .k3 { animation: rsm-word 2.4s linear 1.6s infinite; }
+.rsm .rsm-cap .k1 { animation: rsm-word 2.7s linear infinite; } .rsm .rsm-cap .k2 { animation: rsm-word 2.7s linear .9s infinite; } .rsm .rsm-cap .k3 { animation: rsm-word 2.7s linear 1.8s infinite; }
 .rsm .rsm-rec { animation: rsm-rec 1.2s steps(1) infinite; }
 .rsm .rsm-arm-r { transform-origin: 147px 110px; animation: rsm-wave 5.4s ease-in-out infinite; }
-.rsm .rsm-arm-l { transform-origin: 53px 110px; animation: rsm-swing 1.6s ease-in-out infinite; }
+.rsm .rsm-arm-l { transform-origin: 53px 110px; animation: rsm-swing 1.8s ease-in-out infinite; }
 @keyframes rsm-bob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-4px); } }
 @keyframes rsm-floor { 0%, 100% { transform: scaleX(1); opacity: .45; } 50% { transform: scaleX(.88); opacity: .3; } }
 @keyframes rsm-peek { 0%, 8%, 34%, 100% { transform: none; } 15% { transform: scale(1.95); } 17% { transform: scale(1.86) rotate(-2deg); } 21% { transform: scale(1.92) rotate(2deg); } 26% { transform: scale(1.88) rotate(-1deg); } }
@@ -899,11 +909,11 @@ a.btn { text-decoration: none; color: inherit; }
           </div>
           <div class="stack" id="libMusic" hidden>
             <div class="card">
-              <div class="row between"><div><h3>Your songs</h3><p class="hint">Instrumentals you have the rights to use. They stay on this device.</p></div><button class="btn" type="button" id="addSongs"><span data-icon="plus"></span>Add songs</button></div>
+              <div class="row between"><div><h2 class="h3">Your songs</h2><p class="hint">Instrumentals you have the rights to use. They stay on this device.</p></div><button class="btn" type="button" id="addSongs"><span data-icon="plus"></span>Add songs</button></div>
               <div class="list" id="trackList"></div>
             </div>
             <div class="card">
-              <div><h3>Built-in music</h3><p class="hint">Written fresh for every reel to its exact length, so nothing gets flagged. Tap ▶ to listen, tap a style to make it your default.</p></div>
+              <div><h2 class="h3">Built-in music</h2><p class="hint">Written fresh for every reel to its exact length, so nothing gets flagged. Tap ▶ to listen, tap a style to make it your default.</p></div>
               <div class="mgrid" id="genreList"></div>
             </div>
           </div>
@@ -1433,6 +1443,7 @@ function hsl(h) { let [r, g, b] = hexRgb(h).map(v => v / 255); const mx = Math.m
   if (mx !== mn) { const d = mx - mn; ss = l > 0.5 ? d / (2 - mx - mn) : d / (mx + mn); hh = mx === r ? (g - b) / d + (g < b ? 6 : 0) : mx === g ? (b - r) / d + 2 : (r - g) / d + 4; hh *= 60; } return [hh, ss, l]; }
 function hslHex(hh, ss, l) { const f = n => { const k = (n + hh / 30) % 12, a = ss * Math.min(l, 1 - l); return Math.round(255 * (l - a * Math.max(-1, Math.min(k - 3, 9 - k, 1)))).toString(16).padStart(2, '0'); }; return '#' + f(0) + f(8) + f(4); }
 function shade(h, k) { return '#' + hexRgb(h).map(v => Math.round(Math.max(0, Math.min(255, v * k))).toString(16).padStart(2, '0')).join(''); }
+let mascotsReady = false;
 const mq = matchMedia('(prefers-color-scheme: light)');
 function applyTheme() {
   const light = SET.theme === 'light' || (SET.theme === 'system' && mq.matches), root = document.documentElement;
@@ -1451,6 +1462,7 @@ function applyTheme() {
   root.style.setProperty('--hl', X.cap.hl);
   $('meta[name="theme-color"]').content = light ? '#F3F4F7' : '#07090F';
   $$('#menuTheme button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.v === SET.theme)));
+  if (mascotsReady) syncMascots();   // the mascot loop follows the accent color
 }
 mq.addEventListener && mq.addEventListener('change', () => { if (SET.theme === 'system') applyTheme(); });
 function cfgNow() {
@@ -1739,17 +1751,17 @@ function musicName(v) {
 }
 function musicPicker({ value, level, onPick, onLevel }) {
   const tiles = [`<button class="mtile" type="button" data-v="none" aria-pressed="${value === 'none'}"><b>No music</b><small>Voice only</small></button>`,
-    ...Object.entries(E.GENRES).map(([k, g]) => `<div class="mtile${genreLocked(k) ? ' lk' : ''}" role="button" tabindex="0" data-v="genre:${k}" aria-pressed="${value === 'genre:' + k}">${FREE_GENRES.includes(k) ? '' : crown()}<b>${g.label}</b><small>${g.about}</small><button class="play ${playingKey === 'genre:' + k ? 'on' : ''}" type="button" data-play="genre:${k}" aria-label="Hear ${g.label}">${icon(playingKey === 'genre:' + k ? 'stop' : 'play')}</button></div>`)];
+    ...Object.entries(E.GENRES).map(([k, g]) => `<div class="mtile${genreLocked(k) ? ' lk' : ''}" data-v="genre:${k}" data-on="${value === 'genre:' + k}">${FREE_GENRES.includes(k) ? '' : crown()}<button type="button" class="mpick" aria-pressed="${value === 'genre:' + k}"><b>${g.label}</b><small>${g.about}</small></button><button class="play ${playingKey === 'genre:' + k ? 'on' : ''}" type="button" data-play="genre:${k}" aria-label="Hear ${g.label}">${icon(playingKey === 'genre:' + k ? 'stop' : 'play')}</button></div>`)];
   if (S.tracks.length) {
     tiles.push('<div class="mgroup">Your tracks</div>', `<button class="mtile" type="button" data-v="mine:any" aria-pressed="${value === 'mine:any'}"><b>Any of my tracks</b><small>A different one each reel</small></button>`,
-      ...S.tracks.map(t => `<div class="mtile" role="button" tabindex="0" data-v="mine:${esc(t.docId)}" aria-pressed="${value === 'mine:' + t.docId}"><b>${esc(t.name)}</b><small>${clock(t.duration)}</small><button class="play" type="button" data-play="mine:${esc(t.docId)}" aria-label="Hear ${esc(t.name)}">${icon('play')}</button></div>`));
+      ...S.tracks.map(t => `<div class="mtile" data-v="mine:${esc(t.docId)}" data-on="${value === 'mine:' + t.docId}"><button type="button" class="mpick" aria-pressed="${value === 'mine:' + t.docId}"><b>${esc(t.name)}</b><small>${clock(t.duration)}</small></button><button class="play" type="button" data-play="mine:${esc(t.docId)}" aria-label="Hear ${esc(t.name)}">${icon('play')}</button></div>`));
   }
   const el = h(`<div class="stack" style="gap:14px"><div class="mgrid">${tiles.join('')}</div>
     <label class="field" ${value === 'none' ? 'hidden' : ''}>Music volume<input type="range" min="-22" max="-4" step="1" value="${level}"><div class="range-labels"><span>Quiet</span><span>Loud</span></div></label>
     <button class="btn ghost sm" type="button" data-addsong style="justify-self:start">${icon('plus')}Add your own songs</button></div>`);
   el.querySelector('[data-addsong]').onclick = () => $('#addTracks').click();
   const choose = v => { const k = v.startsWith('genre:') && v.slice(6); if (k && genreLocked(k)) return upsell(`${E.GENRES[k].label} music`); onPick(v); };
-  el.querySelectorAll('[data-v]').forEach(t => { const pick = e => { if (e.target.closest('[data-play]')) return; choose(t.dataset.v); }; t.onclick = pick; t.onkeydown = e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); choose(t.dataset.v); } }; });
+  el.querySelectorAll('[data-v]').forEach(t => { t.onclick = e => { if (e.target.closest('[data-play]')) return; choose(t.dataset.v); }; });
   el.querySelectorAll('[data-play]').forEach(b => b.onclick = e => { e.stopPropagation(); playKey(b.dataset.play); });
   const r = el.querySelector('input[type=range]'); r.onchange = () => onLevel(+r.value);
   return el;
@@ -1783,7 +1795,7 @@ function setLibTab(tab, quiet) {
   if (S.libTab !== tab) { S.libTab = tab; S.libFilter = 'all'; }
   $$('#libTabs [data-tab]').forEach(b => b.setAttribute('aria-selected', String(b.dataset.tab === tab)));
   $('#libVisual').hidden = tab === 'music'; $('#libMusic').hidden = tab !== 'music';
-  $('#libAddLabel').textContent = { clips: 'Add clips', photos: 'Add photos', music: 'Add songs' }[tab];
+  $('#libAddLabel').textContent = { clips: 'Add clips', photos: 'Add photos', music: 'Add songs' }[tab]; $('#libAdd').setAttribute('aria-label', $('#libAddLabel').textContent);
   $('#libSearch').placeholder = { clips: 'Search clips', photos: 'Search photos', music: 'Search songs' }[tab];
   if (tab !== 'music') stopPlaying(); $$('#libGrid video').forEach(x => x.pause());
   if (!quiet) { markNav(); renderLib(); requestAnimationFrame(moveTabInd); }
@@ -1846,9 +1858,9 @@ function renderMusicLib() {
   $$('#trackList [data-edit]').forEach(b => b.onclick = () => openTrack(S.tracks.find(t => t.docId === b.dataset.edit)));
   $$('#trackList [data-addsong]').forEach(b => b.onclick = () => $('#addTracks').click());
   const gs = Object.entries(E.GENRES).filter(([, g]) => !q || (g.label + ' ' + g.about).toLowerCase().includes(q));
-  $('#genreList').innerHTML = gs.map(([k, g], i) => `<div class="mtile${genreLocked(k) ? ' lk' : ''}" role="button" tabindex="0" data-gdef="${k}" aria-pressed="${def === 'genre:' + k}">${FREE_GENRES.includes(k) ? '' : crown()}<b>${g.label}</b><small>${def === 'genre:' + k ? '<span class="def">Default · </span>' : ''}${g.about}</small><button class="play" type="button" data-play="genre:${k}" aria-label="Hear ${g.label}">${icon(playingKey === 'genre:' + k ? 'stop' : 'play')}</button></div>`).join('');
+  $('#genreList').innerHTML = gs.map(([k, g], i) => `<div class="mtile${genreLocked(k) ? ' lk' : ''}" data-gdef="${k}" data-on="${def === 'genre:' + k}">${FREE_GENRES.includes(k) ? '' : crown()}<button type="button" class="mpick" aria-pressed="${def === 'genre:' + k}"><b>${g.label}</b><small>${def === 'genre:' + k ? '<span class="def">Default · </span>' : ''}${g.about}</small></button><button class="play" type="button" data-play="genre:${k}" aria-label="Hear ${g.label}">${icon(playingKey === 'genre:' + k ? 'stop' : 'play')}</button></div>`).join('');
   $$('#genreList [data-play]').forEach(b => b.onclick = e => { e.stopPropagation(); playKey(b.dataset.play); });
-  $$('#genreList [data-gdef]').forEach(t => { const pick = () => { if (genreLocked(t.dataset.gdef)) return upsell(`${E.GENRES[t.dataset.gdef].label} music`); SET.music.choice = 'genre:' + t.dataset.gdef; save(); refresh(); renderMusicLib(); toast(`${E.GENRES[t.dataset.gdef].label} is now your default music`); }; t.onclick = e => { if (!e.target.closest('[data-play]')) pick(); }; t.onkeydown = e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); pick(); } }; });
+  $$('#genreList [data-gdef]').forEach(t => { const pick = () => { if (genreLocked(t.dataset.gdef)) return upsell(`${E.GENRES[t.dataset.gdef].label} music`); SET.music.choice = 'genre:' + t.dataset.gdef; save(); refresh(); renderMusicLib(); toast(`${E.GENRES[t.dataset.gdef].label} is now your default music`); }; t.onclick = e => { if (!e.target.closest('[data-play]')) pick(); }; });
 }
 function renderGenres() { if (S.libTab === 'music') renderMusicLib(); }
 function renderTracks() { if (S.libTab === 'music') renderMusicLib(); }
@@ -2024,10 +2036,47 @@ const Prog = {
 };
 const onStage = (id, p, msg) => Prog.stage(id, p, msg);
 // the mascot loop: fetched when you pick a video, playing only while the progress screen is showing
-const warmMascot = () => {};
-$$('[data-mascot]').forEach(st => st.append($('#mascotTpl').content.cloneNode(true)));
+const warmMascot = () => loadMascotLoop(mascotKey());
+// The mascot: the vector version shows instantly; a looping video of the same loop fades in on top once it's playing.
+// Video is decoded and drawn off the page's main thread, so he keeps moving smoothly while the editor works flat out.
+// The loop is loaded once into memory (about 300 KB), so playing it never waits on the network.
+$$('[data-mascot]').forEach(st => {
+  const inn = document.createElement('span'); inn.className = 'mascot-in'; inn.innerHTML = '<i class="mascot-bg"></i>';
+  inn.append($('#mascotTpl').content.cloneNode(true)); inn.insertAdjacentHTML('beforeend', '<i class="mascot-vig"></i>'); st.append(inn);
+});
+const MASCOT_LOOPS = ['ember', 'ocean', 'violet', 'mint', 'rose', 'gold', 'mono'];
+const motionOk = () => !matchMedia('(prefers-reduced-motion: reduce)').matches;
+const mascotKey = () => { const a = eff().accent; if (!MASCOT_LOOPS.includes(a)) return null; return a === 'mono' && document.documentElement.dataset.theme === 'light' ? 'mono-light' : a; };
+const mascotBlobs = {}; let mascotLoading = null;
+function loadMascotLoop(k) {
+  if (!k || mascotBlobs[k] || mascotLoading) return mascotLoading;
+  return mascotLoading = fetch(`mascot/loop-${k}.mp4?v=1`).then(r => { if (!r.ok) throw new Error(r.status); return r.blob(); })
+    .then(b => { mascotBlobs[k] = URL.createObjectURL(b); }).catch(() => { mascotBlobs[k] = false; }).finally(() => { mascotLoading = null; syncMascots(); });
+}
+const mascotSeen = new Set();
+function mascotVideo(st) {
+  let v = st.querySelector('video');
+  const k = mascotKey(), url = k && mascotBlobs[k], on = mascotSeen.has(st) && !st.classList.contains('paused') && motionOk() && !document.hidden;
+  if (!on || !url) { if (v && !v.paused) v.pause(); st.classList.remove('vid'); if (on && k && mascotBlobs[k] === undefined) loadMascotLoop(k); return; }
+  if (!v) {
+    v = document.createElement('video'); v.muted = true; v.defaultMuted = true; v.loop = true; v.playsInline = true; v.preload = 'auto';
+    ['muted', 'playsinline', 'disablepictureinpicture', 'disableremoteplayback'].forEach(a => v.setAttribute(a, '')); v.setAttribute('aria-hidden', 'true'); v.tabIndex = -1;
+    v.addEventListener('playing', () => st.classList.add('vid'));
+    ['pause', 'waiting', 'error', 'emptied'].forEach(n => v.addEventListener(n, () => st.classList.remove('vid')));
+    st.querySelector('.mascot-in').append(v);
+  }
+  if (v.dataset.k !== k) { v.dataset.k = k; v.src = url; }
+  // start the video at the same moment of the loop the drawing is at, so the hand-over is invisible
+  const sync = () => { try { const a = st.querySelector('.rsm-peek').getAnimations()[0]; if (a && a.currentTime != null) v.currentTime = (a.currentTime % 10800) / 1000; } catch (e) { /* fine either way */ } };
+  if (v.paused) { if (v.readyState >= 1) sync(); else v.addEventListener('loadedmetadata', sync, { once: true }); v.play().catch(() => st.classList.remove('vid')); }
+}
+function syncMascots() { $$('[data-mascot]').forEach(mascotVideo); }
+const mascotIO = 'IntersectionObserver' in window ? new IntersectionObserver(es => { es.forEach(e => { if (e.isIntersecting) mascotSeen.add(e.target); else mascotSeen.delete(e.target); mascotVideo(e.target); }); }) : null;
+$$('[data-mascot]').forEach(st => mascotIO ? mascotIO.observe(st) : mascotSeen.add(st));
+document.addEventListener('visibilitychange', syncMascots);
+mascotsReady = true;
 // he only animates while he's on screen (the browser pauses hidden animations anyway; this keeps the progress one tidy)
-function syncMascot() { const st = $('#progress .mascot-stage'); st.classList.toggle('paused', $('#progress').hidden); }
+function syncMascot() { const st = $('#progress .mascot-stage'); st.classList.toggle('paused', $('#progress').hidden); mascotVideo(st); }
 new MutationObserver(syncMascot).observe($('#progress'), { attributes: true, attributeFilter: ['hidden'] });
 let wake = null;
 async function keepAwake(on) { try { if (on && 'wakeLock' in navigator) wake = await navigator.wakeLock.request('screen'); else if (!on && wake) { await wake.release(); wake = null; } } catch (e) { wake = null; } }
@@ -2627,6 +2676,7 @@ $('#appLink').value = location.href.split('#')[0];
 $('#menuInstall').hidden = standalone();
 setLibTab(S.libTab, true); applyTheme(); refresh();
 loadStock(); loadTrends().then(refresh); loadDeviceLibrary();
+setTimeout(() => loadMascotLoop(mascotKey()), 2500);
 loadBilling().then(async () => { refresh(); if (BILL.accounts) { await handleAuthReturn(); loadEnt(); } });
 addEventListener('hashchange', () => { if (BILL.accounts && /access_token=|error=/.test(location.hash)) handleAuthReturn(); });
 let entCheckedAt = 0;
