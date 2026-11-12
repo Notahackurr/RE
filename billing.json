@@ -1,8 +1,11 @@
 {
-  "_readme": "Paste your two Lemon Squeezy checkout links (product > Share) and your store ID. Until both links are set, the paywall stays in launch mode: everything is unlocked and nobody is blocked. ownerHash is the fingerprint of the creator's lifetime key (the key itself is never stored here).",
-  "monthly": "",
-  "lifetime": "",
-  "storeId": null,
-  "manage": "https://app.lemonsqueezy.com/my-orders",
+  "_readme": "Checkout links from Lemon Squeezy (product > Share), store ID and customer billing page. Set \"live\" to true only once the links are LIVE-mode links (store activated, products copied to live mode); until then everyone stays in launch mode and nothing is locked. Add ?paywall=1 to the site address to test the paywall with test-mode links. ownerHash is the fingerprint of the creator's lifetime key (the key itself is never stored here).",
+  "live": false,
+  "monthly": "https://reelstudioeditapp.lemonsqueezy.com/checkout/buy/dc7587b4-a267-4cfe-af33-a4d0b9efb3e7",
+  "lifetime": "https://reelstudioeditapp.lemonsqueezy.com/checkout/buy/fd1da5e4-f007-4d3b-a475-d8f59e3b75dd",
+  "storeId": 521572,
+  "manage": "https://reelstudioeditapp.lemonsqueezy.com/billing",
+  "lifetimeVariant": 2365610,
+  "monthlyVariant": 2365599,
   "ownerHash": "ef3fb8dd4af4c0d64b4536aacb4a275a6914bff919d481422ebd665d99bda77d"
 }
