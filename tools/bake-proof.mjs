@@ -69,7 +69,7 @@ const founderCard = name
 const links = (founder.links || []).filter((l) => l && /^https:\/\//.test(l.url || ''));
 const about = name
   ? `  <span class="eyebrow">About</span>
-  <h1 style="font-size:clamp(32px,4.6vw,48px);margin-top:10px">Hi, I'm ${esc(first)}.</h1>
+  <h1 style="font-size:clamp(32px,4.6vw,48px);margin-top:10px">Hi, I'm ${esc(first.replace(/\.$/, ''))}.</h1>
   <div class="founder">${founder.photo ? `<img src="${url(founder.photo)}" alt="${esc(name)}" width="180" height="180">` : '<span></span>'}
     <div>${String(founder.story || '').split(/\n\s*\n/).filter(Boolean).map((p) => `<p class="lede">${esc(p.trim())}</p>`).join('')}
       <p class="muted"><b style="color:var(--fg)">${esc(name)}</b>${founder.role ? ` · ${esc(founder.role)}` : ''}</p>
