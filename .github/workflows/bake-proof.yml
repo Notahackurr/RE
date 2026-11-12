@@ -1,0 +1,29 @@
+# Writes site/founder.json, site/proof.json and the live reels-made count into the home and About pages.
+# Runs when you edit those files (on github.com or the GitHub app), once a day for the count, or by hand from Actions.
+name: Bake proof
+on:
+  push:
+    branches: [main]
+    paths: ['site/founder.json', 'site/proof.json', 'tools/bake-proof.mjs', 'billing.json']
+  schedule:
+    - cron: '17 11 * * *'
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  bake:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with: { ref: main }
+      - uses: actions/setup-node@v4
+        with: { node-version: 20 }
+      - run: node tools/bake-proof.mjs
+      - name: Commit
+        run: |
+          git config user.name "proof-bot"
+          git config user.email "proof-bot@users.noreply.github.com"
+          git add index.html about.html
+          git diff --cached --quiet || git commit -m "Bake proof into the pages"
+          git push origin HEAD:main HEAD:gh-pages

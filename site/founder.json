@@ -1,5 +1,5 @@
 {
-  "_readme": "Fill this in to publish the About page (reeleditapp.com/about.html) and its footer link. Nothing shows until name is set. photo: a path like site/img/founder.jpg (square, about 600 x 600). story: about 100 words, in your own words. links: your X or LinkedIn profile.",
+  "_readme": "Fill this in to put your name on the site: the home page \"Who's behind it\" card, the footer About link and the About page (which also becomes searchable). The \"Bake proof\" GitHub action writes it into the pages. name: your name. photo: a square photo, e.g. \"site/img/founder.jpg\" (about 600 x 600). story: three sentences on why you built it, in your own words (blank line between paragraphs). links: one profile, e.g. [{ \"label\": \"X\", \"url\": \"https://x.com/you\" }] or YouTube or LinkedIn.",
   "name": "",
   "role": "Founder, makes his own reels with Reel Studio",
   "photo": "",

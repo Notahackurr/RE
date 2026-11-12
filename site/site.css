@@ -156,3 +156,14 @@ footer .sp { flex: 1; }
 .ba video { width: 100%; aspect-ratio: 9 / 16; object-fit: cover; border-radius: 22px; border: 1px solid var(--line-2); background: #000; }
 .ba figcaption { font-size: 14px; color: var(--muted); text-align: center; }
 .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+/* proof, written into the page by tools/bake-proof.mjs */
+.qface { width: 44px; height: 44px; border-radius: 50%; object-fit: cover; }
+.quotes figcaption b { color: var(--fg); }
+.maker { display: flex; align-items: center; gap: 14px; margin-bottom: 4px; }
+.maker img { width: 56px; height: 56px; border-radius: 50%; object-fit: cover; border: 1px solid var(--line-2); }
+.maker div { display: grid; gap: 2px; } .maker span { color: var(--muted); font-size: 14px; }
+.elsewhere { padding-top: 34px; padding-bottom: 34px; }
+.mentions { list-style: none; margin: 14px 0 0; padding: 0; display: flex; flex-wrap: wrap; gap: 12px; }
+.mentions li { display: flex; align-items: center; gap: 12px; padding: 12px 16px; border-radius: 16px; background: var(--panel); border: 1px solid var(--line); font-size: 15px; }
+.mentions img { height: 40px; width: auto; display: block; }
+.mentions time { color: var(--muted); font-size: 14px; }

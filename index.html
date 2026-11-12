@@ -98,10 +98,10 @@
         <a class="btn big" href="pricing.html">See pricing</a>
       </div>
       <p class="note">No sign-up needed to start. 3 free reels and 1 long-video batch every month. No watermark.</p>
-      <div class="usage" id="usage" hidden></div>
       <ul class="pills" aria-label="How it works">
         <li>Runs in your browser</li><li>Your videos never leave your device</li><li>Nothing AI-generated</li>
       </ul>
+      <!--bake:usage--><p class="usage" id="usage" data-count="0" data-min="50" hidden></p><!--/bake:usage-->
     </div>
     <div class="ba" id="beforeAfter" hidden></div>
     <div class="phones" id="phones" aria-hidden="true">
@@ -154,13 +154,7 @@
     </div>
   </section>
 
-  <section id="proofwall" hidden>
-    <div class="wrap">
-      <div class="head"><span class="eyebrow">From people using it</span><h2>What it's doing for them</h2></div>
-      <div class="quotes" id="quotes"></div>
-      <p class="muted" id="mentions" hidden></p>
-    </div>
-  </section>
+  <!--bake:proofwall--><!--/bake:proofwall-->
 
   <section id="how">
     <div class="wrap">
@@ -194,6 +188,8 @@
     </div>
   </section>
 
+  <!--bake:elsewhere--><!--/bake:elsewhere-->
+
   <section id="trust">
     <div class="wrap">
       <div class="head">
@@ -203,10 +199,10 @@
       <div class="trust">
         <article class="card">
           <h3>Who makes it</h3>
-          <!-- FOUNDER: name, photo and a line about you go here (kept off for now, at your request). -->
+<!--bake:founder-->
           <p class="muted">Reel Studio is made by an independent creator who edits his own reels with it.</p>
           <p class="muted">It's one product, with a free plan that stays free and no ads.</p>
-          <p id="aboutLink" hidden><a href="about.html">More about who makes it →</a></p>
+          <!--/bake:founder-->
         </article>
         <article class="card">
           <h3>Built on tools you can look up</h3>
@@ -287,7 +283,7 @@
   <div class="wrap">
     <a class="brand" href="./" style="font-size:16px"><img src="icons/icon-192.png?v=3" alt="" width="24" height="24">Reel <span>Studio</span><small class="by">by reeleditapp</small></a>
     <span class="sp"></span>
-    <a href="app.html">Editor</a><a href="pricing.html">Pricing</a><a href="vs/opus-clip.html">vs Opus Clip</a><a href="about.html" id="footAbout" hidden>About</a><a href="data.html">Your data</a><a href="#faq">Questions</a>
+    <a href="app.html">Editor</a><a href="pricing.html">Pricing</a><a href="vs/opus-clip.html">vs Opus Clip</a><!--bake:footabout--><!--/bake:footabout--><a href="data.html">Your data</a><a href="#faq">Questions</a>
   </div>
 </footer>
 
@@ -298,33 +294,17 @@
   }).catch(function () {});
   fetch('billing.json', { cache: 'no-store' }).then(function (r) { return r.json(); }).then(function (b) { if (b.live === true) document.getElementById('launchNote').hidden = true; }).catch(function () {});
   var esc = function (x) { return String(x == null ? '' : x).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); };
-  // real proof only: site/proof.json (quotes from named users, dated mentions, early-user avatars)
-  fetch('site/proof.json', { cache: 'no-store' }).then(function (r) { return r.json(); }).then(function (p) {
-    if (p.quotes && p.quotes.length) {
-      document.getElementById('quotes').innerHTML = p.quotes.map(function (q) { return '<figure>' + (q.photo ? '<img src="' + esc(q.photo) + '" alt="" width="44" height="44" style="width:44px;height:44px;border-radius:50%;object-fit:cover">' : '') +
-        '<blockquote>“' + esc(q.text) + '”</blockquote><figcaption><b style="color:var(--fg)">' + esc(q.name) + '</b>' + (q.role ? ', ' + esc(q.role) : '') + '</figcaption></figure>'; }).join('');
-      document.getElementById('proofwall').hidden = false;
-    }
-    if (p.mentions && p.mentions.length) { var m = document.getElementById('mentions'); m.innerHTML = 'Mentioned in ' + p.mentions.map(function (x) { return '<a href="' + esc(x.link) + '">' + esc(x.name) + '</a>' + (x.date ? ' (' + esc(x.date) + ')' : ''); }).join(', ') + '.'; m.hidden = false; document.getElementById('proofwall').hidden = false; }
-    showUsage(null, p);
-  }).catch(function () {});
-  // how many reels have been made: a live count once accounts are connected, otherwise the number in proof.json
-  var usageCount = null, proof = null;
-  function showUsage(n, p) {
-    if (n != null) usageCount = n; if (p) proof = p;
-    var count = usageCount != null ? usageCount : proof && proof.reelsMade, avatars = (proof && proof.avatars) || [], el = document.getElementById('usage');
-    if (!count && !avatars.length) return;
-    el.innerHTML = (avatars.length ? '<span class="faces">' + avatars.slice(0, 6).map(function (a) { return '<img src="' + esc(a) + '" alt="" width="30" height="30">'; }).join('') + '</span>' : '') +
-      (count ? '<span><b>' + Number(count).toLocaleString() + '</b> reels made with Reel Studio' + (proof && proof.cohort ? ' · ' + esc(proof.cohort) : '') + '</span>' : (proof && proof.cohort ? '<span>' + esc(proof.cohort) + '</span>' : ''));
-    el.hidden = false;
-  }
+  // Proof (founder, quotes, mentions, the reel count) is written into this page by tools/bake-proof.mjs. This only nudges the count up between bakes.
   fetch('billing.json', { cache: 'no-store' }).then(function (r) { return r.json(); }).then(function (b) {
-    if (!b.supabaseUrl || !b.supabaseAnonKey) return;
+    var el = document.getElementById('usage'); if (!el || !b.supabaseUrl || !b.supabaseAnonKey) return;
     return fetch(b.supabaseUrl.replace(/\/+$/, '') + '/rest/v1/rpc/reels_made', { method: 'POST', headers: { apikey: b.supabaseAnonKey, 'Content-Type': 'application/json' }, body: '{}' })
-      .then(function (r) { return r.ok ? r.json() : null; }).then(function (n) { if (n) showUsage(+n, null); });
+      .then(function (r) { return r.ok ? r.json() : null; }).then(function (n) {
+        n = +n; var shown = +el.getAttribute('data-count') || 0, num = el.querySelector('[data-n]');
+        if (!(n >= +el.getAttribute('data-min')) || n <= shown) return;
+        if (num) { num.textContent = n.toLocaleString('en-US'); el.setAttribute('data-count', n); }
+        else { el.innerHTML += '<span><b data-n>' + n.toLocaleString('en-US') + '</b> reels made so far</span>'; el.setAttribute('data-count', n); el.hidden = false; }
+      });
   }).catch(function () {});
-  // the About page and its links appear once site/founder.json has your name
-  fetch('site/founder.json', { cache: 'no-store' }).then(function (r) { return r.json(); }).then(function (f) { if (f.name) { document.getElementById('footAbout').hidden = false; document.getElementById('aboutLink').hidden = false; } }).catch(function () {});
   // a real before/after (site/demo/before.mp4 and after.mp4) takes the place of the screenshots once you add one
   Promise.all(['site/demo/before.mp4', 'site/demo/after.mp4'].map(function (u) { return fetch(u, { method: 'HEAD' }).then(function (r) { return r.ok; }).catch(function () { return false; }); })).then(function (ok) {
     if (!ok[0] || !ok[1]) return;
