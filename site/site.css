@@ -8,6 +8,7 @@
   color-scheme: dark;
 }
 * { box-sizing: border-box; }
+[hidden] { display: none !important; }
 html { scroll-behavior: smooth; }
 body { margin: 0; background: var(--bg); color: var(--fg); font: 400 16.5px/1.6 var(--ui); -webkit-font-smoothing: antialiased; overflow-x: hidden; }
 a { color: var(--a3); }
@@ -141,3 +142,17 @@ footer .sp { flex: 1; }
 .doc li { margin: 6px 0; }
 .doc b { color: var(--fg); }
 @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+
+/* name tied to the domain, usage line, three jobs, before/after */
+.brand small.by { font: 600 11.5px var(--ui); color: var(--faint); letter-spacing: 0; margin-left: 2px; align-self: flex-end; padding-bottom: 2px; }
+@media (max-width: 420px) { .top .brand small.by { display: none; } }
+.usage { display: flex; align-items: center; gap: 12px; font-size: 15px; color: var(--muted); }
+.usage b { color: var(--fg); }
+.usage .faces { display: flex; } .usage .faces img { width: 30px; height: 30px; border-radius: 50%; object-fit: cover; border: 2px solid var(--bg); margin-left: -8px; } .usage .faces img:first-child { margin-left: 0; }
+.jobs.three { grid-template-columns: repeat(3, 1fr); }
+@media (max-width: 980px) { .jobs.three { grid-template-columns: 1fr; } }
+.ba { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.ba figure { margin: 0; display: grid; gap: 8px; }
+.ba video { width: 100%; aspect-ratio: 9 / 16; object-fit: cover; border-radius: 22px; border: 1px solid var(--line-2); background: #000; }
+.ba figcaption { font-size: 14px; color: var(--muted); text-align: center; }
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }

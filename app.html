@@ -1025,6 +1025,8 @@ a.btn { text-decoration: none; color: inherit; }
         <button class="plan" type="button" data-plan="monthly"><b>Monthly</b><span class="price">$10<small>/month</small></span><small>Cancel anytime, in two taps</small></button>
         <button class="plan best" type="button" data-plan="lifetime"><i class="tag">Best value</i><b>Lifetime</b><span class="price">$100<small>once</small></span><small>Pay once. Yours for good.</small></button>
       </div>
+      <p class="fine" id="proFree" style="margin-top:-6px">Free stays free: 3 Clip → Reel and 1 long-form batch every month, no watermark.</p>
+      <p class="fine" id="proRefund" hidden></p>
       <ul class="perks">
         <li><span data-icon="check"></span>Unlimited Clip → Reel and long-form batches</li>
         <li><span data-icon="check"></span>Every accent, caption color, size and position</li>
@@ -1204,6 +1206,7 @@ const resetDay = () => { const d = new Date(); return new Date(d.getFullYear(), 
 const live = () => BILL.ready || (forcePaywall && BILL.links);
 function usage() { let u = store.get('usage', null); if (!u || u.month !== monthKey()) { u = { month: monthKey(), clip: 0, batch: 0 }; store.set('usage', u); } return u; }
 const left = k => pro() ? Infinity : Math.max(0, FREE[k] - usage()[k]);
+const countReel = () => { try { if (BILL.accounts) fetch(`${BILL.sbUrl}/rest/v1/rpc/count_reel`, { method: 'POST', headers: { apikey: BILL.sbKey, 'Content-Type': 'application/json' }, body: '{}', keepalive: true }).catch(() => {}); } catch (e) { /* best effort */ } };
 function useOne(k) { if (pro()) return; const u = usage(); u[k]++; store.set('usage', u); renderPlan(); }
 const same = (a, b) => String(a).toLowerCase() === String(b).toLowerCase();
 /** The settings a reel is actually made with: Premium choices are kept (and come back if you upgrade) but Free uses the defaults. */
@@ -1221,7 +1224,7 @@ const genreLocked = k => !pro() && !FREE_GENRES.includes(k);
 async function loadBilling() {
   try {
     const b = await (await fetch('billing.json', { cache: 'no-store' })).json();
-    Object.assign(BILL, { monthly: b.monthly || '', lifetime: b.lifetime || '', storeId: b.storeId ?? null, manage: b.manage || BILL.manage, ownerHash: b.ownerHash || '',
+    Object.assign(BILL, { monthly: b.monthly || '', lifetime: b.lifetime || '', storeId: b.storeId ?? null, manage: b.manage || BILL.manage, ownerHash: b.ownerHash || '', refundDays: b.refundDays ?? null,
       sbUrl: String(b.supabaseUrl || '').replace(/\/+$/, ''), sbKey: b.supabaseAnonKey || '' });
     BILL.links = /^https:\/\//.test(BILL.monthly) && /^https:\/\//.test(BILL.lifetime);
     BILL.accounts = /^(https:\/\/|http:\/\/localhost:)/.test(BILL.sbUrl) && !!BILL.sbKey;
@@ -1380,7 +1383,8 @@ function upsell(reason) {
   const lim = reason && reason.limit, sh = $('#proSheet');
   $('#proTitle').textContent = lim === 'clip' ? `That's your ${FREE.clip} free reels for ${new Date().toLocaleDateString(undefined, { month: 'long' })}` : lim === 'batch' ? "You've used this month's free batch" : typeof reason === 'string' ? `${reason} is a Premium touch` : 'Go Premium';
   $('#proWhy').textContent = lim ? `Nice work. More free ones arrive ${resetDay()}, or go unlimited now.` : typeof reason === 'string' ? 'Free keeps everything you need to make great reels. Premium adds the extra dials.' : 'Unlimited reels and every customization, on every device you sign in to.';
-  if (!live()) $('#proWhy').textContent = 'Premium checkout opens soon. Until then, everything is unlocked for you.';
+  if (!live()) $('#proWhy').textContent = 'Free during launch preview. After launch: 3 reels and 1 long-video batch a month free, unlimited with Premium ($10/month or $100 once).';
+  const rd = +BILL.refundDays || 0; $('#proRefund').hidden = !rd; if (rd) $('#proRefund').innerHTML = `${rd}-day money-back on the lifetime plan, no questions asked. <a href="refund.html" target="_blank" rel="noopener">Refund policy</a>`;
   proStep('buy'); $$('#proSheet [data-plan]').forEach(b => { b.disabled = !BILL.links; });
   sh.hidden = false; setTimeout(() => sh.querySelector('.plan.best').focus({ preventScroll: true }), 50);
 }
@@ -1431,7 +1435,7 @@ function renderPlan() {
   const c = $('#planCard'); if (!c) return;
   const r = acctPlan();
   if (licensed()) c.innerHTML = `<div class="top"><b>Premium${crown()}</b><small>${planLabel(r)}</small></div><span>Unlimited reels and every customization.</span><button class="btn ghost sm" type="button" data-plan-open>Manage</button>`;
-  else if (!live()) c.innerHTML = `<div class="top"><b>Launch preview</b></div><span>Everything is unlocked while Premium checkout gets set up. Enjoy it.</span>`;
+  else if (!live()) c.innerHTML = `<div class="top"><b>Launch preview</b></div><span>Free during launch preview. After launch: 3 reels and 1 long-video batch a month free, unlimited with Premium ($10/month or $100 once).</span>`;
   else c.innerHTML = `<div class="top"><b>Free plan</b><small>Resets ${resetDay()}</small></div>${meter('clip', 'Clip → Reel')}${meter('batch', 'Long form batch')}<button class="btn pro sm" type="button" data-up>${crown()}Go Premium</button>${signedIn() || !BILL.accounts ? '' : '<button class="btn ghost sm" type="button" data-signin>Already Premium? Sign in</button>'}`;
   $('#menuPlan').innerHTML = licensed() ? crown() : live() ? 'Free' : '';
   $('#menuAuth').innerHTML = `${icon('user')}${signedIn() ? 'Sign out' : 'Sign in'}`; $('#menuAuth').hidden = !BILL.accounts;
@@ -2223,7 +2227,7 @@ async function make() {
     const blob = await E.render(P, (p, fps) => onStage('render', p, fps ? `${Math.round(p * 100)}%` : ''), signal);
     onStage('render', 1); store.set('ready.' + SET.speech.model, true);
     P.audioCheck = await E.verifyAudio(blob); P.ui = { dirty: {}, changed: !P.audioCheck.ok, pending: new Set() };
-    S.clip.P = P; S.clip.blob = blob; S.clip.stage = 'review'; useOne('clip');
+    S.clip.P = P; S.clip.blob = blob; S.clip.stage = 'review'; useOne('clip'); countReel();
   } catch (e) {
     S.clip.stage = 'setup';
     if (!(e instanceof E.Cancelled)) { console.error(e); const m = $('#clipError'); m.textContent = `That didn't work: ${e.message || e}`; m.hidden = false; }
@@ -2345,7 +2349,7 @@ async function renderBatch() {
         const blob = await E.render(P, (p, fps) => onStage('render', p, fps ? `${Math.round(p * 100)}%` : ''), signal);
         onStage('render', 1);
         P.audioCheck = await E.verifyAudio(blob); P.ui = { dirty: {}, changed: !P.audioCheck.ok, pending: new Set() };
-        Object.assign(R, { P, blob, url: URL.createObjectURL(blob), status: 'done' });
+        Object.assign(R, { P, blob, url: URL.createObjectURL(blob), status: 'done' }); countReel();
         if (!B.counted) { B.counted = true; useOne('batch'); }
       } catch (e) { if (e instanceof E.Cancelled) throw e; console.error(e); R.status = 'failed'; R.error = e.message || String(e); }
       renderReels();

@@ -50,3 +50,15 @@ grant execute on function public.claim_purchases() to authenticated;
 -- Shared cache for free stock searches (the stock function writes it; nobody reads it from the app).
 create table if not exists public.stock_cache (key text primary key, items jsonb not null, at timestamptz not null default now());
 alter table public.stock_cache enable row level security;
+
+-- Public count of reels made (for the "X reels made with Reel Studio" line on the home page).
+-- The app adds 1 when a reel finishes; nothing else is stored: no video, no words, no user or device ID.
+create table if not exists public.counters (name text primary key, n bigint not null default 0);
+alter table public.counters enable row level security;
+insert into public.counters (name, n) values ('reels', 0) on conflict (name) do nothing;
+create or replace function public.count_reel() returns void language sql security definer set search_path = public as
+  $$ update public.counters set n = n + 1 where name = 'reels'; $$;
+create or replace function public.reels_made() returns bigint language sql stable security definer set search_path = public as
+  $$ select n from public.counters where name = 'reels'; $$;
+grant execute on function public.count_reel() to anon, authenticated;
+grant execute on function public.reels_made() to anon, authenticated;

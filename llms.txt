@@ -1,0 +1,21 @@
+# Reel Studio (reeleditapp.com)
+
+> Reel Studio turns a talking-head take into a finished vertical reel, or a long video into a batch of reels. It runs in the browser, edits on the user's own device, never uploads their videos, and makes nothing AI-generated: the words are the creator's own, the footage is real, and the music is written by fixed rules.
+
+Reel Studio is for people who talk to the camera: tips, stories, lessons, podcasts, vlogs and talks.
+
+- Clip → Reel: one take in, one finished 1080 × 1920 reel out. Pauses and clap-marked retakes trimmed ("Flubbed a line? Clap once and say it again. The flub gets cut."), captions with one highlighted word per line, clips and photos matched to the meaning and feel of each line, music written to the reel's exact length, slow push-ins and punch-ins, no watermark.
+- Long form → Reels: a long video (a podcast, a vlog, a talk) in, a batch of reels out. Every line is scored as a hook, the strongest self-contained stretches become reels (15–30 s up to 60–90 s), and a better hook later in a reel can play first.
+- Every edit is listed and can be removed, changed or added to before saving.
+- Captions are written by Whisper, an open-source speech model running on the user's device; a small open-source face detector keeps the speaker framed.
+
+## Pricing
+- Free: 3 Clip → Reel and 1 long-form batch every month, resets on the 1st, no watermark, no account needed.
+- Premium: $10 a month or $100 once. Unlimited reels and batches, plus every customization (caption colors, size and position, all seven music styles, pacing, clip amount, hook topics, reel counts, word fixes, maximum export quality). Cancel anytime.
+
+## Pages
+- [Home](https://reeleditapp.com/): what it does and how it works
+- [Pricing](https://reeleditapp.com/pricing.html): exactly what's in Free and Premium
+- [Your data](https://reeleditapp.com/data.html): what stays on the device and what is sent where
+- [Reel Studio vs Opus Clip](https://reeleditapp.com/vs/opus-clip.html): an honest comparison
+- [Editor](https://reeleditapp.com/app.html): the app itself

@@ -1,1 +1,8 @@
-{ "reelsMade": null, "quotes": [], "mentions": [] }
+{
+  "_readme": "Real proof only. Everything here is optional and nothing shows until it's filled in. reelsMade: used until the live counter is connected. cohort: e.g. \"42 creators in the launch preview\". avatars: early users' photos (with their permission), e.g. \"site/img/u1.jpg\". quotes: { name (first name), role (e.g. \"fitness creator\", \"podcast host\"), photo, text (one line with a specific outcome) }. mentions: { name, link, date }.",
+  "reelsMade": null,
+  "cohort": "",
+  "avatars": [],
+  "quotes": [],
+  "mentions": []
+}

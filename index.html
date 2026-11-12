@@ -10,21 +10,21 @@
     if (standalone || /access_token=|error_description=|type=recovery/.test(h) || /[?&]paywall=1\b/.test(q)) location.replace('app.html' + q + h);
   })();
 </script>
-<title>Reel Studio: turn a talking-head take into a finished reel</title>
+<title>Reel Studio - Turn a take into a finished reel, automatically</title>
 <meta name="description" content="Automated editing, zero AI slop. Turn a take into a finished reel, or a long video into a batch of reels: your words, real footage and original music, cut on your own device.">
 <link rel="canonical" href="https://reeleditapp.com/">
 <meta name="theme-color" content="#07090F">
 <meta property="og:type" content="website">
-<meta property="og:site_name" content="Reel Studio">
+<meta property="og:site_name" content="Reel Studio by reeleditapp">
 <meta property="og:url" content="https://reeleditapp.com/">
-<meta property="og:title" content="Reel Studio: turn a talking-head take into a finished reel">
+<meta property="og:title" content="Reel Studio - Turn a take into a finished reel, automatically">
 <meta property="og:description" content="Pauses and retakes trimmed, captions added, clips and music placed to fit what you say. Or turn a long video into a batch of reels. Runs in your browser; your videos never leave your device.">
 <meta property="og:image" content="https://reeleditapp.com/site/img/og.jpg">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta property="og:image:alt" content="Reel Studio on a phone: a take ready to edit, and the editor making the reel">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="Reel Studio: turn a talking-head take into a finished reel">
+<meta name="twitter:title" content="Reel Studio - Turn a take into a finished reel, automatically">
 <meta name="twitter:description" content="Pauses and retakes trimmed, captions added, clips and music placed to fit what you say. Your videos never leave your device.">
 <meta name="twitter:image" content="https://reeleditapp.com/site/img/og.jpg">
 <link rel="icon" href="icons/icon-192.png?v=3">
@@ -42,6 +42,7 @@
       "@type": "WebApplication",
       "@id": "https://reeleditapp.com/#app",
       "name": "Reel Studio",
+      "alternateName": ["Reel Studio by reeleditapp", "reeleditapp"],
       "url": "https://reeleditapp.com/",
       "applicationCategory": "MultimediaApplication",
       "operatingSystem": "Any (runs in Chrome, Edge or Safari)",
@@ -75,7 +76,7 @@
 <div class="glow" aria-hidden="true"></div>
 <header class="top">
   <div class="wrap">
-    <a class="brand" href="./"><img src="icons/icon-192.png?v=3" alt="" width="30" height="30">Reel <span>Studio</span></a>
+    <a class="brand" href="./"><img src="icons/icon-192.png?v=3" alt="" width="30" height="30">Reel <span>Studio</span><small class="by">by reeleditapp</small></a>
     <nav aria-label="Main">
       <a href="#how">How it works</a>
       <a href="pricing.html">Pricing</a>
@@ -88,19 +89,21 @@
 <main>
   <div class="wrap hero">
     <div class="copy">
-      <span class="eyebrow">For people who talk to the camera</span>
-      <h1>Turn a take into a <span class="g">finished reel.</span></h1>
+      <span class="eyebrow">Reel Studio by reeleditapp · for people who talk to the camera</span>
+      <h1>Turn a take into a <span class="g">finished reel</span> without learning an editor.</h1>
       <p class="lede">Film yourself talking. Reel Studio trims the pauses and retakes, writes the captions, and places clips and music to fit what you say. Got a podcast, a vlog or a talk? Drop in the long video and get a batch of reels, each opening with its strongest line.</p>
       <div class="ctas">
-        <a class="btn big primary" href="app.html">Make your first reel free</a>
+        <a class="btn big primary" href="app.html">Try it free</a>
         <a class="btn big" href="pricing.html">See pricing</a>
       </div>
       <p class="note">No sign-up needed to start. 3 free reels and 1 long-video batch every month. No watermark.</p>
+      <div class="usage" id="usage" hidden></div>
       <ul class="pills" aria-label="How it works">
         <li>Runs in your browser</li><li>Your videos never leave your device</li><li>Nothing AI-generated</li>
       </ul>
     </div>
-    <div class="phones" aria-hidden="true">
+    <div class="ba" id="beforeAfter" hidden></div>
+    <div class="phones" id="phones" aria-hidden="true">
       <div class="phone"><img src="site/img/setup.jpg" alt="" width="585" height="1266"></div>
       <div class="phone"><img src="site/img/working.jpg" alt="" width="585" height="1266"></div>
     </div>
@@ -113,31 +116,48 @@
         <h2>The editing you keep putting off</h2>
         <p class="lede">You did the hard part: you said it on camera. Reel Studio does the boring work.</p>
       </div>
-      <div class="jobs">
+      <div class="jobs three">
         <article class="card">
           <span class="tag">Clip → Reel</span>
           <h3>One take, one finished reel</h3>
           <ul class="ticks">
-            <li><span><b>Pauses and retakes trimmed.</b> Flubbed a line? Clap once and say it again. The flub gets cut.</span></li>
+            <li><span><b>Pauses trimmed</b> to a natural pace.</span></li>
             <li><span><b>Captions added,</b> with one word in each caption highlighted.</span></li>
-            <li><span><b>Clips and photos placed</b> to fit the meaning and feel of each line, and how you say it. Your own clips go first.</span></li>
+            <li><span><b>Clips and photos placed</b> to fit the meaning and feel of each line. Your own clips go first.</span></li>
             <li><span><b>Music written fresh</b> for every reel to its exact length, so nothing gets flagged.</span></li>
-            <li><span><b>Slow push-ins and punch-ins</b> on key lines.</span></li>
             <li><span><b>1080 × 1920,</b> ready to post as a Reel, TikTok or Short.</span></li>
           </ul>
         </article>
         <article class="card">
           <span class="tag">Long form → Reels</span>
-          <h3>A long video into a batch of reels</h3>
+          <h3>A batch of reels from a podcast</h3>
           <ul class="ticks">
             <li><span><b>A podcast, a vlog, a talk:</b> every line is scored, and the strongest hooks open each reel.</span></li>
             <li><span><b>Each reel stands on its own,</b> 15–30 seconds up to 60–90 seconds, your pick.</span></li>
-            <li><span><b>Hook first.</b> If a better line comes later in a reel, it plays first, then the reel starts.</span></li>
+            <li><span><b>Hook first.</b> If a better line comes later in a reel, it plays first.</span></li>
             <li><span><b>Trending topics rank a little higher.</b> <span id="trendLine">Trend data is updated every day.</span></span></li>
-            <li><span><b>Preview each one</b> and untick any you don't want before they're made.</span></li>
+            <li><span><b>Preview each one</b> and untick any you don't want.</span></li>
+          </ul>
+        </article>
+        <article class="card">
+          <span class="tag">Retakes</span>
+          <h3>Clap to cut</h3>
+          <ul class="ticks">
+            <li><span><b>Flubbed a line?</b> Clap once and say it again.</span></li>
+            <li><span><b>The flub and the clap are cut,</b> and the reel picks up with your good take.</span></li>
+            <li><span><b>No scrubbing through the timeline</b> to find your mistakes.</span></li>
+            <li><span><b>Changed your mind?</b> Every cut is listed, and you can put any of it back.</span></li>
           </ul>
         </article>
       </div>
+    </div>
+  </section>
+
+  <section id="proofwall" hidden>
+    <div class="wrap">
+      <div class="head"><span class="eyebrow">From people using it</span><h2>What it's doing for them</h2></div>
+      <div class="quotes" id="quotes"></div>
+      <p class="muted" id="mentions" hidden></p>
     </div>
   </section>
 
@@ -164,6 +184,7 @@
         <span class="eyebrow">What it won't do</span>
         <h2>Automated editing. Zero AI slop.</h2>
       </div>
+      <p class="note" style="margin:-18px 0 22px"><a href="vs/opus-clip.html">How it compares to Opus Clip →</a></p>
       <div class="wont">
         <div><b>It won't upload your videos.</b><p>Everything happens in your browser, on your device. There's nothing to upload and nothing to wait for on a server.</p></div>
         <div><b>It won't make things up.</b><p>Your words, real footage, original music. No generated faces, voices or scripts.</p></div>
@@ -185,6 +206,7 @@
           <!-- FOUNDER: name, photo and a line about you go here (kept off for now, at your request). -->
           <p class="muted">Reel Studio is made by an independent creator who edits his own reels with it.</p>
           <p class="muted">It's one product, with a free plan that stays free and no ads.</p>
+          <p id="aboutLink" hidden><a href="about.html">More about who makes it →</a></p>
         </article>
         <article class="card">
           <h3>Built on tools you can look up</h3>
@@ -196,8 +218,6 @@
           </ul>
         </article>
       </div>
-      <!-- Proof from real users appears here once site/proof.json has entries (user count, quotes, mentions). Nothing is shown until then. -->
-      <div id="proof" hidden></div>
     </div>
   </section>
 
@@ -258,16 +278,16 @@
     <div class="wrap end">
       <h2>Your next reel, without the editing evening</h2>
       <p class="lede">Choose a video and see what Reel Studio does with it. No account, no card.</p>
-      <a class="btn big primary" href="app.html">Make your first reel free</a>
+      <a class="btn big primary" href="app.html">Try it free</a>
     </div>
   </section>
 </main>
 
 <footer>
   <div class="wrap">
-    <a class="brand" href="./" style="font-size:16px"><img src="icons/icon-192.png?v=3" alt="" width="24" height="24">Reel <span>Studio</span></a>
+    <a class="brand" href="./" style="font-size:16px"><img src="icons/icon-192.png?v=3" alt="" width="24" height="24">Reel <span>Studio</span><small class="by">by reeleditapp</small></a>
     <span class="sp"></span>
-    <a href="app.html">Editor</a><a href="pricing.html">Pricing</a><a href="data.html">Your data</a><a href="#faq">Questions</a>
+    <a href="app.html">Editor</a><a href="pricing.html">Pricing</a><a href="vs/opus-clip.html">vs Opus Clip</a><a href="about.html" id="footAbout" hidden>About</a><a href="data.html">Your data</a><a href="#faq">Questions</a>
   </div>
 </footer>
 
@@ -277,13 +297,41 @@
     if (t && t.updated) document.getElementById('trendLine').textContent = 'Trend data last updated ' + new Date(t.updated + 'T12:00:00').toLocaleDateString(undefined, { month: 'long', day: 'numeric' }) + '.';
   }).catch(function () {});
   fetch('billing.json', { cache: 'no-store' }).then(function (r) { return r.json(); }).then(function (b) { if (b.live !== true) document.getElementById('launchNote').hidden = false; }).catch(function () {});
+  var esc = function (x) { return String(x == null ? '' : x).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); };
+  // real proof only: site/proof.json (quotes from named users, dated mentions, early-user avatars)
   fetch('site/proof.json', { cache: 'no-store' }).then(function (r) { return r.json(); }).then(function (p) {
-    var el = document.getElementById('proof'), esc = function (s) { return String(s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }, html = '';
-    if (p.reelsMade) html += '<p class="lede" style="margin-top:24px"><b style="color:var(--fg)">' + esc(p.reelsMade) + '</b> reels made with Reel Studio so far.</p>';
-    if (p.quotes && p.quotes.length) html += '<div class="quotes">' + p.quotes.map(function (q) { return '<figure><blockquote>“' + esc(q.text) + '”</blockquote><figcaption>' + esc(q.who) + (q.link ? ' · <a href="' + esc(q.link) + '">' + esc(q.where || 'source') + '</a>' : '') + '</figcaption></figure>'; }).join('') + '</div>';
-    if (p.mentions && p.mentions.length) html += '<p class="muted" style="margin-top:20px">Mentioned by ' + p.mentions.map(function (m) { return '<a href="' + esc(m.link) + '">' + esc(m.name) + '</a>'; }).join(', ') + '.</p>';
-    if (html) { el.innerHTML = html; el.hidden = false; }
+    if (p.quotes && p.quotes.length) {
+      document.getElementById('quotes').innerHTML = p.quotes.map(function (q) { return '<figure>' + (q.photo ? '<img src="' + esc(q.photo) + '" alt="" width="44" height="44" style="width:44px;height:44px;border-radius:50%;object-fit:cover">' : '') +
+        '<blockquote>“' + esc(q.text) + '”</blockquote><figcaption><b style="color:var(--fg)">' + esc(q.name) + '</b>' + (q.role ? ', ' + esc(q.role) : '') + '</figcaption></figure>'; }).join('');
+      document.getElementById('proofwall').hidden = false;
+    }
+    if (p.mentions && p.mentions.length) { var m = document.getElementById('mentions'); m.innerHTML = 'Mentioned in ' + p.mentions.map(function (x) { return '<a href="' + esc(x.link) + '">' + esc(x.name) + '</a>' + (x.date ? ' (' + esc(x.date) + ')' : ''); }).join(', ') + '.'; m.hidden = false; document.getElementById('proofwall').hidden = false; }
+    showUsage(null, p);
   }).catch(function () {});
+  // how many reels have been made: a live count once accounts are connected, otherwise the number in proof.json
+  var usageCount = null, proof = null;
+  function showUsage(n, p) {
+    if (n != null) usageCount = n; if (p) proof = p;
+    var count = usageCount != null ? usageCount : proof && proof.reelsMade, avatars = (proof && proof.avatars) || [], el = document.getElementById('usage');
+    if (!count && !avatars.length) return;
+    el.innerHTML = (avatars.length ? '<span class="faces">' + avatars.slice(0, 6).map(function (a) { return '<img src="' + esc(a) + '" alt="" width="30" height="30">'; }).join('') + '</span>' : '') +
+      (count ? '<span><b>' + Number(count).toLocaleString() + '</b> reels made with Reel Studio' + (proof && proof.cohort ? ' · ' + esc(proof.cohort) : '') + '</span>' : (proof && proof.cohort ? '<span>' + esc(proof.cohort) + '</span>' : ''));
+    el.hidden = false;
+  }
+  fetch('billing.json', { cache: 'no-store' }).then(function (r) { return r.json(); }).then(function (b) {
+    if (!b.supabaseUrl || !b.supabaseAnonKey) return;
+    return fetch(b.supabaseUrl.replace(/\/+$/, '') + '/rest/v1/rpc/reels_made', { method: 'POST', headers: { apikey: b.supabaseAnonKey, 'Content-Type': 'application/json' }, body: '{}' })
+      .then(function (r) { return r.ok ? r.json() : null; }).then(function (n) { if (n) showUsage(+n, null); });
+  }).catch(function () {});
+  // the About page and its links appear once site/founder.json has your name
+  fetch('site/founder.json', { cache: 'no-store' }).then(function (r) { return r.json(); }).then(function (f) { if (f.name) { document.getElementById('footAbout').hidden = false; document.getElementById('aboutLink').hidden = false; } }).catch(function () {});
+  // a real before/after (site/demo/before.mp4 and after.mp4) takes the place of the screenshots once you add one
+  Promise.all(['site/demo/before.mp4', 'site/demo/after.mp4'].map(function (u) { return fetch(u, { method: 'HEAD' }).then(function (r) { return r.ok; }).catch(function () { return false; }); })).then(function (ok) {
+    if (!ok[0] || !ok[1]) return;
+    var ba = document.getElementById('beforeAfter');
+    ba.innerHTML = '<figure><video src="site/demo/before.mp4" autoplay muted loop playsinline></video><figcaption>Before: the raw take</figcaption></figure><figure><video src="site/demo/after.mp4" autoplay muted loop playsinline></video><figcaption>After: the finished reel</figcaption></figure>';
+    ba.hidden = false; document.getElementById('phones').hidden = true;
+  });
 </script>
 </body>
 </html>

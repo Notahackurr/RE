@@ -12,7 +12,11 @@ Live at https://reeleditapp.com (editor at https://reeleditapp.com/app.html)
 ```
 index.html       public home page        app.html      the editor app (engine.js does the editing)
 pricing.html, data.html                  pricing and how your data is handled
-site/            styles, screenshots, share image, proof.json (real user proof, empty until collected)
+about.html, refund.html                  founder page and refund policy (both stay hidden until site/founder.json / billing.json refundDays are filled)
+vs/opus-clip.html                        honest comparison page
+llms.txt                                 plain description for AI assistants
+site/            styles, screenshots, share image; proof.json (reel count, testimonials, mentions) and founder.json, empty until you fill them;
+                 put a real before/after at site/demo/before.mp4 + after.mp4 and it replaces the hero screenshots
 robots.txt, sitemap.xml                  for search engines
 stock/           free stock clips and photos (Mixkit Free License) + manifest.json
 models/          face detector (YuNet, MIT)
