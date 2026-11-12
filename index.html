@@ -74,7 +74,7 @@
 }
 </script>
 </head>
-<body>
+<body class="home">
 <div class="glow" aria-hidden="true"></div>
 <header class="top">
   <div class="wrap">
@@ -124,11 +124,10 @@
           <span class="tag">Clip → Reel</span>
           <h3>One take, one finished reel</h3>
           <ul class="ticks">
-            <li><span><b>Pauses trimmed</b> to a natural pace.</span></li>
+            <li><span><b>Pauses trimmed</b> to a natural pace. 1080 × 1920, ready for Reels, TikTok or Shorts.</span></li>
             <li><span><b>Captions added,</b> with one word in each caption highlighted.</span></li>
             <li><span><b>Clips and photos placed</b> to fit the meaning and feel of each line. Your own clips go first.</span></li>
             <li><span><b>Music written fresh</b> for every reel to its exact length, so nothing gets flagged.</span></li>
-            <li><span><b>1080 × 1920,</b> ready to post as a Reel, TikTok or Short.</span></li>
           </ul>
         </article>
         <article class="card">
@@ -139,7 +138,6 @@
             <li><span><b>Each reel stands on its own,</b> 15–30 seconds up to 60–90 seconds, your pick.</span></li>
             <li><span><b>Hook first.</b> If a better line comes later in a reel, it plays first.</span></li>
             <li><span><b>Trending topics rank a little higher.</b> <span id="trendLine">Trend data is updated every day.</span></span></li>
-            <li><span><b>Preview each one</b> and untick any you don't want.</span></li>
           </ul>
         </article>
         <article class="card">
@@ -148,7 +146,6 @@
           <ul class="ticks">
             <li><span><b>Flubbed a line?</b> Clap once and say it again.</span></li>
             <li><span><b>The flub and the clap are cut,</b> and the reel picks up with your good take.</span></li>
-            <li><span><b>No scrubbing through the timeline</b> to find your mistakes.</span></li>
             <li><span><b>Changed your mind?</b> Every cut is listed, and you can put any of it back.</span></li>
           </ul>
         </article>
@@ -314,6 +311,23 @@
   }).catch(function () {});
   fetch('billing.json', { cache: 'no-store' }).then(function (r) { return r.json(); }).then(function (b) { if (b.live === true) document.getElementById('launchNote').hidden = true; }).catch(function () {});
   var esc = function (x) { return String(x == null ? '' : x).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); };
+  // Motion: sections ease in as you scroll, and the quote wall drifts sideways. Added by script, so the page itself shows everything.
+  (function () {
+    var still = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+    var q = document.querySelector('#proofwall .quotes');
+    if (q && q.children.length > 2) {
+      var track = document.createElement('div'); track.className = 'track';
+      while (q.firstChild) track.appendChild(q.firstChild);
+      q.appendChild(track); q.classList.add('marquee');
+      if (!still) { Array.prototype.slice.call(track.children).forEach(function (f) { var c = f.cloneNode(true); c.setAttribute('aria-hidden', 'true'); track.appendChild(c); }); q.classList.add('moving'); }
+    }
+    if (still || !('IntersectionObserver' in window)) return;
+    document.documentElement.classList.add('rv');
+    var io = new IntersectionObserver(function (es) { es.forEach(function (e) { if (e.isIntersecting || e.boundingClientRect.top < 0) { e.target.classList.add('in'); io.unobserve(e.target); } }); }, { rootMargin: '0px 0px -6% 0px' });
+    document.querySelectorAll('main section .head, .eddie-head, .jobs > *, .steps > *, .wont > *, .trust > *, .plans > *, .faq, .end > *').forEach(function (el) {
+      el.classList.add('reveal'); el.style.setProperty('--d', (Array.prototype.indexOf.call(el.parentNode.children, el) % 4) * 80 + 'ms'); io.observe(el);
+    });
+  })();
   // Proof (founder, quotes, mentions, the reel count) is written into this page by tools/bake-proof.mjs. This only nudges the count up between bakes.
   fetch('billing.json', { cache: 'no-store' }).then(function (r) { return r.json(); }).then(function (b) {
     var el = document.getElementById('usage'); if (!el || !b.supabaseUrl || !b.supabaseAnonKey) return;

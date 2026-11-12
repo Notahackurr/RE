@@ -185,3 +185,74 @@ footer .sp { flex: 1; }
 .qface.ini { flex: none; display: grid; place-items: center; font: 700 15px/1 "Inter", sans-serif; letter-spacing: .02em; color: #fff;
   background: linear-gradient(135deg, hsl(var(--h) 70% 58%), hsl(calc(var(--h) + 40) 70% 42%)); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .18); border-radius: 50%; }
 .qface { flex: none; }
+
+/* ---- home page layout: more air, more movement ---- */
+.home section + section { border-top: 0; }
+.home section { padding: clamp(64px, 9vw, 120px) 0; }
+.home .head { margin-bottom: clamp(30px, 4vw, 48px); }
+.home .hero { gap: clamp(32px, 6vw, 80px); padding-top: clamp(44px, 7vw, 88px); padding-bottom: clamp(24px, 4vw, 48px); }
+.home .hero .copy { gap: 20px; }
+.home h1 { font-size: clamp(36px, 5.4vw, 60px); }
+.home .hero .lede { font-size: clamp(16.5px, 1.6vw, 18px); max-width: 52ch; }
+.home .hi-eddie { width: fit-content; padding: 6px 16px 6px 6px; border-radius: 999px; background: rgba(124, 139, 255, .1); border: 1px solid rgba(124, 139, 255, .26); font-size: 15.5px; }
+.home .hero .note { font-size: 14px; }
+.home .pills { gap: 6px 18px; }
+.home .pills li { background: none; border: 0; padding: 0; color: var(--muted); font-weight: 600; font-size: 13.5px; display: flex; align-items: center; gap: 7px; }
+.home .pills li::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--grad); }
+.home .phones { animation: bob 8s ease-in-out infinite; }
+.home .phones::before { content: ""; position: absolute; inset: 10% 5%; z-index: -1; border-radius: 50%; background: radial-gradient(closest-side, rgba(124, 139, 255, .32), transparent); filter: blur(30px); }
+@keyframes bob { 50% { transform: translateY(-12px); } }
+
+/* jobs: three cards, each with its own accent */
+.home .jobs.three { grid-template-columns: repeat(3, 1fr); gap: 18px; }
+.home .jobs .card { position: relative; overflow: hidden; gap: 16px; transition: transform .35s cubic-bezier(.2, .7, .2, 1), border-color .35s; }
+.home .jobs .card::before { content: ""; position: absolute; inset: 0 0 auto; height: 3px; background: var(--acc-line, var(--grad)); }
+.home .jobs .card:nth-child(1) { --acc-line: linear-gradient(90deg, var(--a1), transparent); }
+.home .jobs .card:nth-child(2) { --acc-line: linear-gradient(90deg, var(--a2), transparent); }
+.home .jobs .card:nth-child(3) { --acc-line: linear-gradient(90deg, var(--a3), transparent); }
+.home .jobs .card:hover { transform: translateY(-4px); border-color: var(--line-2); }
+.home .jobs h3 { font-size: 21px; }
+.home .jobs .ticks { gap: 13px; font-size: 15.5px; }
+@media (max-width: 900px) { .home .jobs.three { grid-template-columns: 1fr; } }
+
+/* quote wall: one row drifting sideways, edge to edge */
+.home #proofwall .quotes.marquee { display: block; width: 100vw; margin-left: calc(50% - 50vw); overflow: hidden;
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 7%, #000 93%, transparent); mask-image: linear-gradient(90deg, transparent, #000 7%, #000 93%, transparent); }
+.home #proofwall .track { display: flex; gap: 18px; width: max-content; padding: 6px max(20px, calc(50vw - 560px)); }
+.home #proofwall .track figure { width: 340px; flex: none; }
+.home #proofwall .moving .track { padding-inline: 0; animation: marq 60s linear infinite; }
+.home #proofwall .moving:hover .track, .home #proofwall .moving:focus-within .track { animation-play-state: paused; }
+.home #proofwall .quotes:not(.moving) { overflow-x: auto; scroll-snap-type: x mandatory; }
+.home #proofwall .quotes:not(.moving) figure { scroll-snap-align: center; }
+@keyframes marq { to { transform: translateX(calc(-50% - 9px)); } }
+@media (max-width: 600px) { .home #proofwall .track figure { width: 280px; } }
+
+/* how it works: shorter screenshots */
+.home .step .shot { aspect-ratio: 9 / 11.5; transition: transform .35s cubic-bezier(.2, .7, .2, 1); }
+.home .step:hover .shot { transform: translateY(-4px); }
+
+/* EDDIE's rules: a band of its own */
+.home #different { position: relative; isolation: isolate; }
+.home #different::before { content: ""; position: absolute; inset: 0; z-index: -1; -webkit-mask-image: linear-gradient(transparent, #000 18%, #000 82%, transparent); mask-image: linear-gradient(transparent, #000 18%, #000 82%, transparent); background: radial-gradient(40% 70% at 12% 30%, rgba(255, 94, 160, .12), transparent 70%), radial-gradient(45% 80% at 90% 80%, rgba(95, 214, 255, .10), transparent 70%), linear-gradient(180deg, transparent, rgba(124, 139, 255, .05) 30%, rgba(124, 139, 255, .05) 70%, transparent); }
+.home .eddie.lg { width: 190px; height: 190px; animation: bob 6s ease-in-out infinite; }
+.home .wont { gap: 14px; }
+.home .wont div { background: color-mix(in srgb, var(--panel) 80%, transparent); backdrop-filter: blur(6px); transition: transform .35s cubic-bezier(.2, .7, .2, 1), border-color .35s; }
+.home .wont div:hover { transform: translateY(-3px); border-color: var(--line-2); }
+@media (max-width: 720px) { .home .eddie.lg { width: 128px; height: 128px; } }
+
+/* who's behind it: tidy card spacing */
+.home #trust .card p { margin: 0; }
+.home #trust .card { gap: 16px; }
+
+/* questions: heading on the left, answers on the right */
+.home #faq .wrap { display: grid; grid-template-columns: minmax(0, .75fr) minmax(0, 1.25fr); gap: clamp(28px, 6vw, 80px); align-items: start; }
+.home #faq .head { position: sticky; top: 96px; margin: 0; }
+@media (max-width: 860px) { .home #faq .wrap { grid-template-columns: 1fr; } .home #faq .head { position: static; } }
+
+/* closing call to action */
+.home .end { padding: clamp(36px, 6vw, 64px); border-radius: 32px; background: radial-gradient(60% 120% at 50% 0%, rgba(124, 139, 255, .18), transparent 70%), var(--panel); border: 1px solid var(--line); }
+
+/* ease in on scroll (only when the script adds .rv) */
+.rv .reveal { opacity: 0; transform: translateY(22px); transition: opacity .7s ease var(--d, 0ms), transform .7s cubic-bezier(.2, .7, .2, 1) var(--d, 0ms); }
+.rv .reveal.in { opacity: 1; transform: none; }
+@media (prefers-reduced-motion: reduce) { .home .phones, .home .eddie.lg { animation: none; } .home .jobs .card, .home .wont div, .home .step .shot { transition: none; } }
