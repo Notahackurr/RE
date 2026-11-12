@@ -3,6 +3,27 @@
   "reelsMade": null,
   "cohort": "",
   "avatars": [],
-  "quotes": [],
+  "quotes": [
+    {
+      "name": "John W.",
+      "text": "It sounds dramatic but honestly this automated editor has changed my life, i legitimately couldn’t afford others out there with the relentless subscription models and this one been a game changer."
+    },
+    {
+      "name": "Alicia C.",
+      "text": "What can I say? This is one of the smoothest automated short form editors I’ve ever used and by far the best at it’s price point."
+    },
+    {
+      "name": "Travis S.",
+      "text": "Write a review? I am your review lol! Hooking up all my influencer crew on RS asap 🫶 phenomenal tool."
+    },
+    {
+      "name": "Marques B.",
+      "text": "Finally, an excellent short form content editor that runs on its own but still leaves the steering wheel accessible."
+    },
+    {
+      "name": "Stephen L.",
+      "text": "amazing web app, love the little mascot, EDDIE. Always makes every edit worth it 🙏"
+    }
+  ],
   "mentions": []
 }

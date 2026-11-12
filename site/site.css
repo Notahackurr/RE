@@ -96,7 +96,7 @@ section + section { border-top: 1px solid var(--line); }
 .built li:last-child { border: 0; padding-bottom: 0; }
 .built b { font-weight: 650; }
 .built span { color: var(--muted); font-size: 15px; }
-.quotes { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; margin-top: 20px; }
+.quotes { display: grid; grid-template-columns: repeat(auto-fit, minmax(310px, 1fr)); gap: 16px; margin-top: 20px; }
 .quotes figure { margin: 0; padding: 20px; border-radius: 18px; background: var(--panel); border: 1px solid var(--line); display: grid; gap: 10px; }
 .quotes blockquote { margin: 0; font-size: 16px; }
 .quotes figcaption { color: var(--muted); font-size: 14px; }
@@ -167,3 +167,16 @@ footer .sp { flex: 1; }
 .mentions li { display: flex; align-items: center; gap: 12px; padding: 12px 16px; border-radius: 16px; background: var(--panel); border: 1px solid var(--line); font-size: 15px; }
 .mentions img { height: 40px; width: auto; display: block; }
 .mentions time { color: var(--muted); font-size: 14px; }
+/* Eddie, the mascot */
+.eddie { display: block; border-radius: 50%; overflow: hidden; background: #2a1c4a; box-shadow: 0 0 0 2px rgba(124, 139, 255, .35), 0 18px 50px rgba(124, 139, 255, .28); flex: none; }
+.eddie video, .eddie img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.eddie.xs { width: 40px; height: 40px; box-shadow: 0 0 0 2px rgba(124, 139, 255, .35); }
+.eddie.lg { width: 168px; height: 168px; }
+.eddie.float { position: absolute; z-index: 2; width: 124px; height: 124px; left: 2%; top: -10px; }
+.hi-eddie { display: flex; align-items: center; gap: 12px; margin: 0; font-size: 17px; }
+.hi-eddie b { color: var(--fg); }
+.eddie-head { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 32px; align-items: center; margin-bottom: 38px; }
+.eddie-head .head { margin-bottom: 0; }
+@media (max-width: 720px) { .eddie-head { grid-template-columns: 1fr; gap: 18px; } .eddie.lg { width: 120px; height: 120px; } }
+@media (prefers-reduced-motion: reduce) { .eddie video { display: none; } .eddie:has(video) { background: url(img/eddie.jpg) center / cover; } }
+@media (max-width: 900px) { .eddie.float { width: 88px; height: 88px; left: 0; top: -14px; } }
