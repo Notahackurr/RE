@@ -39,11 +39,18 @@ const usage = (() => {
   return `<p class="usage" id="usage" data-count="${count >= MIN_COUNT ? count : 0}" data-min="${MIN_COUNT}"${show ? '' : ' hidden'}>${faces}${parts.length ? `<span>${parts.join(' · ')}</span>` : ''}</p>`;
 })();
 
+// Each quote shows the person's own photo when they've given one; otherwise their initials (never a stand-in face).
+const face = (q) => {
+  if (q.photo) return `<img src="${url(q.photo)}" alt="" width="44" height="44" class="qface">`;
+  const ini = String(q.name).replace(/[^\p{L}\s]/gu, ' ').trim().split(/\s+/).map((w) => w[0]).join('').slice(0, 2).toUpperCase();
+  let h = 0; for (const c of String(q.name)) h = (h * 31 + c.codePointAt(0)) % 360;
+  return `<span class="qface ini" style="--h:${h}" aria-hidden="true">${esc(ini)}</span>`;
+};
 const proofwall = !quotes.length ? '' : `<section id="proofwall">
     <div class="wrap">
       <div class="head"><span class="eyebrow">From people using it</span><h2>What EDDIE's doing for them</h2></div>
       <div class="quotes">
-${quotes.map((q) => `        <figure>${q.photo ? `<img src="${url(q.photo)}" alt="" width="44" height="44" class="qface">` : ''}<blockquote>“${esc(q.text)}”</blockquote><figcaption><b>${esc(q.name)}</b>${q.role ? `, ${esc(q.role)}` : ''}${q.link ? ` · <a href="${url(q.link)}" rel="nofollow noopener">${esc(q.linkLabel || 'Original post')}</a>` : ''}</figcaption></figure>`).join('\n')}
+${quotes.map((q) => `        <figure><blockquote>“${esc(q.text)}”</blockquote><figcaption>${face(q)}<span><b>${esc(q.name)}</b>${q.role ? `, ${esc(q.role)}` : ''}${q.link ? ` · <a href="${url(q.link)}" rel="nofollow noopener">${esc(q.linkLabel || 'Original post')}</a>` : ''}</span></figcaption></figure>`).join('\n')}
       </div>
     </div>
   </section>`;

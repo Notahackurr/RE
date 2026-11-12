@@ -4,10 +4,10 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <script>
-  // Installed app icons, sign-in email links and test links still open the editor directly.
+  // Installed app icons, sign-in email links and test links still open the editor directly (the editor's logo adds ?home to come here).
   (function () {
     var h = location.hash, q = location.search, standalone = navigator.standalone || (window.matchMedia && matchMedia('(display-mode: standalone)').matches);
-    if (standalone || /access_token=|error_description=|type=recovery/.test(h) || /[?&]paywall=1\b/.test(q)) location.replace('app.html' + q + h);
+    if ((standalone && !/[?&]home\b/.test(q)) || /access_token=|error_description=|type=recovery/.test(h) || /[?&]paywall=1\b/.test(q)) location.replace('app.html' + q + h);
   })();
 </script>
 <title>Reel Studio - Turn a take into a finished reel, automatically</title>
@@ -160,11 +160,11 @@
     <div class="wrap">
       <div class="head"><span class="eyebrow">From people using it</span><h2>What EDDIE's doing for them</h2></div>
       <div class="quotes">
-        <figure><blockquote>“It sounds dramatic but honestly this automated editor has changed my life, i legitimately couldn’t afford others out there with the relentless subscription models and this one been a game changer.”</blockquote><figcaption><b>John W.</b></figcaption></figure>
-        <figure><blockquote>“What can I say? This is one of the smoothest automated short form editors I’ve ever used and by far the best at it’s price point.”</blockquote><figcaption><b>Alicia C.</b></figcaption></figure>
-        <figure><blockquote>“Write a review? I am your review lol! Hooking up all my influencer crew on RS asap 🫶 phenomenal tool.”</blockquote><figcaption><b>Travis S.</b></figcaption></figure>
-        <figure><blockquote>“Finally, an excellent short form content editor that runs on its own but still leaves the steering wheel accessible.”</blockquote><figcaption><b>Marques B.</b></figcaption></figure>
-        <figure><blockquote>“amazing web app, love the little mascot, EDDIE. Always makes every edit worth it 🙏”</blockquote><figcaption><b>Stephen L.</b></figcaption></figure>
+        <figure><blockquote>“It sounds dramatic but honestly this automated editor has changed my life, i legitimately couldn’t afford others out there with the relentless subscription models and this one been a game changer.”</blockquote><figcaption><span class="qface ini" style="--h:204" aria-hidden="true">JW</span><span><b>John W.</b></span></figcaption></figure>
+        <figure><blockquote>“What can I say? This is one of the smoothest automated short form editors I’ve ever used and by far the best at it’s price point.”</blockquote><figcaption><span class="qface ini" style="--h:94" aria-hidden="true">AC</span><span><b>Alicia C.</b></span></figcaption></figure>
+        <figure><blockquote>“Write a review? I am your review lol! Hooking up all my influencer crew on RS asap 🫶 phenomenal tool.”</blockquote><figcaption><span class="qface ini" style="--h:134" aria-hidden="true">TS</span><span><b>Travis S.</b></span></figcaption></figure>
+        <figure><blockquote>“Finally, an excellent short form content editor that runs on its own but still leaves the steering wheel accessible.”</blockquote><figcaption><span class="qface ini" style="--h:308" aria-hidden="true">MB</span><span><b>Marques B.</b></span></figcaption></figure>
+        <figure><blockquote>“amazing web app, love the little mascot, EDDIE. Always makes every edit worth it 🙏”</blockquote><figcaption><span class="qface ini" style="--h:221" aria-hidden="true">SL</span><span><b>Stephen L.</b></span></figcaption></figure>
       </div>
     </div>
   </section><!--/bake:proofwall-->

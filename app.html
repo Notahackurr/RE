@@ -57,6 +57,7 @@ svg.i { width: 20px; height: 20px; flex: none; fill: none; stroke: currentColor;
 .brand { display: flex; align-items: center; gap: 10px; padding: 4px 8px 18px; font: 800 19px/1 "Archivo", var(--ui); font-stretch: 125%; letter-spacing: -0.01em; }
 .brand .logo { width: 30px; height: 30px; border-radius: 9px; background: var(--grad); display: grid; place-items: center; color: var(--on-acc); }
 .brand .logo svg { width: 16px; height: 16px; }
+a.brand { color: inherit; text-decoration: none; } a.brand:focus-visible { outline: 2px solid var(--acc); outline-offset: 2px; border-radius: 10px; }
 .brand b { font: inherit; } .brand b span { color: var(--acc); }
 .nav-i { width: 100%; display: grid; grid-template-columns: 22px 1fr; gap: 2px 12px; align-items: center; text-align: left; padding: 10px 12px; border: 0; border-radius: 12px; background: none; color: var(--muted); transition: background .2s, color .2s; }
 .nav-i:hover { background: var(--panel-2); color: var(--fg); }
@@ -757,7 +758,7 @@ a.btn { text-decoration: none; color: inherit; }
 <div class="ambient" aria-hidden="true"><i></i><i></i><i></i></div>
 <div class="shell">
   <aside class="side" aria-label="Main"><i class="side-ind" aria-hidden="true"></i><button class="side-x" id="sideClose" type="button" aria-label="Hide sidebar" title="Hide sidebar (Ctrl+\)"><span data-icon="sidebar"></span></button>
-    <div class="brand"><span class="logo" data-icon="play"></span><b>Reel <span>Studio</span></b></div>
+    <a class="brand" href="./?home" data-home aria-label="Reel Studio home page"><span class="logo" data-icon="play"></span><b>Reel <span>Studio</span></b></a>
     <div class="brand-sub">Automated editing. Zero AI slop.</div>
     <button class="nav-i" data-go="clip"><span data-icon="clip"></span><b>Clip → Reel</b><small>One take, one finished reel</small></button>
     <button class="nav-i" data-go="batch"><span data-icon="batch"></span><b>Long form → Reels</b><small>A long video into a batch</small></button>
@@ -774,7 +775,7 @@ a.btn { text-decoration: none; color: inherit; }
   <div class="main">
     <header class="topbar">
       <button class="side-toggle" id="sideOpen" type="button" aria-label="Show sidebar" title="Show sidebar (Ctrl+\)"><span data-icon="sidebar"></span></button>
-      <span class="brand mobile-brand" style="padding:0"><span class="logo" data-icon="play"></span></span>
+      <a class="brand mobile-brand" href="./?home" data-home aria-label="Reel Studio home page" style="padding:0"><span class="logo" data-icon="play"></span></a>
       <button class="btn ghost sm" id="backBtn" type="button" hidden><span data-icon="back"></span>All reels</button>
       <h1 id="pageTitle">Clip → Reel</h1>
       <div class="grow"></div>
@@ -2396,6 +2397,10 @@ function useYtLink(raw) {
   if (!id) { $('#ytErr').textContent = /\S/.test(raw) ? "That doesn't look like a YouTube video link. Copy it from the Share button or the address bar." : 'Paste a YouTube link first.'; $('#ytErr').hidden = false; return false; }
   showYt(id, { fresh: true }); return true;
 }
+$$('[data-home]').forEach(a => a.addEventListener('click', e => {
+  if (!S.busy) return;
+  e.preventDefault(); toast('EDDIE’s still working. Leaving now stops this reel.', 5200, { label: 'Leave anyway', fn: () => { location.href = a.href; } });
+}));
 $('#ytForm').onsubmit = e => { e.preventDefault(); useYtLink($('#ytUrl').value); };
 $('#ytUrl').addEventListener('paste', () => setTimeout(() => { if (ytId($('#ytUrl').value)) useYtLink($('#ytUrl').value); }, 0));
 $('#ytUrl').addEventListener('input', () => { $('#ytErr').hidden = true; });
