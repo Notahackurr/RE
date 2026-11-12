@@ -17,6 +17,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@125,800&family=Inter:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@500&display=swap">
+<script type="module" src="site/analytics.js"></script>
 <style>
 :root {
   --bg: #07090F; --panel: #0E121B; --panel-2: #121724; --raise: #191F2D; --sunk: #090C13;
@@ -1131,6 +1132,10 @@ const toast = (msg, ms = 2600, act) => {
   clearTimeout(toast._t); toast._t = setTimeout(() => { t.hidden = true; }, ms);
 };
 const store = { get(k, d) { try { const v = localStorage.getItem('rs.' + k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } }, set(k, v) { try { localStorage.setItem('rs.' + k, JSON.stringify(v)); } catch (e) { /* storage blocked */ } } };
+// HeyCatch analytics (site/analytics.js, a module) runs what's queued here once it has loaded. Your videos, words and file names are never sent.
+const hc = (fn, ...args) => { (window.__hcq = window.__hcq || []).push([fn, args]); if (window.__hcRun) window.__hcRun(); };
+// Clicks inside these aren't captured at all: they show file names, transcript words, captions, songs, profile details or the email address.
+$$('#takeRow,#longRow,#cands,#reels,#editList,#caps,#reelMusic,#musicNow,#libGrid,#trackList,#setBody,#pickSheet,#addSheet,#prevSheet,#assetSheet,#trayList,#acctMenu .who,#proAcct,#authSheet,#toast').forEach(e => e.classList.add('ph-no-capture'));
 const clock = t => { t = Math.max(0, Math.round(t)); return `${Math.floor(t / 60)}:${String(t % 60).padStart(2, '0')}`; };
 const longClock = t => { t = Math.max(0, Math.round(t)); const h = Math.floor(t / 3600), m = Math.floor(t % 3600 / 60); return h ? `${h}:${String(m).padStart(2, '0')}:${String(t % 60).padStart(2, '0')}` : clock(t); };
 const newId = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
@@ -1210,7 +1215,7 @@ const resetDay = () => { const d = new Date(); return new Date(d.getFullYear(), 
 const live = () => BILL.ready || (forcePaywall && BILL.links);
 function usage() { let u = store.get('usage', null); if (!u || u.month !== monthKey()) { u = { month: monthKey(), clip: 0, batch: 0 }; store.set('usage', u); } return u; }
 const left = k => pro() ? Infinity : Math.max(0, FREE[k] - usage()[k]);
-const countReel = () => { try { if (BILL.accounts) fetch(`${BILL.sbUrl}/rest/v1/rpc/count_reel`, { method: 'POST', headers: { apikey: BILL.sbKey, 'Content-Type': 'application/json' }, body: '{}', keepalive: true }).catch(() => {}); } catch (e) { /* best effort */ } };
+const countReel = mode => { hc('trackEvent', 'reel_made', { mode }); try { if (BILL.accounts) fetch(`${BILL.sbUrl}/rest/v1/rpc/count_reel`, { method: 'POST', headers: { apikey: BILL.sbKey, 'Content-Type': 'application/json' }, body: '{}', keepalive: true }).catch(() => {}); } catch (e) { /* best effort */ } };
 function useOne(k) { if (pro()) return; const u = usage(); u[k]++; store.set('usage', u); renderPlan(); }
 const same = (a, b) => String(a).toLowerCase() === String(b).toLowerCase();
 /** The settings a reel is actually made with: Premium choices are kept (and come back if you upgrade) but Free uses the defaults. */
@@ -1253,7 +1258,7 @@ async function sb(path, { method = 'GET', body, auth = true } = {}) {
 function setSession(j) {
   if (!j || !j.access_token) { SESSION = null; store.set('session', null); return; }
   SESSION = { access_token: j.access_token, refresh_token: j.refresh_token, expires_at: +j.expires_at || Math.floor(Date.now() / 1000) + (+j.expires_in || 3600),
-    user: j.user ? { id: j.user.id, email: j.user.email } : SESSION && SESSION.user };
+    user: j.user ? { id: j.user.id, email: j.user.email, created: j.user.created_at } : SESSION && SESSION.user };
   store.set('session', SESSION);
 }
 let refreshing = null;
@@ -1277,7 +1282,7 @@ const authMsg = e => {
 };
 const backTo = () => location.origin + location.pathname;
 const Account = {
-  async signUp(email, password) { const j = await sb(`/auth/v1/signup?redirect_to=${encodeURIComponent(backTo())}`, { method: 'POST', auth: false, body: { email, password } }); if (j && j.access_token) { setSession(j); return 'in'; } return 'confirm'; },
+  async signUp(email, password) { const j = await sb(`/auth/v1/signup?redirect_to=${encodeURIComponent(backTo())}`, { method: 'POST', auth: false, body: { email, password } }); if (j && j.access_token) { setSession(j); hcSync(); hc('trackEvent', 'signup_completed'); return 'in'; } return 'confirm'; },
   async signIn(email, password) { setSession(await sb('/auth/v1/token?grant_type=password', { method: 'POST', auth: false, body: { email, password } })); },
   async signOut() { try { await sb('/auth/v1/logout', { method: 'POST' }); } catch (e) { /* signed out here either way */ } setSession(null); ENT = null; store.set('ent', null); refresh(); },
   recover: email => sb(`/auth/v1/recover?redirect_to=${encodeURIComponent(backTo())}`, { method: 'POST', auth: false, body: { email } }),
@@ -1306,6 +1311,16 @@ async function loadEnt() {
   } catch (e) { if (e.status === 401) { setSession(null); refresh(); } return false; }
 }
 const owner = () => !!(LIC && LIC.owner && LIC.status === 'active');
+/** Tell HeyCatch who's signed in (the account id, with email and plan as details), only when that changes; sign-out starts a fresh anonymous visitor. */
+function hcSync() {
+  const id = signedIn() ? SESSION.user.id : null, was = store.get('hcId', null);
+  if (!id) { if (was) { hc('resetIdentity'); store.set('hcId', null); } return; }
+  const plan = owner() ? 'creator' : (acctPlan() || {}).plan || 'free';
+  if (!was || was.id !== id) hc('setIdentity', id, { email: SESSION.user.email, plan }, SESSION.user.created ? { signup_date: SESSION.user.created } : undefined);
+  else if (was.plan !== plan) hc('setPersonProperties', { plan });
+  else return;
+  store.set('hcId', { id, plan });
+}
 const licensed = () => owner() || !!acctPlan();
 const pro = () => licensed() || !live();
 async function ownerKey(key) {
@@ -1375,8 +1390,9 @@ async function handleAuthReturn() {
   history.replaceState(null, '', location.pathname + location.search);
   if (p.get('error')) return toast(/expired/i.test(p.get('error_description') || '') ? 'That link has expired. Request a new one from Sign in.' : (p.get('error_description') || 'That link didn’t work.').replace(/\+/g, ' '), 6000);
   setSession({ access_token: p.get('access_token'), refresh_token: p.get('refresh_token'), expires_in: p.get('expires_in'), expires_at: p.get('expires_at') });
-  try { const u = await sb('/auth/v1/user'); SESSION.user = { id: u.id, email: u.email }; store.set('session', SESSION); } catch (e) { setSession(null); return toast(authMsg(e), 5000); }
+  try { const u = await sb('/auth/v1/user'); SESSION.user = { id: u.id, email: u.email, created: u.created_at }; store.set('session', SESSION); } catch (e) { setSession(null); return toast(authMsg(e), 5000); }
   await loadEnt(); refresh();
+  if (p.get('type') === 'signup') hc('trackEvent', 'signup_completed');   // came back from the confirmation email
   if (p.get('type') === 'recovery') openAuth('newpw', { why: 'Signed in from your reset link.' });
   else { toast(`You're in. Signed in as ${SESSION.user.email}`, 4200); const plan = store.get('pendingBuy', null); store.set('pendingBuy', null); if (plan && !licensed()) { upsell(); startCheckout(plan); } }
 }
@@ -1400,6 +1416,7 @@ function proStep(s) {
 }
 let waitTimer = null;
 function startCheckout(plan) {
+  hc('trackEvent', 'checkout_started', { plan });
   window.open(checkoutUrl(plan), '_blank', 'noopener'); proStep('wait');
   $('#proWaitNote').textContent = `Finish paying in the new tab. Premium switches on here by itself a few seconds later, and on any device where you sign in as ${SESSION.user.email}.`;
   clearInterval(waitTimer); const t0 = Date.now();
@@ -1719,7 +1736,7 @@ function accordion(el, keys) {
   el.querySelectorAll('[data-body]').forEach(c => { const k = c.dataset.body; if (k !== open) { c.closest('.acc-body').inert = true; return; } c.append(ctl[k]()); if (k === 'captions') c.append(ctl.captionsMore()); });
 }
 function refresh() {
-  applyTheme(); renderProfile(); renderPlan();
+  hcSync(); applyTheme(); renderProfile(); renderPlan();
   accordion($('#clipStyle'), ['captions', 'visuals', 'music', 'editing']);
   accordion($('#batchStyle'), ['reels', 'captions', 'visuals', 'music', 'editing']);
   if (S.view === 'settings' && !typing($('#setBody'))) renderSettings();
@@ -2267,7 +2284,7 @@ async function make() {
     const blob = await E.render(P, (p, fps) => onStage('render', p, fps ? `${Math.round(p * 100)}%` : ''), signal);
     onStage('render', 1); store.set('ready.' + SET.speech.model, true);
     P.audioCheck = await E.verifyAudio(blob); P.ui = { dirty: {}, changed: !P.audioCheck.ok, pending: new Set() };
-    S.clip.P = P; S.clip.blob = blob; S.clip.stage = 'review'; useOne('clip'); countReel();
+    S.clip.P = P; S.clip.blob = blob; S.clip.stage = 'review'; useOne('clip'); countReel('clip');
   } catch (e) {
     S.clip.stage = 'setup';
     if (!(e instanceof E.Cancelled)) { console.error(e); const m = $('#clipError'); m.textContent = `That didn't work: ${e.message || e}`; m.hidden = false; }
@@ -2389,7 +2406,7 @@ async function renderBatch() {
         const blob = await E.render(P, (p, fps) => onStage('render', p, fps ? `${Math.round(p * 100)}%` : ''), signal);
         onStage('render', 1);
         P.audioCheck = await E.verifyAudio(blob); P.ui = { dirty: {}, changed: !P.audioCheck.ok, pending: new Set() };
-        Object.assign(R, { P, blob, url: URL.createObjectURL(blob), status: 'done' }); countReel();
+        Object.assign(R, { P, blob, url: URL.createObjectURL(blob), status: 'done' }); countReel('long');
         if (!B.counted) { B.counted = true; useOne('batch'); }
       } catch (e) { if (e instanceof E.Cancelled) throw e; console.error(e); R.status = 'failed'; R.error = e.message || String(e); }
       renderReels();

@@ -2,6 +2,10 @@
 // written to the buyer's account. Deploy with JWT verification OFF (Lemon Squeezy can't sign in).
 // Secrets: LS_SIGNING_SECRET (the signing secret you typed when creating the webhook).
 import { createClient } from 'npm:@supabase/supabase-js@2';
+import { analytics } from 'npm:@heycatch/sdk@0.8.5/server';
+
+// HeyCatch: purchases are business events only this server knows for sure. Same account id the app identifies with.
+analytics.init({ projectKey: 'hck_pk_5nW7o4oHXVFis5fCSEQjTfBG0Hy6w1y4', install: { framework: 'web', agent: 'claude-code' } });
 
 const db = () => createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!, { auth: { persistSession: false } });
 const enc = new TextEncoder();
@@ -48,6 +52,8 @@ Deno.serve(async (req) => {
         await upsert({ id: `order:${body.data.id}`, user_id: userId ?? undefined, email: a.user_email, plan: 'lifetime',
           status: event === 'order_refunded' || a.refunded ? 'refunded' : a.status === 'paid' ? 'active' : a.status,
           ls_order_id: String(body.data.id), portal_url: a.urls?.receipt ?? undefined, test_mode: test });
+        if (userId && event === 'order_refunded') await analytics.trackEvent('purchase_refunded', { plan: 'lifetime', test_mode: test }, { userId });
+        else if (userId && a.status === 'paid') await analytics.trackEvent('purchase_completed', { plan: 'lifetime', test_mode: test }, { userId, set: { plan: 'lifetime' } });
       }
     } else if (event.startsWith('subscription_')) {
       const id = event.startsWith('subscription_payment_') ? a.subscription_id : body.data.id;
@@ -61,6 +67,9 @@ Deno.serve(async (req) => {
           if (!cur) row.status = event === 'subscription_payment_success' ? 'active' : 'past_due'; else delete row.email;
         }
         if (row.status !== undefined || event.startsWith('subscription_payment_')) await upsert(row);
+        if (userId && event === 'subscription_created') await analytics.trackEvent('subscription_started', { plan: 'monthly', test_mode: test }, { userId, set: { plan: 'monthly' } });
+        else if (userId && event === 'subscription_cancelled') await analytics.trackEvent('subscription_cancelled', { plan: 'monthly', test_mode: test }, { userId });
+        else if (userId && event === 'subscription_expired') await analytics.trackEvent('subscription_ended', { plan: 'monthly', test_mode: test }, { userId });
       }
     } else if (event === 'license_key_created' || event === 'license_key_updated') {
       // the key belongs to an order we've (usually) already recorded; store it there so it can't be linked to anyone else
