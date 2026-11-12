@@ -41,7 +41,7 @@ const usage = (() => {
 
 const proofwall = !quotes.length ? '' : `<section id="proofwall">
     <div class="wrap">
-      <div class="head"><span class="eyebrow">From people using it</span><h2>What Eddie's doing for them</h2></div>
+      <div class="head"><span class="eyebrow">From people using it</span><h2>What EDDIE's doing for them</h2></div>
       <div class="quotes">
 ${quotes.map((q) => `        <figure>${q.photo ? `<img src="${url(q.photo)}" alt="" width="44" height="44" class="qface">` : ''}<blockquote>“${esc(q.text)}”</blockquote><figcaption><b>${esc(q.name)}</b>${q.role ? `, ${esc(q.role)}` : ''}${q.link ? ` · <a href="${url(q.link)}" rel="nofollow noopener">${esc(q.linkLabel || 'Original post')}</a>` : ''}</figcaption></figure>`).join('\n')}
       </div>

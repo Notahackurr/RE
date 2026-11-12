@@ -4,7 +4,7 @@
 
 Reel Studio is for people who talk to the camera: tips, stories, lessons, podcasts, vlogs and talks.
 
-Eddie is Reel Studio's mascot and the face of the brand: the editor character who "does the editing while you do the talking". He isn't AI; he stands for the app's fixed, visible editing rules.
+EDDIE is Reel Studio's mascot and the face of the brand: the editor character who "does the editing while you do the talking". He isn't AI; he stands for the app's fixed, visible editing rules.
 
 - Clip → Reel: one take in, one finished 1080 × 1920 reel out. Pauses and clap-marked retakes trimmed ("Flubbed a line? Clap once and say it again. The flub gets cut."), captions with one highlighted word per line, clips and photos matched to the meaning and feel of each line, music written to the reel's exact length, slow push-ins and punch-ins, no watermark.
 - Long form → Reels: a long video (a podcast, a vlog, a talk) in, a batch of reels out. Every line is scored as a hook, the strongest self-contained stretches become reels (15–30 s up to 60–90 s), and a better hook later in a reel can play first.

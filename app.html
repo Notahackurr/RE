@@ -804,9 +804,9 @@ a.btn { text-decoration: none; color: inherit; }
           <label class="drop" id="clipDrop" for="takeInput">
             <span class="mascot-stage sm" data-mascot></span>
             <h2>Turn a take into a finished reel</h2>
-            <p class="hint">Hand Eddie a take. He trims the pauses and retakes, adds captions, and places clips and music to fit what you say.</p>
+            <p class="hint">Hand EDDIE a take. He trims the pauses and retakes, adds captions, and places clips and music to fit what you say.</p>
             <span class="btn primary">Choose a video</span>
-            <span class="tip">Flubbed a line? Clap once and say it again. Eddie cuts the flub.</span>
+            <span class="tip">Flubbed a line? Clap once and say it again. EDDIE cuts the flub.</span>
             <span class="tagline"><i></i>Your words, real footage, original music. Nothing AI-generated.</span>
           </label>
           <div class="card file-row" id="takeRow" hidden>
@@ -831,7 +831,7 @@ a.btn { text-decoration: none; color: inherit; }
           <label class="drop" id="batchDrop" for="longInput">
             <span class="mascot-stage sm" data-mascot></span>
             <h2>Turn a long video into a batch of reels</h2>
-            <p class="hint">A podcast, a vlog, a talk: Eddie scores every line, opens each reel with its strongest hook, and edits every one for you.</p>
+            <p class="hint">A podcast, a vlog, a talk: EDDIE scores every line, opens each reel with its strongest hook, and edits every one for you.</p>
             <span class="btn primary">Choose a long video</span>
             <span class="tip">Up to 30 minutes works best.</span>
             <span class="tagline"><i></i>Edited by clear rules on your device. Nothing AI-generated.</span>
@@ -899,10 +899,10 @@ a.btn { text-decoration: none; color: inherit; }
           </div>
           <b class="pct" id="ringPct">0%</b>
           <div class="eyebrow" id="progStep">Starting</div>
-          <h2 id="progTitle">Eddie’s making your reel</h2>
+          <h2 id="progTitle">EDDIE’s making your reel</h2>
         </div>
         <ol class="stages" id="stages"></ol>
-        <div class="prog-foot"><p class="hint">Keep this page open until Eddie finishes. You can look around the rest of the app meanwhile.</p><button class="btn ghost" id="cancelBtn" type="button">Cancel</button></div>
+        <div class="prog-foot"><p class="hint">Keep this page open until EDDIE finishes. You can look around the rest of the app meanwhile.</p><button class="btn ghost" id="cancelBtn" type="button">Cancel</button></div>
       </div>
 
       <div id="review" hidden>
@@ -1046,12 +1046,12 @@ a.btn { text-decoration: none; color: inherit; }
 </div>
 <div class="sheet" id="helpSheet" hidden role="dialog" aria-modal="true" aria-labelledby="helpTitle">
   <div class="card">
-    <h2 id="helpTitle">Tips from Eddie</h2>
+    <h2 id="helpTitle">Tips from EDDIE</h2>
     <ul class="steps">
       <li><b>Retakes:</b> clap once right after a flub and say the line again. The flub and the clap are cut.</li>
       <li><b>Clip → Reel</b> is for a single take. <b>Long form → Reels</b> finds the best stretches of a long video and opens each with its strongest line.</li>
       <li><b>Your own clips</b> (Library) are matched first. Describe what they show and the words you'd say over them.</li>
-      <li><b>After a reel is made</b>, every edit Eddie made is listed. Tap to watch it, remove it, or add your own, then Update reel.</li>
+      <li><b>After a reel is made</b>, every edit EDDIE made is listed. Tap to watch it, remove it, or add your own, then Update reel.</li>
       <li>Your videos never leave this device. Settings, clips and tracks are saved in this browser.</li>
     </ul>
     <button class="btn primary" data-close type="button">Got it</button>
@@ -2315,7 +2315,7 @@ async function make() {
   if (S.busy) return toast('Wait for the current job to finish first.');
   if (!left('clip')) return upsell({ limit: 'clip' });
   S.busy = 'clip'; S.clip.stage = 'work'; showClip(); updateBusy();
-  Prog.start($('#view-clip'), 'Eddie’s making your reel', CLIP_STAGES); await keepAwake(true); window.scrollTo(0, 0);
+  Prog.start($('#view-clip'), 'EDDIE’s making your reel', CLIP_STAGES); await keepAwake(true); window.scrollTo(0, 0);
   S.abort = new AbortController(); const signal = S.abort.signal;
   try {
     const cfg = cfgNow();
@@ -2331,7 +2331,7 @@ async function make() {
   } catch (e) {
     S.clip.stage = 'setup';
     if (!(e instanceof E.Cancelled)) { console.error(e); const m = $('#clipError'); m.textContent = `That didn't work: ${e.message || e}`; m.hidden = false; }
-  } finally { await keepAwake(false); S.abort = null; S.busy = null; $('#progress').hidden = true; notes(); if (S.view === 'clip') showClip(); else updateBusy(); updateBusy(); if (S.view !== 'clip' && S.clip.stage === 'review') toast('Eddie’s done. Your reel is ready'); }
+  } finally { await keepAwake(false); S.abort = null; S.busy = null; $('#progress').hidden = true; notes(); if (S.view === 'clip') showClip(); else updateBusy(); updateBusy(); if (S.view !== 'clip' && S.clip.stage === 'review') toast('EDDIE’s done. Your reel is ready'); }
 }
 $('#makeBtn').onclick = make;
 
@@ -2413,7 +2413,7 @@ async function findReels() {
   if (S.busy) return toast('Wait for the current job to finish first.');
   if (B.duration > 3600) return toast('Trim the video to under 45 minutes first.');
   S.busy = 'batch'; B.stage = 'finding'; showBatch(); updateBusy();
-  Prog.start($('#view-batch'), 'Eddie’s finding your best reels', [['read', 'Reading your video'], ['claps', 'Listening for claps'], ['transcribe', 'Writing down every line'], ['score', 'Scoring hooks and picking reels']]);
+  Prog.start($('#view-batch'), 'EDDIE’s finding your best reels', [['read', 'Reading your video'], ['claps', 'Listening for claps'], ['transcribe', 'Writing down every line'], ['score', 'Scoring hooks and picking reels']]);
   await keepAwake(true); window.scrollTo(0, 0);
   S.abort = new AbortController(); const signal = S.abort.signal;
   try {
@@ -2429,7 +2429,7 @@ async function findReels() {
   } catch (e) {
     B.stage = 'setup';
     if (!(e instanceof E.Cancelled)) { console.error(e); $('#batchError').textContent = `That didn't work: ${e.message || e}`; $('#batchError').hidden = false; }
-  } finally { await keepAwake(false); S.abort = null; S.busy = null; $('#progress').hidden = true; notes(); if (S.view === 'batch') showBatch(); updateBusy(); if (S.view !== 'batch' && B.stage === 'pick') toast('Eddie found your reels. Pick the ones you want'); }
+  } finally { await keepAwake(false); S.abort = null; S.busy = null; $('#progress').hidden = true; notes(); if (S.view === 'batch') showBatch(); updateBusy(); if (S.view !== 'batch' && B.stage === 'pick') toast('EDDIE found your reels. Pick the ones you want'); }
 }
 $('#findBtn').onclick = findReels;
 const PART = [['hook', 'Hook'], ['standalone', 'Stands alone'], ['flow', 'Flow'], ['payoff', 'Payoff'], ['pace', 'Pace']];
@@ -2503,7 +2503,7 @@ async function renderBatch() {
     await keepAwake(false); S.abort = null; S.busy = null; $('#progress').hidden = true;
     B.reels = B.reels.filter(r => r.status === 'done' || r.status === 'failed');
     B.stage = B.reels.length ? 'results' : 'pick'; if (S.view === 'batch') showBatch(); updateBusy();
-    if (S.view !== 'batch') toast('Eddie’s done. Your reels are ready');
+    if (S.view !== 'batch') toast('EDDIE’s done. Your reels are ready');
   }
 }
 $('#renderBatch').onclick = renderBatch;
@@ -2765,7 +2765,7 @@ $('#rerender').onclick = async () => {
   S.busy = rev.where; $('#review').hidden = true; $('#reelVideo').pause(); updateBar(); updateBusy();
   const music = d.music || (d.retime ? currentMusic(P) : null);
   if (music && ui.musicPrev && !d.music) music.mode = 'off';
-  Prog.start(host, 'Eddie’s updating your reel', [...(d.retime ? [['cut', 'Trimming pauses and retakes'], ['face', 'Framing you']] : []), ...(music ? [['music', 'Adding music']] : []), ['render', 'Finishing the video']]);
+  Prog.start(host, 'EDDIE’s updating your reel', [...(d.retime ? [['cut', 'Trimming pauses and retakes'], ['face', 'Framing you']] : []), ...(music ? [['music', 'Adding music']] : []), ['render', 'Finishing the video']]);
   if (rev.where === 'batch') host.insertBefore($('#progress'), $('#review'));
   await keepAwake(true); window.scrollTo(0, 0);
   S.abort = new AbortController();
