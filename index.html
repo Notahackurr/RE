@@ -383,6 +383,15 @@ input[type="range"] { width: 100%; accent-color: var(--acc); }
 .tile .mine { position: absolute; left: 7px; top: 7px; font-size: 11px; font-weight: 700; background: var(--acc); color: var(--on-acc); padding: 2px 7px; border-radius: 6px; }
 .tile b { font-size: 13.5px; font-weight: 600; line-height: 1.35; }
 .tile small { font-size: 12px; color: var(--muted); }
+@media (max-width: 700px) {   /* many topics: one row you swipe through instead of a wall of chips */
+  #libFilters, #pickFilters { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; -webkit-overflow-scrolling: touch; padding: 2px 16px 4px 0; margin-right: -16px;
+    -webkit-mask-image: linear-gradient(90deg, #000 85%, transparent); mask-image: linear-gradient(90deg, #000 85%, transparent); }
+  #libFilters::-webkit-scrollbar, #pickFilters::-webkit-scrollbar { display: none; }
+  #libFilters .chip, #pickFilters .chip { flex: none; }
+}
+[data-online] .tile b { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+[data-online] .tile small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+#libOnline { margin-top: 26px; padding-top: 22px; border-top: 1px solid var(--line); }
 .list { display: grid; gap: 8px; }
 .item { display: grid; grid-template-columns: 52px minmax(0, 1fr) auto; gap: 12px; align-items: center; padding: 10px; border-radius: 14px; background: var(--panel-2); border: 1px solid var(--line); }
 .item img, .item .ph { width: 52px; aspect-ratio: 9 / 16; object-fit: cover; border-radius: 9px; background: var(--sunk); display: grid; place-items: center; color: var(--muted); }
@@ -906,6 +915,7 @@ a.btn { text-decoration: none; color: inherit; }
           <div id="libVisual" class="stack">
             <div class="chips" id="libFilters" role="group" aria-label="Filter"></div>
             <div class="lib" id="libGrid"></div>
+            <div class="stack" id="libOnline" hidden></div>
           </div>
           <div class="stack" id="libMusic" hidden>
             <div class="card">
@@ -1157,7 +1167,7 @@ const DEF = {
   theme: 'dark', accent: 'ember', accentCustom: '#FF9A3C',
   cap: { color: '#FFFFFF', hl: '#FFC94A', style: 'outline', size: 'm', pos: 'lower', upper: false },
   music: { choice: 'genre:chill', level: -10 },
-  vis: { stock: true, photos: true, amount: 'balanced' },
+  vis: { stock: true, photos: true, amount: 'balanced', online: true },
   edit: { pauses: 'natural', zooms: true, claps: true, cleanup: true },
   speech: { model: 'small', longModel: 'base', corrections: null },
   batch: { length: '30-45', count: 'auto', coldOpen: true, topics: '', trends: true },
@@ -1652,6 +1662,7 @@ const ctl = {
     return frag(
     h('<p class="hint">Clips and photos are matched to the meaning and feel of each line, and how you say it. Your own clips go first.</p>'), mine,
     sw('Free stock footage', `${S.stock.length} clips and ${S.photos.length} photos, free to use in your reels.`, () => SET.vis.stock, v => { SET.vis.stock = v; }),
+    BILL.accounts && BILL.stockOk !== false ? sw('Search free stock online', 'When something you say isn’t covered by the library, matching free clips and photos from Pexels join in. Only a few search words are sent, never your video.', () => SET.vis.online !== false, v => { SET.vis.online = v; }) : null,
     sw('Photo cards', 'A photo slides into the lower half while you stay on camera.', () => SET.vis.photos, v => { SET.vis.photos = v; }),
     field('How many', seg([['fewer', 'Fewer'], ['balanced', 'Balanced'], ['more', 'More']], () => eff().vis.amount, v => { SET.vis.amount = v; }, 'How many', { vals: ['fewer', 'more'], feat: 'Clip amount' }), '', true)); },
   music: () => musicPicker({ value: eff().music.choice, level: SET.music.level, onPick: v => { SET.music.choice = v; save(); refresh(); }, onLevel: v => { SET.music.level = v; save(); } }),
@@ -1779,17 +1790,29 @@ async function loadStock() {
 async function loadTrends() { try { S.trends = await (await fetch('trends.json', { cache: 'no-store' })).json(); } catch (e) { S.trends = null; } }
 function ownItems() {
   return S.added.map(a => ({ id: a.name, name: a.name, kind: a.kind || 'clip', duration: a.duration, tags: a.tags || [], category: a.category || 'added', subject: a.subject || a.name,
-    suggested_use: a.subject || (a.tags || []).join(', '), url: a.url, thumbUrl: a.thumbUrl, source: 'added', docId: a.docId, energy: a.energy, needsInfo: !!a.needsInfo }));
+    suggested_use: a.subject || (a.tags || []).join(', '), url: a.url, thumbUrl: a.thumbUrl, source: 'added', docId: a.docId, energy: a.energy, needsInfo: !!a.needsInfo, credit: a.credit || null }));
 }
 function allItems() { return [...ownItems(), ...S.stock, ...S.photos]; }
 function planItems() { return (SET.vis.stock ? [...ownItems(), ...S.stock] : ownItems()).filter(i => i.kind !== 'photo'); }
 function popItems() { const own = ownItems().filter(i => i.kind === 'still' || i.kind === 'photo'); return SET.vis.stock ? [...S.photos, ...own] : own; }
-const CATS = { all: 'All', mine: 'Yours', stock: 'Stock', photos: 'Photos', nature: 'Nature', training: 'Training', habits: 'Habits', lifestyle: 'Lifestyle', food: 'Food', family: 'Family', mood: 'Mood', contrast: 'Contrast', added: 'Other' };
-const ADD_CATS = ['added', 'nature', 'training', 'habits', 'lifestyle', 'food', 'family', 'mood', 'contrast'];
+const CATS = { all: 'All', mine: 'Yours', stock: 'Stock', photos: 'Photos', work: 'Work', money: 'Money', tech: 'Tech', city: 'City', travel: 'Travel', social: 'People', emotion: 'Feelings',
+  family: 'Family & love', learning: 'Learning', creative: 'Creative', home: 'Home', food: 'Food', pets: 'Pets', celebration: 'Celebrate', sport: 'Sports', time: 'Time', wellness: 'Wellness',
+  nature: 'Nature', mood: 'Mood', habits: 'Habits', lifestyle: 'Lifestyle', training: 'Fitness', home_gym: 'Home gym', contrast: 'Flashy', online: 'Free stock', added: 'Other' };
+const ADD_CATS = ['added', 'work', 'money', 'tech', 'city', 'travel', 'social', 'emotion', 'family', 'learning', 'creative', 'home', 'food', 'pets', 'celebration', 'sport', 'time', 'nature', 'mood', 'training'];
 const inCat = (i, k) => k === 'all' || (k === 'mine' ? i.source === 'added' : k === 'stock' ? i.source === 'stock' : k === 'photos' ? i.kind === 'photo' || i.kind === 'still' : i.category === k);
 
 // ---------------------------------------------------------- library view: Clips · Photos · Music
-const libItems = tab => tab === 'photos' ? [...ownItems().filter(i => i.kind !== 'clip'), ...S.photos] : [...ownItems().filter(i => i.kind === 'clip'), ...S.stock];
+/** Stock in a browsable mix: one from each topic in turn, everyday topics first and fitness last. Your own always lead. */
+const mixMemo = new Map();
+function mixed(list) {
+  if (mixMemo.has(list)) return mixMemo.get(list);
+  const order = Object.keys(CATS), rank = c => { const i = order.indexOf(c); return i < 0 ? 99 : i; }, groups = new Map();
+  list.forEach(i => { const c = i.category || 'other'; if (!groups.has(c)) groups.set(c, []); groups.get(c).push(i); });
+  const g = [...groups.entries()].sort((a, b) => rank(a[0]) - rank(b[0])).map(x => x[1]), out = [];
+  for (let k = 0; out.length < list.length; k++) g.forEach(arr => { if (arr[k]) out.push(arr[k]); });
+  mixMemo.clear(); mixMemo.set(list, out); return out;
+}
+const libItems = tab => tab === 'photos' ? [...ownItems().filter(i => i.kind !== 'clip'), ...mixed(S.photos)] : [...ownItems().filter(i => i.kind === 'clip'), ...mixed(S.stock)];
 const matches = (i, q) => !q || [label(i), ...(i.tags || []), CATS[i.category] || '', i.name || ''].join(' ').toLowerCase().includes(q);
 function setLibTab(tab, quiet) {
   if (S.libTab !== tab) { S.libTab = tab; S.libFilter = 'all'; }
@@ -1833,7 +1856,7 @@ function renderLib() {
     const media = i.kind === 'clip'
       ? `<video src="${esc(i.url)}" ${i.thumbUrl ? `poster="${esc(i.thumbUrl)}"` : ''} muted loop playsinline preload="none"></video><span class="tag">${(+i.duration || 0).toFixed(0)}s</span>`
       : `<img src="${esc(i.thumbUrl || i.url)}" alt="" loading="lazy">`;
-    return `<article class="tile" style="--i:${k + 1}"><button class="media" type="button" data-open="${esc(i.id)}" aria-label="${esc(label(i))}">${media}${mine}${need}</button><b>${esc(label(i))}</b><small>${i.source === 'added' ? 'Yours' : 'Stock'} · ${esc(CATS[i.category] || 'Other')}</small></article>`;
+    return `<article class="tile" style="--i:${k + 1}"><button class="media" type="button" data-open="${esc(i.id)}" aria-label="${esc(label(i))}">${media}${mine}${need}</button><b>${esc(label(i))}</b><small>${i.credit ? 'Pexels' : i.source === 'added' ? 'Yours' : 'Stock'} · ${esc(CATS[i.category] || 'Other')}</small></article>`;
   });
   if (q && !list.length) grid.innerHTML = `<div class="empty-hero"><b>Nothing matches “${esc(S.libQuery)}”</b><span>Try another word, or clear the search.</span></div>`;
   else if (S.libFilter === 'mine' && !list.length) grid.innerHTML = `<div class="empty-hero"><span class="ico" style="width:52px;height:52px;border-radius:16px;display:grid;place-items:center;background:var(--acc-soft);color:var(--acc)">${icon(tab === 'photos' ? 'image' : 'film')}</span><b>No ${noun} of your own yet</b><span>Add some and they're used first in your reels. They stay on this device.</span><button class="btn primary" type="button" data-add>${icon('plus')}Add ${noun}</button></div>`;
@@ -1845,6 +1868,63 @@ function renderLib() {
     b.onpointerenter = e => { if (e.pointerType !== 'mouse') return; if (hoverVideo && hoverVideo !== v) hoverVideo.pause(); hoverVideo = v; v.play().catch(() => {}); };
     b.onpointerleave = e => { if (e.pointerType !== 'mouse') return; v.pause(); };
   });
+  renderOnline(tab, q);
+}
+// ---- free stock (Pexels, searched through Reel Studio's server so the key stays private)
+const STOCK_IDEAS = ['city at night', 'laptop work', 'coffee', 'money', 'friends laughing', 'travel', 'dog', 'celebration', 'thinking', 'ocean', 'cooking', 'studying'];
+const stockMemo = new Map();
+const onlineOk = () => !!(BILL.accounts && BILL.stockOk !== false && SET.vis.online !== false && navigator.onLine !== false);
+async function stockSearch(q, kind = 'both', n = 8, signal) {
+  const key = `${kind}|${n}|${q.toLowerCase().trim()}`; if (stockMemo.has(key)) return stockMemo.get(key);
+  const r = await fetch(`${BILL.sbUrl}/functions/v1/stock?q=${encodeURIComponent(q)}&kind=${kind}&n=${n}`, { headers: { apikey: BILL.sbKey }, signal });
+  const j = await r.json().catch(() => ({}));
+  if (r.status === 404 || r.status === 503) { BILL.stockOk = false; refresh(); }   // not set up on the server: hide it quietly
+  if (!r.ok) throw new Error(j.error || "Couldn't reach free stock right now.");
+  BILL.stockOk = true;
+  const items = (j.items || []).filter(x => x && x.url).map(x => ({ ...x, thumbUrl: x.thumb, source: 'stock', provider: 'pexels', category: 'online', energy: 'medium', suggested_use: x.subject }));
+  stockMemo.set(key, items); return items;
+}
+/** For the editor: free stock for a few things you talk about, found within a few seconds or not at all. */
+const onlineFinder = () => onlineOk() ? async (terms, signal) => {
+  const all = await Promise.race([Promise.all(terms.map(t => stockSearch(t, 'both', 4, signal).catch(() => []))), new Promise(r => setTimeout(() => r([]), 8000))]);
+  return all.flat();
+} : null;
+let onlineReq = 0;
+function renderOnline(tab, q) {
+  const box = $('#libOnline'); if (!box) return;
+  if (!onlineOk() || tab === 'music') { box.hidden = true; return; }
+  box.hidden = false; q = (q || '').trim();
+  const kind = tab === 'photos' ? 'photo' : 'clip', my = ++onlineReq;
+  const head = `<div><h2 class="h3">Free stock</h2><p class="hint">Search millions of free ${kind === 'photo' ? 'photos' : 'videos'} and add any to your library in one tap. <a href="https://www.pexels.com" target="_blank" rel="noopener">Provided by Pexels</a>.</p></div>`;
+  if (q.length < 2) {
+    box.innerHTML = head + `<div class="chips">${STOCK_IDEAS.map(x => `<button class="chip" type="button" data-idea="${esc(x)}">${esc(x)}</button>`).join('')}</div>`;
+    box.querySelectorAll('[data-idea]').forEach(b => b.onclick = () => { $('#libSearch').value = b.dataset.idea; S.libQuery = b.dataset.idea; renderLib(); });
+    return;
+  }
+  box.innerHTML = head + `<div class="lib${kind === 'photo' ? ' photos' : ''}" data-online>${Array.from({ length: 6 }, () => '<div class="skel"></div>').join('')}</div>`;
+  clearTimeout(renderOnline._t);
+  renderOnline._t = setTimeout(async () => {
+    let list; try { list = (await stockSearch(q, kind, 12)).filter(x => x.kind === kind); }
+    catch (e) { if (my === onlineReq && box.querySelector('[data-online]')) box.querySelector('[data-online]').innerHTML = `<div class="empty">${esc(e.message)}</div>`; return; }
+    if (my !== onlineReq) return;
+    const grid = box.querySelector('[data-online]');
+    if (!list.length) { grid.innerHTML = `<div class="empty">No free ${kind === 'photo' ? 'photos' : 'videos'} for “${esc(q)}”. Try a simpler word.</div>`; return; }
+    const have = new Set(S.added.map(a => a.stockId).filter(Boolean));
+    grid.innerHTML = list.map((i, k) => `<article class="tile" style="--i:${k}"><div class="media">${i.kind === 'clip' ? `<video src="${esc(i.url)}" poster="${esc(i.thumbUrl)}" muted loop playsinline preload="none"></video><span class="tag">${Math.round(i.duration || 0)}s</span>` : `<img src="${esc(i.thumbUrl)}" alt="" loading="lazy">`}</div>
+      <b>${esc(i.subject)}</b><small>${esc(i.credit)}</small><button class="btn sm${have.has(i.id) ? '' : ' primary'}" type="button" data-get="${esc(i.id)}"${have.has(i.id) ? ' disabled' : ''}>${have.has(i.id) ? 'In your library' : `${icon('plus')}Add`}</button></article>`).join('');
+    grid.querySelectorAll('.media').forEach(m => { const v = m.querySelector('video'); if (!v) return; m.onpointerenter = () => v.play().catch(() => {}); m.onpointerleave = () => v.pause(); });
+    grid.querySelectorAll('[data-get]').forEach(b => b.onclick = () => addOnline(list.find(x => x.id === b.dataset.get), b));
+  }, 400);
+}
+async function addOnline(it, btn) {
+  if (!it) return; btn.disabled = true; btn.textContent = 'Adding…';
+  try {
+    const r = await fetch(it.url); if (!r.ok) throw new Error('download failed'); const blob = await r.blob();
+    const ext = it.kind === 'clip' ? 'mp4' : 'jpg', base = it.subject.toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim().slice(0, 40) || 'free stock';
+    const f = new File([blob], `${base}.${ext}`, { type: it.kind === 'clip' ? 'video/mp4' : 'image/jpeg' });
+    await importFiles([f], new Map([[f, { subject: it.subject, tags: it.tags, credit: it.credit, page: it.page, stockId: it.id }]]));
+    btn.textContent = 'In your library';
+  } catch (e) { btn.disabled = false; btn.innerHTML = `${icon('plus')}Add`; toast(`Couldn't add that one: ${e.message}`); }
 }
 // music tab
 function renderMusicLib() {
@@ -1935,7 +2015,7 @@ function trayRow(f, kind) {
       if (tray.done >= tray.n) { $('#trayTitle').textContent = 'Added to your library'; tray.timer = setTimeout(() => { $('#tray').hidden = true; $('#trayList').innerHTML = ''; tray.n = 0; tray.done = 0; }, 3200); } } };
 }
 const niceName = (f, kind) => { const w = f.name.replace(/\.[^.]+$/, '').replace(/[_\-.]+/g, ' ').split(/\s+/).filter(x => x && !/^(img|mov|vid|video|dsc|pxl|screenshot|image|photo|\d+)$/i.test(x)); return w.join(' ').trim(); };
-async function importFiles(files) {
+async function importFiles(files, meta = new Map()) {
   const list = [...files], bad = list.filter(f => !kindOf(f)), good = list.filter(f => kindOf(f));
   if (bad.length) toast(`${bad.length === 1 ? `“${bad[0].name}” isn't` : `${bad.length} files aren't`} a video, photo or song, so ${bad.length === 1 ? 'it was' : 'they were'} skipped.`, 4200);
   if (!good.length) return;
@@ -1960,7 +2040,9 @@ async function importFiles(files) {
         if (thumb) r.thumb(thumb);
         let name = (words || (kind === 'clip' ? 'my clip' : 'my photo')).toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '').slice(0, 40) || 'clip';
         const taken = new Set(allItems().map(i => i.id)); for (let n = 2, b0 = name; taken.has(name); n++) name = `${b0}_${n}`;
-        await IDB.put('clips', { docId: stampId, name, subject: words || (kind === 'clip' ? 'My clip' : 'My photo'), category: 'added', energy: 'medium', tags: words ? words.toLowerCase().split(/\s+/) : [], kind, duration: +dur.toFixed(2), blob, thumb: thumb || null, addedAt: new Date().toISOString(), needsInfo: true });
+        const m = meta.get(f);
+        await IDB.put('clips', { docId: stampId, name, subject: (m && m.subject) || words || (kind === 'clip' ? 'My clip' : 'My photo'), category: 'added', energy: 'medium', tags: (m && m.tags) || (words ? words.toLowerCase().split(/\s+/) : []), kind, duration: +dur.toFixed(2), blob, thumb: thumb || null, addedAt: new Date().toISOString(), needsInfo: !m,
+          ...(m ? { credit: m.credit, page: m.page, stockId: m.stockId } : {}) });
         taken.add(name);
       }
       added[kind]++; r.end(true, 'Added');
@@ -2132,7 +2214,7 @@ async function make() {
   S.abort = new AbortController(); const signal = S.abort.signal;
   try {
     const cfg = cfgNow();
-    const P = await E.analyze({ file: S.clip.file, items: planItems(), notes: '', cfg, onStage, signal, photos: SET.vis.photos ? popItems() : [], model: SET.speech.model });
+    const P = await E.analyze({ file: S.clip.file, items: planItems(), notes: '', cfg, onStage, signal, photos: SET.vis.photos ? popItems() : [], model: SET.speech.model, online: SET.vis.stock ? onlineFinder() : null });
     await E.buildCaptions(P);
     onStage('music', 0, 'Choosing music');
     await E.buildAudio(P, musicOpts(eff().music.choice, SET.music.level), onStage, signal);
@@ -2256,7 +2338,7 @@ async function renderBatch() {
       $('#view-batch').insertBefore($('#progress'), $('#batchResults'));
       try {
         const cfg = cfgNow();
-        const P = await E.buildReel(B.prep, { items: planItems(), photos: SET.vis.photos ? popItems() : [], notes: '', cfg, onStage, signal, range: [c.a, c.b], hook: c.hook });
+        const P = await E.buildReel(B.prep, { items: planItems(), photos: SET.vis.photos ? popItems() : [], notes: '', cfg, onStage, signal, range: [c.a, c.b], hook: c.hook, online: SET.vis.stock ? onlineFinder() : null });
         await E.buildCaptions(P);
         await E.buildAudio(P, musicOpts(eff().music.choice, SET.music.level), onStage, signal);
         const blob = await E.render(P, (p, fps) => onStage('render', p, fps ? `${Math.round(p * 100)}%` : ''), signal);

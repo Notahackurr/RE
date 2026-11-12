@@ -46,3 +46,7 @@ grant execute on function public.claim_purchases() to authenticated;
 --   insert into public.entitlements (id, user_id, email, plan, status)
 --   select 'creator:' || id, id, email, 'creator', 'active' from auth.users where lower(email) = lower('YOU@EXAMPLE.COM')
 --   on conflict (id) do nothing;
+
+-- Shared cache for free stock searches (the stock function writes it; nobody reads it from the app).
+create table if not exists public.stock_cache (key text primary key, items jsonb not null, at timestamptz not null default now());
+alter table public.stock_cache enable row level security;

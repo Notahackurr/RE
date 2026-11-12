@@ -5,11 +5,11 @@ name: Fetch free stock
 on:
   workflow_dispatch:
     inputs:
-      query: { description: "Search (e.g. ocean waves slow, man lifting weights)", required: true, default: "ocean waves slow" }
+      query: { description: "Search (e.g. ocean waves slow, man lifting weights)", required: true, default: "city street at night" }
       category:
         description: Category
         type: choice
-        options: [nature, training, home_gym, habits, food, family, lifestyle, mood, contrast]
+        options: [work, money, tech, city, travel, social, emotion, family, learning, creative, home, food, pets, celebration, sport, time, wellness, nature, mood, habits, lifestyle, training, home_gym, contrast]
         default: nature
       kind:
         description: Clips or photos

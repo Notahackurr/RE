@@ -627,18 +627,20 @@ function itemText(it) { return `${it.subject || ''}. ${(it.tags || []).join(', '
 /** The feel of a line or a shot, as a mix of these. Lines and visuals are placed in the same space by the sentence model,
  *  so a quiet line about patience lands near a slow ocean shot even when no word matches. */
 const VIBES = {
-  calm: ['be patient with yourself', 'slow down and breathe', 'calm, quiet, peaceful nature', 'trust the process, it takes time', 'rest and recover', 'zoom out and get perspective'],
-  grind: ['hard work and sweat', 'push through when it gets hard', 'train hard, heavy weights', 'discipline and effort every day', 'the grind'],
-  triumph: ['you did it, feeling proud', 'getting stronger, real progress', 'confidence and winning', 'the results paid off', 'feeling unstoppable'],
-  warmth: ['my kids and my family', 'love and connection', 'grateful for the people around me', 'being there for the ones you love', 'home and togetherness'],
-  struggle: ['stressed and overwhelmed', 'exhausted, burned out', 'doubting yourself, wanting to quit', 'feeling stuck and frustrated', 'it hurts and it is hard'],
-  hype: ['influencers showing off', 'expensive gear and fancy gyms', 'quick fixes and shortcuts', 'social media fitness hype', 'perfect abs and flashy promises'],
-  practical: ['what to eat and how to cook it', 'a simple daily routine', 'step by step how to do it', 'track it and write it down', 'meals, protein and groceries'],
-  hope: ['a fresh start', 'a new morning, a new day', 'it is never too late to begin', 'looking forward to the future', 'possibility and new beginnings'],
-  play: ['that is funny', 'just having fun with it', 'joking around, lighthearted', 'laughing at myself', 'playful and silly'],
+  calm: ['be patient with yourself', 'slow down and breathe', 'calm, quiet, peaceful nature', 'trust the process, it takes time', 'rest and recharge', 'zoom out and get perspective'],
+  grind: ['hard work and long hours', 'push through when it gets hard', 'putting in the work every day', 'discipline and effort', 'building something from nothing', 'the grind'],
+  triumph: ['you did it, feeling proud', 'real progress and results', 'confidence and winning', 'the hard work paid off', 'celebrating a big win', 'feeling unstoppable'],
+  warmth: ['my kids and my family', 'love and connection', 'grateful for the people around me', 'being there for the ones you love', 'friends and good times together', 'home and togetherness'],
+  struggle: ['stressed and overwhelmed', 'exhausted, burned out', 'doubting yourself, wanting to quit', 'feeling stuck and frustrated', 'money worries and bills', 'it hurts and it is hard'],
+  hype: ['influencers showing off', 'flashy promises and get-rich-quick', 'quick fixes and shortcuts', 'social media hype', 'expensive stuff and showing off', 'too good to be true'],
+  practical: ['how to do it, step by step', 'a simple tip you can use today', 'track it and write it down', 'everyday tasks and errands', 'tools, apps and how they work', 'the numbers and the plan'],
+  hope: ['a fresh start', 'a new morning, a new day', 'it is never too late to begin', 'looking forward to the future', 'possibility and new beginnings', 'dream big'],
+  play: ['that is funny', 'just having fun with it', 'joking around, lighthearted', 'laughing at myself', 'playful and silly', 'cute pets and goofy moments'],
+  focus: ['deep focus and concentration', 'learning something new', 'working on my laptop', 'thinking it through carefully', 'studying and reading', 'research and ideas'],
+  adventure: ['exploring somewhere new', 'travel and adventure', 'big city energy', 'on the road, going places', 'freedom and the open sky', 'trying something bold'],
 };
-const VIBE_ENERGY = { calm: -1, warmth: -0.5, hope: -0.3, practical: 0, play: 0.3, struggle: 0.1, triumph: 0.7, grind: 1, hype: 1 };
-const VIBE_LABEL = { calm: 'calm', grind: 'effort', triumph: 'strong', warmth: 'warm', struggle: 'struggle', hype: 'hype', practical: 'everyday', hope: 'hopeful', play: 'light' };
+const VIBE_ENERGY = { calm: -1, warmth: -0.5, hope: -0.3, focus: -0.3, practical: 0, play: 0.3, struggle: 0.1, adventure: 0.5, triumph: 0.7, grind: 1, hype: 1 };
+const VIBE_LABEL = { calm: 'calm', grind: 'effort', triumph: 'strong', warmth: 'warm', struggle: 'struggle', hype: 'hype', practical: 'everyday', hope: 'hopeful', play: 'light', focus: 'focused', adventure: 'adventurous' };
 function softmax(xs, T) { const m = Math.max(...xs), e = xs.map(x => Math.exp((x - m) * T)), z = e.reduce((a, b) => a + b, 0); return e.map(x => x / z); }
 function cosv(a, b) { let d = 0, x = 0, y = 0; for (let i = 0; i < a.length; i++) { d += a[i] * b[i]; x += a[i] * a[i]; y += b[i] * b[i]; } return d / Math.sqrt(x * y + 1e-12); }
 /** For each line: what it means (the line, and the whole thought around it) and how it feels; same for every visual. */
@@ -785,14 +787,29 @@ function planVisuals(words, items, photos, notes, tmap, total, cfg, aiPicks, ctx
   return { broll, pops, log, mode };
 }
 const CUES = {
-  nature: ['patient', 'patience', 'slow', 'years', 'decades', 'lifetime', 'life', 'calm', 'stress', 'peace', 'breathe', 'perspective', 'season', 'simple', 'enough', 'quiet', 'rest', 'sleep', 'recover', 'recovery', 'mind', 'grateful', 'trust', 'process', 'journey', 'grow', 'growth', 'nature', 'outside', 'walk', 'walking', 'sun', 'morning', 'tomorrow', 'forever', 'decade', 'overwhelmed', 'tired', 'burnout', 'anxious', 'worry'],
-  training: ['lift', 'lifting', 'rep', 'reps', 'set', 'sets', 'weight', 'weights', 'squat', 'bench', 'deadlift', 'press', 'train', 'training', 'workout', 'gym', 'muscle', 'strong', 'strength', 'overload', 'heavy', 'barbell', 'dumbbell', 'dumbbells', 'pullup', 'pullups', 'pushup', 'pushups', 'row', 'curl', 'curls', 'effort', 'work', 'progress', 'progressive', 'form', 'exercise', 'cardio', 'run', 'running', 'body', 'sweat', 'grind', 'boring'],
-  home_gym: ['home', 'gym', 'garage', 'basement', 'bench', 'equipment', 'budget', 'cheap', 'setup', 'rack', 'plates', 'plate', 'membership', 'fancy', 'expensive', 'wobbly'],
-  habits: ['habit', 'habits', 'consistent', 'consistency', 'routine', 'daily', 'track', 'write', 'notebook', 'journal', 'plan', 'discipline', 'goal', 'goals', 'water', 'steps', 'alarm', 'early'],
-  food: ['protein', 'eat', 'eating', 'food', 'meal', 'meals', 'calorie', 'calories', 'diet', 'nutrition', 'carbs', 'fat', 'chicken', 'eggs', 'rice', 'hungry', 'snack', 'cook', 'gram', 'grams', 'pizza', 'dinner', 'breakfast', 'lunch'],
-  family: ['kid', 'kids', 'son', 'daughter', 'wife', 'family', 'dad', 'father', 'children', 'child', 'parent', 'love'],
-  contrast: ['influencer', 'influencers', 'fancy', 'hype', 'bro', 'bros', 'supplements', 'supplement', 'shortcut', 'hack', 'hacks', 'instagram', 'program', 'expensive', 'magic', 'ripped', 'shredded'],
-  mood: ['honestly', 'truth', 'real', 'hard', 'quit', 'doubt', 'feel', 'feeling', 'think', 'remember', 'proud', 'alone', 'start', 'again'],
+  nature: ['patient', 'patience', 'slow', 'years', 'decades', 'lifetime', 'life', 'calm', 'peace', 'breathe', 'perspective', 'season', 'simple', 'enough', 'quiet', 'rest', 'mind', 'grateful', 'trust', 'process', 'journey', 'grow', 'growth', 'nature', 'outside', 'ocean', 'forest', 'sky'],
+  training: ['lift', 'lifting', 'rep', 'reps', 'squat', 'bench', 'deadlift', 'workout', 'gym', 'muscle', 'strength', 'barbell', 'dumbbell', 'dumbbells', 'pullup', 'pullups', 'pushup', 'pushups', 'cardio', 'run', 'running'],
+  home_gym: ['garage', 'basement', 'equipment', 'rack', 'plates', 'membership', 'wobbly'],
+  habits: ['habit', 'habits', 'consistent', 'consistency', 'routine', 'daily', 'track', 'write', 'notebook', 'journal', 'plan', 'discipline', 'goal', 'goals', 'alarm', 'early', 'morning'],
+  food: ['eat', 'eating', 'food', 'meal', 'meals', 'diet', 'nutrition', 'hungry', 'snack', 'cook', 'cooking', 'recipe', 'pizza', 'dinner', 'breakfast', 'lunch', 'restaurant', 'coffee'],
+  family: ['kid', 'kids', 'son', 'daughter', 'wife', 'husband', 'family', 'dad', 'mom', 'father', 'mother', 'children', 'child', 'parent', 'love', 'baby', 'married', 'partner'],
+  contrast: ['influencer', 'influencers', 'fancy', 'hype', 'bro', 'bros', 'supplements', 'shortcut', 'hack', 'hacks', 'expensive', 'magic', 'ripped', 'shredded'],
+  mood: ['honestly', 'truth', 'real', 'hard', 'quit', 'doubt', 'feel', 'feeling', 'remember', 'alone', 'start', 'again', 'lonely', 'night'],
+  work: ['work', 'job', 'boss', 'office', 'career', 'business', 'company', 'team', 'meeting', 'client', 'clients', 'customer', 'customers', 'sales', 'marketing', 'startup', 'entrepreneur', 'project', 'deadline', 'coworker', 'coworkers', 'manager', 'hire', 'hired', 'brand', 'strategy'],
+  money: ['money', 'cash', 'pay', 'paid', 'salary', 'income', 'budget', 'save', 'saving', 'savings', 'invest', 'investing', 'stock', 'stocks', 'debt', 'bills', 'rent', 'price', 'cost', 'expensive', 'cheap', 'buy', 'bought', 'spend', 'spending', 'profit', 'rich', 'broke', 'dollars', 'shopping', 'credit'],
+  tech: ['phone', 'app', 'apps', 'computer', 'laptop', 'code', 'coding', 'software', 'internet', 'online', 'website', 'tech', 'ai', 'data', 'email', 'text', 'texting', 'screen', 'scroll', 'scrolling', 'social', 'post', 'algorithm', 'digital'],
+  city: ['city', 'downtown', 'street', 'streets', 'traffic', 'commute', 'crowd', 'busy', 'night', 'lights', 'urban', 'neighborhood', 'building', 'everyone', 'people'],
+  travel: ['travel', 'trip', 'vacation', 'flight', 'fly', 'plane', 'airport', 'road', 'drive', 'driving', 'adventure', 'explore', 'abroad', 'country', 'beach', 'mountains', 'hotel', 'away', 'move', 'moving'],
+  social: ['friend', 'friends', 'party', 'people', 'together', 'conversation', 'talk', 'talking', 'date', 'dating', 'relationship', 'community', 'group', 'laugh', 'fun', 'everybody'],
+  learning: ['learn', 'learning', 'study', 'studying', 'school', 'college', 'class', 'teacher', 'student', 'students', 'book', 'books', 'read', 'reading', 'exam', 'test', 'course', 'knowledge', 'skill', 'skills', 'lesson'],
+  creative: ['create', 'creative', 'art', 'artist', 'design', 'designer', 'music', 'song', 'paint', 'painting', 'draw', 'drawing', 'camera', 'photo', 'photos', 'video', 'videos', 'film', 'content', 'creator', 'edit', 'editing', 'idea', 'ideas'],
+  home: ['home', 'house', 'apartment', 'room', 'clean', 'cleaning', 'chores', 'kitchen', 'garden', 'plant', 'plants', 'cozy', 'move', 'dishes'],
+  pets: ['dog', 'dogs', 'puppy', 'cat', 'cats', 'kitten', 'pet', 'pets', 'animal', 'animals'],
+  celebration: ['celebrate', 'celebration', 'party', 'birthday', 'win', 'won', 'congrats', 'congratulations', 'finally', 'achievement', 'launch', 'launched', 'announce', 'milestone', 'proud'],
+  emotion: ['happy', 'sad', 'angry', 'stress', 'stressed', 'anxious', 'anxiety', 'tired', 'exhausted', 'frustrated', 'confused', 'surprised', 'shocked', 'think', 'thinking', 'overthinking', 'worried', 'excited', 'nervous', 'smile', 'cry'],
+  sport: ['game', 'team', 'play', 'player', 'score', 'goal', 'win', 'compete', 'competition', 'practice', 'coach', 'soccer', 'basketball', 'football', 'surf', 'skate', 'swim'],
+  time: ['time', 'minutes', 'hours', 'hour', 'clock', 'deadline', 'late', 'wait', 'waiting', 'years', 'later', 'soon', 'today', 'tomorrow', 'forever', 'seconds'],
+  wellness: ['calm', 'meditate', 'meditation', 'mindful', 'breathe', 'yoga', 'stretch', 'relax', 'self', 'care', 'mental', 'health', 'balance', 'peace'],
 };
 /** Fill the reel to a natural rhythm with visuals that fit what you're saying and how it feels.
  *  Each line is scored against every clip and photo by: meaning (the line and the whole thought), feel (calm, effort,
@@ -836,7 +853,7 @@ function fillVisuals(words, items, photos, add, all, cuts, total, cfg, log, firs
       } else {
         sc = hit.reduce((a, t) => a + idf(t), 0) * (type === 'photo' ? 1 : 0.8) + hitNear.reduce((a, t) => a + idf(t), 0) * 0.35;
         if (cueSets[cat]) sc += cueHit(cat) * 1.6;
-        if (cat === 'contrast' || it.energy === 'high') sc += cueHit('contrast') > 0.9 ? 1 : -4;
+        if (cat === 'contrast') sc += cueHit('contrast') > 0.9 ? 1 : -4;
         why = hit.length ? `fits "${hit.slice(0, 2).map(said).join('", "')}"` : `${String(cat).replace('_', ' ')} shot`;
       }
       if (it.source !== 'stock') sc += 0.5;                                                  // your own footage first
@@ -1861,8 +1878,27 @@ async function prepareTake({ file, cfg, onStage, signal, model, long = false }) 
   mark('transcribe'); check(signal);
   return { movie, total, raw, proc, words, claps, near, times, model: words.model, long };
 }
+// words that make good stock searches: the concrete things across every kind of shot
+const CONCRETE = new Set([...Object.values(CUES).flat(), 'building', 'painting', 'cooking', 'clothing', 'ceiling', 'wedding', 'sibling', 'evening', 'morning', 'meeting', 'parking', 'housing', 'fishing', 'camping', 'hiking', 'shopping', 'running', 'swimming', 'surfing', 'skating', 'dancing', 'singing', 'reading', 'writing', 'studying', 'drawing', 'baking', 'gardening'].filter(w => w.length >= 4));
+/** What to search free stock for: the concrete things you talk about most, favoring ones the library doesn't cover well. */
+function stockTerms(words, have, max = 4) {
+  const cover = new Map();
+  for (const it of have) for (const w of itemTerms(it).words) cover.set(w, (cover.get(w) || 0) + 1);
+  const VAGUE = new Set(`thing things stuff people person really actually going gonna wanna want wants know think thought right today something everything anything nothing because little about there their would could should maybe first thank thanks start started great never always every video videos guys kind whole better pretty point times years year make made making doing getting still other which these those where while again around enough without through before after need needs needed talk talking said says tell told feel feeling felt look looking looks keep help find found give take took come came mean means honest honestly literally basically definitely probably obviously seriously totally simply boring easy hard simple real good best worst different same important true sure okay also just only even much many most more less long short big small high best worse thing part place half side ways ways lot lots bunch sort type hey yeah yes like love hate trying try tried used using use work works worked done says saying idea ideas problem problems reason reasons question questions answer change changes life world everyone anyone someone yourself myself himself herself ourselves matter matters last next week weeks month months three four five seven eight nine twenty hundred thousand million second thing`.split(/\s+/));
+  const score = new Map(), surface = new Map(), CONCRETE_HIT = new Set();
+  words.forEach((w, i) => {
+    const n = norm(w.w), prev = i ? words[i - 1].w : '.', proper = /^[A-Z][a-z]{2,}/.test(w.w) && !/[.?!:]["')]*$/.test(prev) && n !== 'i';   // a name mid-sentence: a place, a brand, a dish
+    if (proper && !STOP.has(n) && !VAGUE.has(n)) { CONCRETE_HIT.add(n); }
+    if (n.includes("'") || (n.length < 4 && !(n.length === 3 && CONCRETE.has(n))) || STOP.has(n) || VAGUE.has(n) || /^\d/.test(n) || GENERIC.has(n) || /(ly|ing|ed|ness|ful|ous|ive|able|ible)$/.test(n) && !CONCRETE.has(n)) return;
+    const k = stem(n); surface.set(k, surface.get(k) || n);
+    score.set(k, (score.get(k) || 0) + 1 + Math.max(0, w.emph || 0) * 0.15 + (i < 12 ? 0.3 : 0) + (CONCRETE.has(n) || CONCRETE_HIT.has(n) ? 0.8 : 0));
+  });
+  // concrete things, or something you keep coming back to; and skip what the library already covers well
+  return [...score.entries()].filter(([k, v]) => CONCRETE.has(surface.get(k)) || CONCRETE_HIT.has(surface.get(k)) || v >= 2)
+    .map(([k, v]) => [surface.get(k), v / (1 + 0.6 * (cover.get(k) || 0))]).filter(x => x[1] >= 0.9).sort((a, b) => b[1] - a[1]).slice(0, max).map(x => x[0]);
+}
 /** Build one reel from the take (or from a stretch of it, with an optional hook line moved to the front). */
-async function buildReel(prep, { items, photos, notes, cfg, onStage, signal, range, hook }) {
+async function buildReel(prep, { items, photos, notes, cfg, onStage, signal, range, hook, online }) {
   cfg = cfg || defaults();
   const stage = (id, pct, msg) => onStage && onStage(id, pct, msg);
   const { movie, total } = prep;
@@ -1894,6 +1930,17 @@ async function buildReel(prep, { items, photos, notes, cfg, onStage, signal, ran
   check(signal); stage('cut', 1);
 
   stage('plan', 0, 'Choosing clips and photos');
+  if (online && cfg.broll.amount !== 0) {   // free stock that fits what you're talking about joins the library for this reel; the usual scoring decides
+    try {
+      stage('plan', 0.08, 'Looking for free stock that fits');
+      const terms = stockTerms(outWords, [...(items || []), ...(photos || [])]);
+      const extra = terms.length ? await online(terms, signal) : [];
+      const ids = new Set([...(items || []), ...(photos || [])].map(x => x.id));
+      const fresh = extra.filter(x => x && !ids.has(x.id) && (ids.add(x.id), true));
+      items = [...(items || []), ...fresh.filter(x => x.kind !== 'photo')]; photos = [...(photos || []), ...fresh.filter(x => x.kind === 'photo')];
+      DIAG.online = { terms, found: fresh.length };
+    } catch (e) { if (e instanceof Cancelled) throw e; DIAG.online = { error: String(e.message || e).slice(0, 120) }; }
+  }
   const ctx = { delivery: deliveryRows(outWords, voice, phrases(outWords, 10)) };
   if (cfg.meaning !== false && ((items || []).length || (photos || []).length)) {
     try { stage('plan', 0.2, 'Matching visuals to the feel of each line'); ctx.vibe = await vibeContext(outWords, [...(items || []), ...(photos || [])]); }
@@ -1917,10 +1964,10 @@ async function buildReel(prep, { items, photos, notes, cfg, onStage, signal, ran
     speechOut: vad(voice), broll, brollLog, brollMode, pops, popLog: [], zooms, timing, proof: { applied: [] }, model: prep.model, zc, track, times: prep.times, chunks: null, music: null, notes,
     proc, raw, speech, rawWords: [...surv, ...cutWords].sort((x, y) => x.s - y.s), audioBase: base, range: range ? [ra, rb] : null, hook: hook || null, cleanup: cfg.cleanup !== false, capsOff: false };
 }
-async function analyze({ file, items, notes, cfg, onStage, signal, photos, model }) {
+async function analyze({ file, items, notes, cfg, onStage, signal, photos, model, online }) {
   cfg = cfg || defaults();
   const prep = await prepareTake({ file, cfg, onStage, signal, model });
-  return buildReel(prep, { items, photos, notes, cfg, onStage, signal });
+  return buildReel(prep, { items, photos, notes, cfg, onStage, signal, online });
 }
 
 
@@ -2190,7 +2237,7 @@ async function renderOnce(P, onProgress, signal, soft) {
 
 // ------------------------------------------------------------------ edit log
 function editLog(P) {
-  const on = a => (a || []).filter(x => !x.off), name = p => (p.item && (p.item.subject || p.item.name)) || String(p.id).replace(/_/g, ' ');
+  const on = a => (a || []).filter(x => !x.off), name = p => ((p.item && (p.item.subject || p.item.name)) || String(p.id).replace(/_/g, ' ')) + (p.item && p.item.credit ? ` (${p.item.credit})` : '');
   const fl = on(P.flubs), mine = on(P.manual), tr = on(P.trimmed), zs = on(P.zooms), br = on(P.broll), pl = on(P.pops);
   const L = ['EDIT SUMMARY', '', `Original ${fmt(P.total)}, reel ${fmt(P.outDur)} (${(P.total - P.outDur).toFixed(1)} s removed).`, '', 'CUTS'];
   fl.forEach(f => L.push(`- ${fmt(f.outJoin)}: retake before your clap removed${f.flubText ? ` ("${f.flubText}")` : ''}`));
@@ -2207,5 +2254,5 @@ function editLog(P) {
 
 root.ReelEngine = { GENRES, VIBES, prepareTake, buildReel, findReels, hookScore, sentencesOf, HOOK_LABEL, DEFAULT_CORRECTIONS, retime, rebuildCaptions, setZooms, transcribe, MODELS, popAlpha, snapEnd, stem, isStop: w => STOP.has(norm(w)), norm, phrases, catalogLine, decodeAudioTrack, sanitizeAsc, decodeTrack, DIAG, verifyAudio, ensureMuxer, toWav, audioToM4a, drawRotated, defaults, analyze, buildCaptions, buildAudio, render, editLog, toSrt, composeMusic, openMovie, VideoSource,
   decodeTrack, loudness, drawCaption, capFont, fmt, pickHighlight, FPS, OUT_W, OUT_H, SR, MOODS, Cancelled,
-  _t: { refineTiming, applyCorrections, parseCorrections, rhythmStart, planVisuals, deliveryRows, vibeContext, captionLift, detectClaps, vad, buildKeep, flubRegions, planZooms, chunkWords, parseNotes, findPhrase, mapWords, TimeMap, denoise, compress, limit, resample, highpass4, filt, biquad, addEmphasis, fitTrack, mixMusic, ratio } };
+  _t: { stockTerms, refineTiming, applyCorrections, parseCorrections, rhythmStart, planVisuals, deliveryRows, vibeContext, captionLift, detectClaps, vad, buildKeep, flubRegions, planZooms, chunkWords, parseNotes, findPhrase, mapWords, TimeMap, denoise, compress, limit, resample, highpass4, filt, biquad, addEmphasis, fitTrack, mixMusic, ratio } };
 })(typeof window !== 'undefined' ? window : globalThis);

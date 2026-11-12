@@ -5,3 +5,4 @@ Free stock in this folder
 - pexels_* items: Pexels License (pexels.com/license) — free to use, attribution appreciated; the edit log credits them.
 - pixabay_* items: Pixabay Content License (pixabay.com/service/license-summary).
 Not allowed under these licenses: selling the clips unaltered, or implying an identifiable person endorses you.
+- Free stock found in the app (Library search or automatic matching) comes from Pexels under the Pexels License; each clip and photo keeps its creator credit, which the edit summary lists.

@@ -15,10 +15,12 @@ Fallbacks:
 - `schema.sql`: the purchases table, its security rules, and the claim function.
 - `functions/ls-webhook/index.ts`: receives Lemon Squeezy events. Deploy with JWT verification **off**.
 - `functions/account/index.ts`: links a license key, or deletes an account. Leave JWT verification **on**.
+- `functions/stock/index.ts`: free stock search (Pexels videos and photos) for the Library and for automatic matching. Deploy with JWT verification **off**. Needs the `PEXELS_API_KEY` secret (free at pexels.com/api). Until it's deployed, the app simply doesn't show online stock.
 
 ## Secrets (Supabase → Edge Functions → Secrets)
 - `LS_SIGNING_SECRET`: the same random string you type into the Lemon Squeezy webhook.
 - `LS_STORE_ID`: `521572`
+- `PEXELS_API_KEY`: your free Pexels API key (for the `stock` function).
 - `LIFETIME_VARIANT_IDS`: comma-separated lifetime variant IDs. Test mode is `2365610`; add the live one after you copy to live mode.
 
 ## Lemon Squeezy webhook (Settings → Webhooks → +, once in test mode and again in live mode)
