@@ -1,10 +1,12 @@
 {
-  "_readme": "Checkout links from Lemon Squeezy (product > Share), store ID and customer billing page. Set \"live\" to true only once the links are LIVE-mode links (store activated, products copied to live mode); until then everyone stays in launch mode and nothing is locked. Add ?paywall=1 to the site address to test the paywall with test-mode links. ownerHash is the fingerprint of the creator's lifetime key (the key itself is never stored here).",
+  "_readme": "Checkout links (Lemon Squeezy product > Share), store ID and customer billing page; supabaseUrl and supabaseAnonKey from Supabase > Project Settings > API (the anon/public key is meant to be public). Set \"live\" to true once the links are LIVE-mode links and accounts are set up; until then everyone stays in launch mode and nothing is locked. Add ?paywall=1 to the site address to test. ownerHash is the fingerprint of the creator's key (the key itself is never stored here).",
   "live": false,
   "monthly": "https://reelstudioeditapp.lemonsqueezy.com/checkout/buy/dc7587b4-a267-4cfe-af33-a4d0b9efb3e7",
   "lifetime": "https://reelstudioeditapp.lemonsqueezy.com/checkout/buy/fd1da5e4-f007-4d3b-a475-d8f59e3b75dd",
   "storeId": 521572,
   "manage": "https://reelstudioeditapp.lemonsqueezy.com/billing",
+  "supabaseUrl": "",
+  "supabaseAnonKey": "",
   "lifetimeVariant": 2365610,
   "monthlyVariant": 2365599,
   "ownerHash": "ef3fb8dd4af4c0d64b4536aacb4a275a6914bff919d481422ebd665d99bda77d"
