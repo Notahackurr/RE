@@ -1145,7 +1145,7 @@ const FREE = { clip: 3, batch: 1 };
 const FREE_GENRES = ['chill', 'lofi', 'upbeat'];
 const CROWN = '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M3 8.2c0-.7.8-1 1.3-.6l3.6 3.1 3.3-6.1c.4-.7 1.3-.7 1.6 0l3.3 6.1 3.6-3.1c.5-.4 1.3-.1 1.3.6l-1.5 9.3c-.1.5-.5.9-1 .9H5.5c-.5 0-.9-.4-1-.9z"/><rect fill="currentColor" x="5" y="19.6" width="14" height="2" rx="1"/></svg>';
 const crown = (t = 'Premium') => `<span class="crown" title="${esc(t)}" aria-label="${esc(t)}" role="img">${CROWN}</span>`;
-const BILL = { monthly: '', lifetime: '', storeId: null, manage: 'https://app.lemonsqueezy.com/my-orders', ready: false };
+const BILL = { monthly: '', lifetime: '', storeId: null, manage: 'https://app.lemonsqueezy.com/my-orders', ownerHash: '', ready: false };
 const forcePaywall = /[?&]paywall=1\b/.test(location.search);
 let LIC = store.get('license', null);   // { key, instance, status, name, lifetime, email, checked, ok }
 const monthKey = (d = new Date()) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
@@ -1172,7 +1172,7 @@ const genreLocked = k => !pro() && !FREE_GENRES.includes(k);
 async function loadBilling() {
   try {
     const b = await (await fetch('billing.json', { cache: 'no-store' })).json();
-    Object.assign(BILL, { monthly: b.monthly || '', lifetime: b.lifetime || '', storeId: b.storeId ?? null, manage: b.manage || BILL.manage });
+    Object.assign(BILL, { monthly: b.monthly || '', lifetime: b.lifetime || '', storeId: b.storeId ?? null, manage: b.manage || BILL.manage, ownerHash: b.ownerHash || '' });
     BILL.ready = /^https:\/\//.test(BILL.monthly) && /^https:\/\//.test(BILL.lifetime);
   } catch (e) { BILL.ready = false; }
 }
@@ -1189,13 +1189,19 @@ function fromMeta(j, key, instance) {
 }
 async function activateKey(raw) {
   const key = String(raw || '').trim(); if (!key) return { error: 'Paste your license key first.' };
+  // the creator's own key: checked against its fingerprint in billing.json, lifetime on every device, no store involved
+  if (BILL.ownerHash && /^RS-OWNER-/i.test(key)) {
+    try { const d = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(key.toUpperCase())); const hex = [...new Uint8Array(d)].map(x => x.toString(16).padStart(2, '0')).join('');
+      if (hex === BILL.ownerHash) { LIC = { key: 'owner', owner: true, status: 'active', name: 'Creator', lifetime: true, email: SET.profile.email || '', checked: Date.now(), ok: Date.now() }; store.set('license', LIC); return { ok: true }; } } catch (e) { /* fall through */ }
+    return { error: "That creator key doesn't match." };
+  }
   let j; try { j = await lsCall('activate', { license_key: key, instance_name: devName() }); } catch (e) { return { error: "Couldn't reach the license server. Check your connection and try again." }; }
   if (!j.activated) return { error: /limit/i.test(j.error || '') ? 'That key is already on its maximum number of devices. Remove it from one in Settings → Plan and billing on that device, then try again.' : /not found|invalid/i.test(j.error || '') ? "That key wasn't recognized. Copy it again from your receipt email." : (j.error || "That key couldn't be activated.") };
   if (BILL.storeId && j.meta && +j.meta.store_id !== +BILL.storeId) return { error: "That key is for a different store's product." };
   LIC = fromMeta(j, key, j.instance && j.instance.id); store.set('license', LIC); return { ok: true };
 }
 async function checkLicense(force) {
-  if (!LIC || (!force && Date.now() - (LIC.checked || 0) < 864e5)) return;
+  if (!LIC || LIC.owner || (!force && Date.now() - (LIC.checked || 0) < 864e5)) return;
   try {
     const j = await lsCall('validate', { license_key: LIC.key, ...(LIC.instance ? { instance_id: LIC.instance } : {}) });
     const was = LIC.status;
@@ -1209,7 +1215,7 @@ async function checkLicense(force) {
   } catch (e) { /* offline: keep Premium; we'll check again next time */ }
 }
 async function removeLicense() {
-  if (LIC && LIC.instance) { try { await lsCall('deactivate', { license_key: LIC.key, instance_id: LIC.instance }); } catch (e) { /* still forget it here */ } }
+  if (LIC && LIC.instance && !LIC.owner) { try { await lsCall('deactivate', { license_key: LIC.key, instance_id: LIC.instance }); } catch (e) { /* still forget it here */ } }
   LIC = null; store.set('license', null); refresh();
 }
 function checkoutUrl(plan) {
@@ -2372,7 +2378,8 @@ function planSection() {
     box.append(h(`<div class="row"><span class="pill acc">Premium${crown()}</span><span class="hint">${esc(LIC.name)}${LIC.lifetime ? ' · yours for good' : ''}${LIC.email ? ' · ' + esc(LIC.email) : ''}</span></div>`),
       h(`<p class="hint">Unlimited reels and batches, and every customization. Thanks for backing an editor with zero AI slop.</p>`));
     const r = h('<div class="row"></div>');
-    if (!LIC.lifetime) { const m = h(`<a class="btn" href="${esc(BILL.manage)}" target="_blank" rel="noopener">${icon('card')}Manage or cancel</a>`); r.append(m); }
+    if (LIC.owner) { /* the creator's key has nothing to manage */ }
+    else if (!LIC.lifetime) { const m = h(`<a class="btn" href="${esc(BILL.manage)}" target="_blank" rel="noopener">${icon('card')}Manage or cancel</a>`); r.append(m); }
     else r.append(h(`<a class="btn" href="${esc(BILL.manage)}" target="_blank" rel="noopener">${icon('card')}Receipts</a>`));
     r.append(confirmBtn('Remove from this device', 'Tap again to remove', async () => { await removeLicense(); toast('Removed from this device. Your key still works anywhere you enter it.', 4200); }));
     box.append(r);

@@ -1,7 +1,8 @@
 {
-  "_readme": "Paste your two Lemon Squeezy checkout links (Products > Share > copy link) and your store ID (Settings > Stores, the number). Until both links are here, the paywall stays in launch mode: everything is unlocked and nobody is blocked.",
+  "_readme": "Paste your two Lemon Squeezy checkout links (product > Share) and your store ID. Until both links are set, the paywall stays in launch mode: everything is unlocked and nobody is blocked. ownerHash is the fingerprint of the creator's lifetime key (the key itself is never stored here).",
   "monthly": "",
   "lifetime": "",
   "storeId": null,
-  "manage": "https://app.lemonsqueezy.com/my-orders"
+  "manage": "https://app.lemonsqueezy.com/my-orders",
+  "ownerHash": "ef3fb8dd4af4c0d64b4536aacb4a275a6914bff919d481422ebd665d99bda77d"
 }
