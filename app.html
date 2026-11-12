@@ -380,6 +380,9 @@ input[type="range"] { width: 100%; accent-color: var(--acc); }
 .tile { display: grid; gap: 6px; min-width: 0; align-content: start; }
 .tile .media { position: relative; aspect-ratio: 9 / 16; border-radius: 14px; overflow: hidden; background: #000; border: 0; padding: 0; display: block; width: 100%; }
 .tile .media img, .tile .media video { width: 100%; height: 100%; object-fit: cover; display: block; }
+.tile .media video.hov { position: absolute; inset: 0; opacity: 0; transition: opacity .2s; }
+.tile .media.playing video.hov { opacity: 1; }
+.lib-more { grid-column: 1 / -1; height: 1px; }
 .tile .tag { position: absolute; right: 7px; bottom: 7px; font-size: 11px; font-weight: 600; background: rgba(0, 0, 0, .6); color: #fff; padding: 2px 7px; border-radius: 6px; }
 .tile .mine { position: absolute; left: 7px; top: 7px; font-size: 11px; font-weight: 700; background: var(--acc); color: var(--on-acc); padding: 2px 7px; border-radius: 6px; }
 .tile b { font-size: 13.5px; font-weight: 600; line-height: 1.35; }
@@ -527,6 +530,7 @@ html.side-closed .topbar .mobile-brand b { display: none; }
 .ltabs .n { font-size: 11.5px; font-weight: 600; color: var(--faint); }
 .ltabs .ind { position: absolute; z-index: 0; top: 4px; bottom: 4px; left: 0; width: 0; border-radius: 10px; background: var(--panel); box-shadow: 0 1px 3px rgba(0, 0, 0, .25), inset 0 0 0 1px var(--line-2); transition: transform .45s cubic-bezier(.2, .8, .2, 1), width .35s var(--ease); }
 .lib-tools { display: flex; gap: 8px; align-items: center; flex: 1; justify-content: flex-end; min-width: 240px; }
+@media (min-width: 641px) { #libAdd { min-width: 136px; } }
 .search { position: relative; flex: 1; max-width: 300px; display: flex; align-items: center; }
 .search svg.i { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); width: 17px; height: 17px; color: var(--faint); pointer-events: none; z-index: 1; }
 .search input::-webkit-search-decoration { -webkit-appearance: none; }
@@ -611,7 +615,7 @@ html.side-closed .topbar .mobile-brand b { display: none; }
 .locked { position: relative; } .locked > :not(.lock-cover) { opacity: .5; }
 .lock-cover { position: absolute; inset: 0; z-index: 2; border: 0; padding: 0; background: none; border-radius: 12px; cursor: pointer; }
 .lock-cover:hover { box-shadow: inset 0 0 0 1px color-mix(in srgb, #FFD25E 45%, transparent); }
-.plan-card { gap: 8px; }
+.plan-card { gap: 8px; min-height: 132px; align-content: start; }
 .plan-card .top { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
 .plan-card .top small { font-size: 11.5px; color: var(--faint); white-space: nowrap; }
 .meter { display: grid; grid-template-columns: 1fr auto; gap: 5px 8px; font-size: 12.5px; color: var(--muted); }
@@ -1512,7 +1516,7 @@ async function loadDeviceLibrary() {
   try { S.added = (await IDB.all('clips')).map(a => ({ ...a, url: blobUrl('c' + a.docId, a.blob), thumbUrl: blobUrl('t' + a.docId, a.thumb) })); } catch (e) { S.added = []; }
   try { S.tracks = (await IDB.all('tracks')).map(t => ({ ...t, url: blobUrl('m' + t.docId, t.blob) })); } catch (e) { S.tracks = []; }
   if (SET.music.choice.startsWith('mine:') && SET.music.choice !== 'mine:any' && !S.tracks.some(t => 'mine:' + t.docId === SET.music.choice)) { SET.music.choice = 'genre:chill'; save(); }
-  renderLib(); renderTracks(); refresh();
+  renderCounts(); if (S.view === 'library') renderLib(); renderTracks(); refresh();
 }
 async function saveFile(filename, data, label) {
   const blob = data instanceof Blob ? data : new Blob([data], { type: 'text/plain' });
@@ -1790,7 +1794,7 @@ async function loadStock() {
     S.stock = st.clips.map(c => ({ ...c, kind: 'clip', duration: c.duration_s, url: 'stock/' + c.file, thumbUrl: 'stock/' + c.thumb, source: 'stock', suggested_use: c.subject }));
     S.photos = (st.photos || []).map(p => ({ ...p, kind: 'photo', url: 'stock/' + p.file, thumbUrl: 'stock/' + (p.thumb || p.file), source: 'stock', suggested_use: p.subject }));
   } catch (e) { S.stock = []; S.photos = []; }
-  S.stockLoaded = true; renderLib(); refresh();
+  S.stockLoaded = true; renderCounts(); if (S.view === 'library') renderLib(); refresh();
 }
 async function loadTrends() { try { S.trends = await (await fetch('trends.json', { cache: 'no-store' })).json(); } catch (e) { S.trends = null; } }
 function ownItems() {
@@ -1818,7 +1822,7 @@ function mixed(list) {
   mixMemo.clear(); mixMemo.set(list, out); return out;
 }
 const libItems = tab => tab === 'photos' ? [...ownItems().filter(i => i.kind !== 'clip'), ...mixed(S.photos)] : [...ownItems().filter(i => i.kind === 'clip'), ...mixed(S.stock)];
-const matches = (i, q) => !q || [label(i), ...(i.tags || []), CATS[i.category] || '', i.name || ''].join(' ').toLowerCase().includes(q);
+const matches = (i, q) => { if (!q) return true; let t = hayCache.get(i); if (!t) { t = [label(i), ...(i.tags || []), CATS[i.category] || '', i.name || ''].join(' ').toLowerCase(); hayCache.set(i, t); } return t.includes(q); };
 function setLibTab(tab, quiet) {
   if (S.libTab !== tab) { S.libTab = tab; S.libFilter = 'all'; }
   $$('#libTabs [data-tab]').forEach(b => b.setAttribute('aria-selected', String(b.dataset.tab === tab)));
@@ -1833,7 +1837,7 @@ function moveTabInd() {
   ind.style.width = b.offsetWidth + 'px'; ind.style.transform = `translateX(${b.offsetLeft}px)`;
 }
 $$('#libTabs [data-tab]').forEach(b => b.onclick = () => smooth(() => setLibTab(b.dataset.tab)));
-$('#libSearch').oninput = e => { S.libQuery = e.target.value.trim().toLowerCase(); renderLib(); };
+$('#libSearch').oninput = e => { const v = e.target.value.trim().toLowerCase(); clearTimeout(renderLib._q); renderLib._q = setTimeout(() => { S.libQuery = v; renderLib(); }, v ? 140 : 0); };
 $('#libAdd').onclick = () => $(S.libTab === 'music' ? '#addTracks' : S.libTab === 'photos' ? '#addPhotos' : '#addClips').click();
 $('#addSongs').onclick = () => $('#addTracks').click();
 function renderCounts() {
@@ -1842,6 +1846,48 @@ function renderCounts() {
   requestAnimationFrame(moveTabInd);
 }
 let hoverVideo = null;
+const LIB_PAGE = 48, tileCache = new Map(), hayCache = new WeakMap();
+function tileEl(i, k) {
+  const key = [i.thumbUrl, i.url, label(i), i.category, i.needsInfo ? 1 : 0, i.credit ? 1 : 0].join('|');
+  let el = tileCache.get(i.id);
+  if (!el || el.dataset.key !== key) {
+    const mine = i.source === 'added' ? '<span class="mine">Yours</span>' : '';
+    const need = i.source === 'added' && i.needsInfo ? '<span class="need">Add a description</span>' : '';
+    // a still picture until you point at it: the clip itself only loads to play on hover (or when opened)
+    const media = (i.thumbUrl ? `<img src="${esc(i.thumbUrl)}" alt="" decoding="async">` : i.kind === 'clip' ? `<video src="${esc(i.url)}#t=0.5" muted playsinline preload="metadata"></video>` : `<img src="${esc(i.url)}" alt="" decoding="async">`)
+      + (i.kind === 'clip' ? `<span class="tag">${(+i.duration || 0).toFixed(0)}s</span>` : '');
+    el = h(`<article class="tile"><button class="media" type="button" aria-label="${esc(label(i))}">${media}${mine}${need}</button><b>${esc(label(i))}</b><small>${i.credit ? 'Pexels' : i.source === 'added' ? 'Yours' : 'Stock'} · ${esc(CATS[i.category] || 'Other')}</small></article>`);
+    el.dataset.key = key;
+    const b = el.querySelector('.media');
+    b.onclick = () => openAsset(allItems().find(x => x.id === i.id));
+    if (i.kind === 'clip') {
+      b.onpointerenter = e => { if (e.pointerType !== 'mouse') return;
+        let v = b.querySelector('video');
+        if (!v) { v = document.createElement('video'); v.muted = true; v.loop = true; v.playsInline = true; v.preload = 'auto'; v.src = i.url; v.className = 'hov'; b.prepend(v); }
+        if (hoverVideo && hoverVideo !== v) hoverVideo.pause(); hoverVideo = v; v.play().then(() => b.classList.add('playing')).catch(() => {}); };
+      b.onpointerleave = e => { if (e.pointerType !== 'mouse') return; const v = b.querySelector('video'); if (v) v.pause(); b.classList.remove('playing'); };
+    }
+    tileCache.set(i.id, el);
+  }
+  el.style.setProperty('--i', Math.min(k + 1, 18));
+  return el;
+}
+const addTiles = {};
+function addTileEl(tab) {
+  if (!addTiles[tab]) { const noun = tab === 'photos' ? 'photos' : 'clips';
+    addTiles[tab] = h(`<button class="add-tile" type="button" data-add style="--i:0"><span class="ico">${icon('plus')}</span>Add your own ${noun}<small class="muted drop-only" style="font-weight:400">or drop files here</small></button>`);
+    addTiles[tab].onclick = () => $(tab === 'photos' ? '#addPhotos' : '#addClips').click(); }
+  return addTiles[tab];
+}
+const libMore = h('<div class="lib-more" aria-hidden="true"></div>');
+// more tiles arrive a row or two per frame as you near the end, so scrolling never waits on a big batch
+let libFilling = false;
+new IntersectionObserver(es => { if (!es.some(e => e.isIntersecting) || !S.libRest || libFilling) return;
+  libFilling = true; const stop = Math.min(S.libRest.length, S.libLimit + LIB_PAGE), rest = S.libRest;
+  const step = () => { if (rest !== S.libRest) { libFilling = false; return; }
+    const from = S.libLimit, to = Math.min(stop, from + 8); libMore.before(...rest.slice(from, to).map((i, k) => tileEl(i, k))); S.libLimit = to;
+    if (to < stop) requestAnimationFrame(step); else { libFilling = false; if (to >= rest.length) libMore.remove(); } };
+  requestAnimationFrame(step); }, { rootMargin: '1200px 0px' }).observe(libMore);
 function renderLib() {
   renderCounts();
   if (S.libTab === 'music') return renderMusicLib();
@@ -1854,25 +1900,19 @@ function renderLib() {
   if (!S.stockLoaded) { grid.innerHTML = Array.from({ length: 10 }, () => '<div class="skel"></div>').join(''); return; }
   const list = items.filter(i => inCat(i, S.libFilter) && matches(i, q));
   const noun = tab === 'photos' ? 'photos' : 'clips';
-  const addTile = `<button class="add-tile" type="button" data-add style="--i:0"><span class="ico">${icon('plus')}</span>Add your own ${noun}<small class="muted drop-only" style="font-weight:400">or drop files here</small></button>`;
-  const tiles = list.map((i, k) => {
-    const mine = i.source === 'added' ? '<span class="mine">Yours</span>' : '';
-    const need = i.source === 'added' && i.needsInfo ? '<span class="need">Add a description</span>' : '';
-    const media = i.kind === 'clip'
-      ? `<video src="${esc(i.url)}" ${i.thumbUrl ? `poster="${esc(i.thumbUrl)}"` : ''} muted loop playsinline preload="none"></video><span class="tag">${(+i.duration || 0).toFixed(0)}s</span>`
-      : `<img src="${esc(i.thumbUrl || i.url)}" alt="" loading="lazy">`;
-    return `<article class="tile" style="--i:${k + 1}"><button class="media" type="button" data-open="${esc(i.id)}" aria-label="${esc(label(i))}">${media}${mine}${need}</button><b>${esc(label(i))}</b><small>${i.credit ? 'Pexels' : i.source === 'added' ? 'Yours' : 'Stock'} · ${esc(CATS[i.category] || 'Other')}</small></article>`;
-  });
-  if (q && !list.length) grid.innerHTML = `<div class="empty-hero"><b>Nothing matches “${esc(S.libQuery)}”</b><span>Try another word, or clear the search.</span></div>`;
-  else if (S.libFilter === 'mine' && !list.length) grid.innerHTML = `<div class="empty-hero"><span class="ico" style="width:52px;height:52px;border-radius:16px;display:grid;place-items:center;background:var(--acc-soft);color:var(--acc)">${icon(tab === 'photos' ? 'image' : 'film')}</span><b>No ${noun} of your own yet</b><span>Add some and they're used first in your reels. They stay on this device.</span><button class="btn primary" type="button" data-add>${icon('plus')}Add ${noun}</button></div>`;
-  else grid.innerHTML = (S.libFilter === 'all' || S.libFilter === 'mine' ? addTile : '') + tiles.join('');
-  $$('#libGrid [data-add]').forEach(b => b.onclick = () => $(tab === 'photos' ? '#addPhotos' : '#addClips').click());
-  $$('#libGrid [data-open]').forEach(b => {
-    b.onclick = () => openAsset(allItems().find(x => x.id === b.dataset.open));
-    const v = b.querySelector('video'); if (!v) return;
-    b.onpointerenter = e => { if (e.pointerType !== 'mouse') return; if (hoverVideo && hoverVideo !== v) hoverVideo.pause(); hoverVideo = v; v.play().catch(() => {}); };
-    b.onpointerleave = e => { if (e.pointerType !== 'mouse') return; v.pause(); };
-  });
+  // tiles are built once and reused; only the first screenfuls go in now, the rest as you scroll
+  const sig = `${tab}|${S.libFilter}|${q}`; if (S.libSig !== sig) { S.libSig = sig; S.libLimit = LIB_PAGE; }
+  if (q && !list.length) { grid.innerHTML = `<div class="empty-hero"><b>Nothing matches “${esc(S.libQuery)}”</b><span>Try another word, or clear the search.</span></div>`; }
+  else if (S.libFilter === 'mine' && !list.length) grid.innerHTML = `<div class="empty-hero"><span class="ico" style="width:52px;height:52px;border-radius:16px;display:grid;place-items:center;background:var(--acc-soft);color:var(--acc)">${icon(tab === 'photos' ? 'image' : 'film')}</span><b>No ${noun} of your own yet</b><span>Add videos and photos from your phone or computer. They're matched first.</span><button class="btn primary" type="button" data-add>${icon('plus')}Add ${noun}</button></div>`;
+  else {
+    const nodes = [];
+    if (S.libFilter === 'all' || S.libFilter === 'mine') nodes.push(addTileEl(tab));
+    list.slice(0, S.libLimit).forEach((i, k) => nodes.push(tileEl(i, k)));
+    if (list.length > S.libLimit) nodes.push(libMore);
+    grid.replaceChildren(...nodes);
+    S.libRest = list;
+  }
+  $$('#libGrid .empty-hero [data-add]').forEach(b => b.onclick = () => $(tab === 'photos' ? '#addPhotos' : '#addClips').click());
   renderOnline(tab, q);
 }
 // ---- free stock (Pexels, searched through Reel Studio's server so the key stays private)

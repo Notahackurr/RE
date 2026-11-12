@@ -226,7 +226,7 @@
       <div class="head">
         <span class="eyebrow">Pricing</span>
         <h2>Free to start. Premium when you want more.</h2>
-        <p class="launch" id="launchNote" hidden>Premium checkout opens soon. Until then, everything in the editor is unlocked for free.</p>
+        <p class="launch" id="launchNote">Premium checkout opens soon. Until then, everything in the editor is unlocked for free.</p>
       </div>
       <div class="plans">
         <article class="card plan">
@@ -296,7 +296,7 @@
   fetch('trends.json', { cache: 'no-store' }).then(function (r) { return r.json(); }).then(function (t) {
     if (t && t.updated) document.getElementById('trendLine').textContent = 'Trend data last updated ' + new Date(t.updated + 'T12:00:00').toLocaleDateString(undefined, { month: 'long', day: 'numeric' }) + '.';
   }).catch(function () {});
-  fetch('billing.json', { cache: 'no-store' }).then(function (r) { return r.json(); }).then(function (b) { if (b.live !== true) document.getElementById('launchNote').hidden = false; }).catch(function () {});
+  fetch('billing.json', { cache: 'no-store' }).then(function (r) { return r.json(); }).then(function (b) { if (b.live === true) document.getElementById('launchNote').hidden = true; }).catch(function () {});
   var esc = function (x) { return String(x == null ? '' : x).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); };
   // real proof only: site/proof.json (quotes from named users, dated mentions, early-user avatars)
   fetch('site/proof.json', { cache: 'no-store' }).then(function (r) { return r.json(); }).then(function (p) {
