@@ -1,8 +1,10 @@
 {
-  "_readme": "Fill this in to put your name on the site: the home page \"Who's behind it\" card, the footer About link and the About page (which also becomes searchable). The \"Bake proof\" GitHub action writes it into the pages. name: your name. photo: a square photo, e.g. \"site/img/founder.jpg\" (about 600 x 600). story: three sentences on why you built it, in your own words (blank line between paragraphs). links: one profile, e.g. [{ \"label\": \"X\", \"url\": \"https://x.com/you\" }] or YouTube or LinkedIn.",
+  "_readme": "Fill this in to put your name on the site: the home page \"Who's behind it\" card, the footer About link and the About page (which also becomes searchable). The \"Bake proof\" GitHub action writes it into the pages. name: your name. photo: a square photo, e.g. \"site/img/founder.jpg\" (about 600 x 600). story: three sentences on why you built it, in your own words (blank line between paragraphs). links: one profile, e.g. [{ \"label\": \"X\", \"url\": \"https://x.com/you\" }] or YouTube or LinkedIn. since: when you started building Reel Studio. based: where you build it from (for example a city and state), shown on the About page.",
   "name": "J.P. Gentry",
   "role": "Online fitness coach. Edits his own reels with Reel Studio.",
   "photo": "",
   "story": "I coach fitness online, and my reels are me talking to a camera in a budget home gym: one take, and a clap whenever I flub a line so I can say it again.\n\nEditing each one took longer than filming it, and the AI tools I tried turned my reels into the same flashy, captions-bouncing stuff everyone else posts.\n\nSo I built Reel Studio to edit the way I would by hand: cut the flubs and dead air, caption what I actually said, add real footage and music, and stop there.",
-  "links": []
+  "links": [],
+  "since": "November 2026",
+  "based": ""
 }

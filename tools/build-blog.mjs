@@ -13,6 +13,7 @@ const root = path.resolve(new URL('..', import.meta.url).pathname);
 const SITE = 'https://reeleditapp.com';
 const API = process.env.HEYCATCH_API_BASE || 'https://api.heycatch.ai/v1';   // the base can be overridden for tests
 const KEY = process.env.HEYCATCH_API_KEY || '';
+const EMAIL = (() => { try { const e = String(JSON.parse(fs.readFileSync(path.join(root, 'site/contact.json'), 'utf8')).email || '').trim(); return /^[^\s@<>"]+@[^\s@<>"]+\.[a-z]{2,}$/i.test(e) ? e : ''; } catch (e) { return ''; } })();
 const RTL = new Set(['ar', 'he', 'fa', 'ur', 'ps', 'yi', 'dv', 'ckb']);
 
 const esc = (x) => String(x ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -83,7 +84,7 @@ const footer = `<footer>
   <div class="wrap">
     <a class="brand" href="/" style="font-size:16px"><img src="/icons/icon-192.png?v=3" alt="" width="24" height="24">Reel <span>Studio</span></a>
     <span class="sp"></span>
-    <a href="/app.html">Editor</a><a href="/pricing.html">Pricing</a>${posts.length ? '<a href="/blog/">Blog</a>' : ''}<a href="/data.html">Your data</a><a href="/#faq">Questions</a>
+    <a href="/app.html">Editor</a><a href="/pricing.html">Pricing</a>${posts.length ? '<a href="/blog/">Blog</a>' : ''}<a href="/data.html">Your data</a><a href="/#faq">Questions</a><a href="/about">About Reel Studio</a><a href="/contact">Contact</a>${EMAIL ? `<a href="mailto:${esc(EMAIL)}">Email</a>` : ''}
   </div>
 </footer>`;
 const meta = (a) => [a.published_at && `<time datetime="${esc(iso(a.published_at))}">${esc(day(a.published_at))}</time>`, a.read_time && `${esc(a.read_time)} min read`].filter(Boolean).join(' · ');
@@ -172,7 +173,7 @@ sm = sm.replace('</urlset>', urls.join('\n') + '\n</urlset>');
 fs.writeFileSync(smf, sm);
 
 // ---- "Blog" in the main menu, only while there are articles
-for (const f of ['index.html', 'pricing.html', 'data.html', 'about.html', 'refund.html', 'vs/opus-clip.html']) {
+for (const f of ['index.html', 'pricing.html', 'data.html', 'about.html', 'refund.html', 'vs/opus-clip.html', 'contact.html']) {
   const p = path.join(root, f); let html = fs.readFileSync(p, 'utf8');
   html = html.replace(/<!--bake:blognav-->[\s\S]*?<!--\/bake:blognav-->/, `<!--bake:blognav-->${posts.length ? '<a href="/blog/">Blog</a>' : ''}<!--/bake:blognav-->`);
   fs.writeFileSync(p, html);

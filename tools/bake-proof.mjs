@@ -12,7 +12,8 @@ const esc = (x) => String(x ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<
 const url = (u) => /^(https:\/\/|site\/|\/)/.test(String(u || '')) ? esc(u) : '';
 const MIN_COUNT = 50;   // a count shows once it's more than a handful
 
-const founder = read('site/founder.json'), proof = read('site/proof.json'), bill = read('billing.json');
+const founder = read('site/founder.json'), proof = read('site/proof.json'), bill = read('billing.json'), contact = read('site/contact.json');
+const email = /^[^\s@<>"]+@[^\s@<>"]+\.[a-z]{2,}$/i.test(String(contact.email || '').trim()) ? String(contact.email).trim() : '';
 const name = String(founder.name || '').trim(), first = name.split(/\s+/)[0];
 const quotes = (proof.quotes || []).filter((q) => q && q.name && q.text);
 const mentions = (proof.mentions || []).filter((m) => m && m.name && /^https:\/\//.test(m.link || '') && m.date);
@@ -80,6 +81,8 @@ const about = name
   <div class="founder">${founder.photo ? `<img src="${url(founder.photo)}" alt="${esc(name)}" width="180" height="180">` : '<span></span>'}
     <div>${String(founder.story || '').split(/\n\s*\n/).filter(Boolean).map((p) => `<p class="lede">${esc(p.trim())}</p>`).join('')}
       <p class="muted"><b style="color:var(--fg)">${esc(name)}</b>${founder.role ? ` · ${esc(founder.role)}` : ''}</p>
+      ${founder.since || founder.based ? `<p class="muted">${[founder.since && `Building Reel Studio since ${esc(founder.since)}`, founder.based && `from ${esc(founder.based)}`].filter(Boolean).join(' ')}.</p>` : ''}
+      <p class="muted">Questions or feedback? ${email ? `Write to <a href="mailto:${esc(email)}">${esc(email)}</a>, or see the <a href="/contact">Contact page</a>.` : 'See the <a href="/contact">Contact page</a>.'}</p>
       ${links.length ? `<p>${links.map((l) => `<a href="${url(l.url)}" rel="me noopener">${esc(l.label || l.url)}</a>`).join(' · ')}</p>` : ''}
     </div>
   </div>`
@@ -98,8 +101,12 @@ function bake(file, regions) {
 }
 bake('index.html', {
   usage, proofwall, elsewhere, founder: '\n          ' + founderCard + '\n          ',
-  footabout: name ? '<a href="about.html">About</a>' : '',
 });
+const footemail = email ? `<a href="mailto:${esc(email)}">Email</a>` : '';
+for (const f of ['index.html', 'pricing.html', 'data.html', 'about.html', 'refund.html', 'vs/opus-clip.html', '404.html', 'contact.html']) bake(f, { footemail });
+bake('contact.html', { contact: '\n' + (email
+  ? `  <div class="card" style="margin:28px 0"><h2 style="margin:0">Email</h2><p style="margin:0;font-size:20px"><a href="mailto:${esc(email)}">${esc(email)}</a></p><p class="muted" style="margin:0">Usually answered within a day or two.</p></div>`
+  : `  <div class="card" style="margin:28px 0"><h2 style="margin:0">Email</h2><p class="muted" style="margin:0">The contact address is being set up and will be posted here shortly.</p></div>`) + '\n' });
 bake('about.html', {
   robots: name ? '' : '<meta name="robots" content="noindex">',
   title: `<title>${name ? `About ${esc(name)}` : 'About'} | Reel Studio by reeleditapp</title>`,
