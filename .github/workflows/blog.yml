@@ -1,0 +1,37 @@
+# Rebuilds the blog from HeyCatch: new and updated articles go live within minutes, no redeploy needed.
+# Needs the repository secret HEYCATCH_API_KEY (Settings -> Secrets and variables -> Actions).
+# GitHub runs scheduled jobs every 5 minutes at the most, and can be a few minutes late when it's busy.
+name: Blog
+on:
+  schedule:
+    - cron: '*/5 * * * *'
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['tools/build-blog.mjs']
+permissions:
+  contents: write
+concurrency: { group: blog, cancel-in-progress: false }
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with: { ref: main }
+      - uses: actions/setup-node@v4
+        with: { node-version: 20 }
+      - run: npm install --no-save --silent sanitize-html@2.18.2
+      - name: Build the blog
+        env:
+          HEYCATCH_API_KEY: ${{ secrets.HEYCATCH_API_KEY }}
+        run: node tools/build-blog.mjs
+      - name: Publish if anything changed
+        run: |
+          git config user.name "blog-bot"
+          git config user.email "blog-bot@users.noreply.github.com"
+          git add blog sitemap.xml index.html pricing.html data.html about.html refund.html vs/opus-clip.html
+          git diff --cached --quiet && exit 0
+          git commit -m "Blog: update articles"
+          git pull --rebase origin main
+          git push origin HEAD:main HEAD:gh-pages
