@@ -2477,33 +2477,58 @@ function restartBatch() {
 }
 $('#batchRestart').onclick = restartBatch;
 $('#batchRestart2').onclick = e => { const b = e.currentTarget; if (b.dataset.confirm !== '1') { b.dataset.confirm = '1'; b.textContent = 'Tap again: unsaved reels are lost'; setTimeout(() => { b.dataset.confirm = ''; b.textContent = 'Start over'; }, 3000); return; } b.dataset.confirm = ''; b.textContent = 'Start over'; restartBatch(); };
-async function renderBatch() {
-  const B = S.batch, picks = B.cands.filter(c => c.on); if (!picks.length) return;
-  if (S.busy) return toast('Wait for the current job to finish first.');
-  if (!B.counted && !left('batch')) return upsell({ limit: 'batch' });
-  B.reels = picks.map(c => ({ cand: c, P: null, blob: null, url: null, status: 'waiting' }));
-  S.busy = 'batch'; B.stage = 'rendering'; showBatch(); updateBusy(); await keepAwake(true); window.scrollTo(0, 0);
-  S.abort = new AbortController(); const signal = S.abort.signal;
-  const stages = [['cut', 'Trimming pauses and retakes'], ['plan', 'Choosing clips and photos'], ['face', 'Framing you'], ['music', 'Adding music'], ['render', 'Finishing the video']];
-  try {
-    for (let k = 0; k < B.reels.length; k++) {
-      const R = B.reels[k], c = R.cand; R.status = 'working'; renderReels();
-      Prog.start($('#view-batch'), `“${c.hookText.length > 60 ? c.hookText.slice(0, 58) + '…' : c.hookText}”`, stages, { k, n: B.reels.length });
-      $('#view-batch').insertBefore($('#progress'), $('#batchResults'));
-      try {
-        const cfg = cfgNow();
-        const P = await E.buildReel(B.prep, { items: planItems(), photos: SET.vis.photos ? popItems() : [], notes: '', cfg, onStage, signal, range: [c.a, c.b], hook: c.hook, online: SET.vis.stock ? onlineFinder() : null });
-        await E.buildCaptions(P);
-        await E.buildAudio(P, musicOpts(eff().music.choice, SET.music.level), onStage, signal);
-        const blob = await E.render(P, (p, fps) => onStage('render', p, fps ? `${Math.round(p * 100)}%` : ''), signal);
-        onStage('render', 1);
-        P.audioCheck = await E.verifyAudio(blob); P.ui = { dirty: {}, changed: !P.audioCheck.ok, pending: new Set() };
-        Object.assign(R, { P, blob, url: URL.createObjectURL(blob), status: 'done' }); countReel('long');
-        if (!B.counted) { B.counted = true; useOne('batch'); }
-      } catch (e) { if (e instanceof E.Cancelled) throw e; console.error(e); R.status = 'failed'; R.error = e.message || String(e); }
-      renderReels();
+// A reel can fail because the browser paused or reclaimed the video encoder (another app, a locked screen, low memory).
+// So each reel gets a second try once the page is showing again, and anything still failed can be retried by hand.
+const whenVisible = () => document.hidden ? new Promise(r => { const f = () => { if (!document.hidden) { document.removeEventListener('visibilitychange', f); r(); } }; document.addEventListener('visibilitychange', f); }) : Promise.resolve();
+const BATCH_STAGES = [['cut', 'Trimming pauses and retakes'], ['plan', 'Choosing clips and photos'], ['face', 'Framing you'], ['music', 'Adding music'], ['render', 'Finishing the video']];
+async function makeBatchReel(R, k, n, signal) {
+  const B = S.batch, c = R.cand;
+  for (let attempt = 0; ; attempt++) {
+    R.status = 'working'; R.error = ''; renderReels();
+    Prog.start($('#view-batch'), `“${c.hookText.length > 60 ? c.hookText.slice(0, 58) + '…' : c.hookText}”`, BATCH_STAGES, { k, n });
+    $('#view-batch').insertBefore($('#progress'), $('#batchResults'));
+    try {
+      await whenVisible();
+      const cfg = cfgNow();
+      const P = await E.buildReel(B.prep, { items: planItems(), photos: SET.vis.photos ? popItems() : [], notes: '', cfg, onStage, signal, range: [c.a, c.b], hook: c.hook, online: SET.vis.stock ? onlineFinder() : null });
+      await E.buildCaptions(P);
+      await E.buildAudio(P, musicOpts(eff().music.choice, SET.music.level), onStage, signal);
+      const blob = await E.render(P, (p, fps) => onStage('render', p, fps ? `${Math.round(p * 100)}%` : ''), signal);
+      onStage('render', 1);
+      P.audioCheck = await E.verifyAudio(blob); P.ui = { dirty: {}, changed: !P.audioCheck.ok, pending: new Set() };
+      if (R.url) URL.revokeObjectURL(R.url);
+      Object.assign(R, { P, blob, url: URL.createObjectURL(blob), status: 'done', error: '' }); countReel('long');
+      if (!B.counted) { B.counted = true; useOne('batch'); }
+      return true;
+    } catch (e) {
+      if (e instanceof E.Cancelled || signal.aborted) throw e;
+      console.error('[batch] reel', k + 1, 'attempt', attempt + 1, e);
+      E.DIAG.batchErrors = [...(E.DIAG.batchErrors || []).slice(-9), { k, attempt, at: new Date().toISOString(), hidden: document.hidden, msg: String(e && (e.name + ': ' + e.message) || e).slice(0, 300) }];
+      if (attempt < 1) { await whenVisible(); await new Promise(r => setTimeout(r, 400)); continue; }
+      R.status = 'failed'; R.error = friendlyFail(e); renderReels(); return false;
     }
-  } catch (e) { B.reels.forEach(r => { if (r.status !== 'done') r.status = 'cancelled'; }); }
+  }
+}
+const friendlyFail = e => {
+  const m = String(e && (e.name + ' ' + e.message) || e);
+  if (/memory|quota|allocation|RangeError/i.test(m)) return 'your device ran out of memory. Close other apps and tabs, then tap Try again.';
+  if (/encod|codec|closed|reclaim|invalidstate|operation/i.test(m)) return 'the video encoder stopped (this happens if the app or screen was switched away). Tap Try again.';
+  return (e && e.message) || String(e);
+};
+async function renderBatch(only) {
+  const B = S.batch;
+  if (S.busy) return toast('Wait for the current job to finish first.');
+  if (only == null) {
+    const picks = B.cands.filter(c => c.on); if (!picks.length) return;
+    if (!B.counted && !left('batch')) return upsell({ limit: 'batch' });
+    B.reels = picks.map(c => ({ cand: c, P: null, blob: null, url: null, status: 'waiting' }));
+  }
+  const queue = only == null ? B.reels.map((r, k) => k) : [only];
+  S.busy = 'batch'; B.stage = 'rendering'; showBatch(); updateBusy(); await keepAwake(true); if (only == null) window.scrollTo(0, 0);
+  S.abort = new AbortController(); const signal = S.abort.signal;
+  try {
+    for (const k of queue) await makeBatchReel(B.reels[k], k, B.reels.length, signal);
+  } catch (e) { B.reels.forEach(r => { if (r.status === 'working' || r.status === 'waiting') r.status = only == null ? 'cancelled' : 'failed'; if (r.status === 'failed' && !r.error) r.error = 'cancelled'; }); }
   finally {
     await keepAwake(false); S.abort = null; S.busy = null; $('#progress').hidden = true;
     B.reels = B.reels.filter(r => r.status === 'done' || r.status === 'failed');
@@ -2511,7 +2536,7 @@ async function renderBatch() {
     if (S.view !== 'batch') toast('EDDIE’s done. Your reels are ready');
   }
 }
-$('#renderBatch').onclick = renderBatch;
+$('#renderBatch').onclick = () => renderBatch();
 function renderReels() {
   const B = S.batch, done = B.reels.filter(r => r.status === 'done').length;
   $('#resEyebrow').textContent = B.stage === 'rendering' ? `Making ${B.reels.length} reels` : `${done} ready`;
@@ -2521,9 +2546,10 @@ function renderReels() {
     ${r.status === 'done' ? `<video src="${r.url}" controls playsinline preload="metadata"></video>` : `<div class="ph">${r.status === 'working' ? 'Making this one…' : r.status === 'failed' ? `Couldn't make this one: ${esc(r.error)}` : 'Waiting'}</div>`}
     <b>“${esc(r.cand.hookText)}”</b>
     <span class="status">${r.P ? clock(r.P.outDur) : Math.round(r.cand.d) + ' s'} · from ${longClock(r.cand.a)}</span>
-    ${r.status === 'done' ? `<div class="row"><button class="btn sm primary" type="button" data-save="${i}">${icon('download')}Save</button><button class="btn sm" type="button" data-edit="${i}">Edit</button></div>` : ''}
+    ${r.status === 'done' ? `<div class="row"><button class="btn sm primary" type="button" data-save="${i}">${icon('download')}Save</button><button class="btn sm" type="button" data-edit="${i}">Edit</button></div>` : r.status === 'failed' && B.stage !== 'rendering' ? `<div class="row"><button class="btn sm primary" type="button" data-retry="${i}">Try again</button></div>` : ''}
   </article>`).join('');
   $$('#reels [data-save]').forEach(b => b.onclick = () => saveFile(`reel_${stamp()}_${+b.dataset.save + 1}.mp4`, B.reels[+b.dataset.save].blob, 'Reel'));
+  $$('#reels [data-retry]').forEach(b => b.onclick = () => renderBatch(+b.dataset.retry));
   $$('#reels [data-edit]').forEach(b => b.onclick = () => { $$('#reels video').forEach(v => v.pause()); B.idx = +b.dataset.edit; B.stage = 'review'; showBatch(); window.scrollTo(0, 0); });
 }
 $('#saveAll').onclick = async () => {
