@@ -1,17 +1,14 @@
-# Rebuilds the blog from HeyCatch: new and updated articles go live within minutes, no redeploy needed.
-# Needs the repository secret HEYCATCH_API_KEY (Settings -> Secrets and variables -> Actions).
-# GitHub runs scheduled jobs every 5 minutes at the most, and can be a few minutes late when it's busy.
+# Keeps the blog index, sitemap and "Blog" menu link up to date, and publishes, whenever an article lands in blog/
+# (Marblism commits its articles there). Nothing to set up: no keys or secrets.
 name: Blog
 on:
-  schedule:
-    - cron: '*/5 * * * *'
-  workflow_dispatch:
   push:
     branches: [main]
-    paths: ['tools/build-blog.mjs']
+    paths: ['blog/**', 'tools/build-blog.mjs', '!blog/index.html']
+  workflow_dispatch:
 permissions:
   contents: write
-concurrency: { group: blog, cancel-in-progress: false }
+concurrency: { group: publish, cancel-in-progress: false }
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -21,17 +18,15 @@ jobs:
         with: { ref: main }
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with: { node-version: 20 }
-      - run: npm install --no-save --silent sanitize-html@2.18.2
-      - name: Build the blog
-        env:
-          HEYCATCH_API_KEY: ${{ secrets.HEYCATCH_API_KEY }}
+      - name: Update the blog index, sitemap and menu
         run: node tools/build-blog.mjs
-      - name: Publish if anything changed
+      - name: Commit
         run: |
           git config user.name "blog-bot"
           git config user.email "blog-bot@users.noreply.github.com"
           git add blog sitemap.xml index.html pricing.html data.html about.html refund.html vs/opus-clip.html contact.html
-          git diff --cached --quiet && exit 0
-          git commit -m "Blog: update articles"
+          git diff --cached --quiet || git commit -m "Blog: update the index"
           git pull --rebase origin main
-          git push origin HEAD:main HEAD:gh-pages
+      - name: Publish (only if every page is whole)
+        run: |
+          if node tools/check-pages.mjs; then git push origin HEAD:main HEAD:gh-pages; else git push origin HEAD:main; echo "::error::Not published: a page looks cut off. The live site keeps its last good version."; exit 1; fi

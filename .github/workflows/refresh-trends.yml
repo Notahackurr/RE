@@ -5,6 +5,7 @@ on:
   workflow_dispatch:
 permissions:
   contents: write
+concurrency: { group: publish, cancel-in-progress: false }
 jobs:
   refresh:
     runs-on: ubuntu-latest
@@ -21,4 +22,4 @@ jobs:
           git config user.email "trends-bot@users.noreply.github.com"
           git add trends.json
           git diff --cached --quiet || git commit -m "Refresh trends"
-          git push origin HEAD:main HEAD:gh-pages
+          if node tools/check-pages.mjs; then git push origin HEAD:main HEAD:gh-pages; else git push origin HEAD:main; echo "::error::Not published: a page looks cut off. The live site keeps its last good version."; exit 1; fi

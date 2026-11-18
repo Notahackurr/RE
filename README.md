@@ -28,3 +28,6 @@ tools/, .github/workflows/                stock fetcher (Pexels / Pixabay) and t
 ```
 
 To run it locally, serve the folder over http (for example `npx serve .`).
+
+## Blog
+Articles live in `blog/` (Marblism commits them there, as `blog/<slug>.html`). On every change the Blog action runs `tools/build-blog.mjs`, which updates `blog/index.html`, the sitemap and the Blog menu link, then publishes. Every publishing action runs `tools/check-pages.mjs` first: if any page looks cut off, nothing is published and the live site keeps its last good version.
