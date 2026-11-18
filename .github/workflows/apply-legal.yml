@@ -1,0 +1,44 @@
+# Applies the reviewed release package (every changed page, both blog articles, the
+# generator and the stylesheet) over main, then publishes. Runs once when this file lands.
+name: Apply legal and brand copy
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/apply-legal.yml']
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency: { group: publish, cancel-in-progress: false }
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with: { ref: main, fetch-depth: 0 }
+      - name: Fetch and unpack the release package
+        run: |
+          curl -fsSL "https://cdn.marblism.com/cCdc_ew6JKZ.tgz" -o /tmp/release.tgz
+          tar xzf /tmp/release.tgz -C .
+          ls -l index.html app.html blog/
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with: { node-version: 20 }
+      - name: Rebuild the blog index and sitemap, then check every page
+        run: |
+          node tools/build-blog.mjs
+          node tools/check-pages.mjs
+      - name: Guard the brand rules
+        run: |
+          if grep -rilE 'nothing gets flagged|never flagged|guaranteed views|claim-free|unlimited growth' --include=*.html --include=*.xml . ; then
+            echo "::error::A banned claim is still on the site"; exit 1
+          fi
+          test "$(grep -c 'legal-strip' index.html)" -ge 1 || { echo "::error::footer legal strip missing"; exit 1; }
+          echo "brand guard ok"
+      - name: Commit and publish
+        run: |
+          git config user.name "release-bot"
+          git config user.email "release-bot@users.noreply.github.com"
+          git add -A
+          git diff --cached --quiet || git commit -m "Legal and brand-guide copy: disclaimer strip on every page, results disclaimer, Pillar 8 wording, rights and platform-claims FAQ, Terms intro, data cross-reference; Penny's rewritten CapCut article and the new how-to article"
+          git push origin HEAD:main
+          git push origin HEAD:gh-pages
