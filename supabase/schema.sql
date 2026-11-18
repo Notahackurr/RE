@@ -62,3 +62,42 @@ create or replace function public.reels_made() returns bigint language sql stabl
   $$ select n from public.counters where name = 'reels'; $$;
 grant execute on function public.count_reel() to anon, authenticated;
 grant execute on function public.reels_made() to anon, authenticated;
+
+-- Free-plan usage per account (added Nov 18, 2026). The first reel needs no account; after that the monthly count lives here,
+-- so clearing the browser or switching devices doesn't reset it. Months are counted in UTC.
+create table if not exists public.usage (
+  user_id uuid not null references auth.users (id) on delete cascade,
+  month   text not null,                 -- 'YYYY-MM'
+  clip    integer not null default 0,
+  batch   integer not null default 0,
+  primary key (user_id, month)
+);
+alter table public.usage enable row level security;
+drop policy if exists "read own usage" on public.usage;
+create policy "read own usage" on public.usage for select to authenticated using (user_id = auth.uid());
+
+-- This month's count for the signed-in account.
+create or replace function public.my_usage()
+returns json language sql stable security definer set search_path = public as $$
+  select json_build_object('month', m, 'clip', coalesce(u.clip, 0), 'batch', coalesce(u.batch, 0))
+  from (select to_char(now() at time zone 'utc', 'YYYY-MM') as m) t
+  left join public.usage u on u.user_id = auth.uid() and u.month = t.m;
+$$;
+-- Add n (1 to 10) to this month's count of 'clip' or 'batch', and return the new count.
+create or replace function public.use_free(kind text, n integer default 1)
+returns json language plpgsql security definer set search_path = public as $$
+declare m text := to_char(now() at time zone 'utc', 'YYYY-MM'); r public.usage;
+begin
+  if auth.uid() is null then raise exception 'Sign in first'; end if;
+  if kind not in ('clip', 'batch') then raise exception 'Unknown kind'; end if;
+  n := greatest(0, least(coalesce(n, 1), 10));
+  insert into public.usage (user_id, month) values (auth.uid(), m) on conflict do nothing;
+  update public.usage set clip = clip + case when kind = 'clip' then n else 0 end,
+                          batch = batch + case when kind = 'batch' then n else 0 end
+    where user_id = auth.uid() and month = m returning * into r;
+  return json_build_object('month', r.month, 'clip', r.clip, 'batch', r.batch);
+end $$;
+revoke all on function public.my_usage() from public, anon;
+revoke all on function public.use_free(text, integer) from public, anon;
+grant execute on function public.my_usage() to authenticated;
+grant execute on function public.use_free(text, integer) to authenticated;

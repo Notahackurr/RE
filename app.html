@@ -1258,10 +1258,38 @@ let LIC = store.get('license', null);   // only the creator's key lives on the d
 const monthKey = (d = new Date()) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
 const resetDay = () => { const d = new Date(); return new Date(d.getFullYear(), d.getMonth() + 1, 1).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }); };
 const live = () => BILL.ready || (forcePaywall && BILL.links);
-function usage() { let u = store.get('usage', null); if (!u || u.month !== monthKey()) { u = { month: monthKey(), clip: 0, batch: 0 }; store.set('usage', u); } return u; }
+// Free-plan counting. The first reel needs no account and is counted on this device. After that a free account
+// keeps the monthly count on the server (supabase: use_free / my_usage), so clearing the browser or switching devices doesn't reset it.
+function localUsage() { let u = store.get('usage', null); if (!u || u.month !== monthKey()) { u = { month: monthKey(), clip: 0, batch: 0 }; store.set('usage', u); } return u; }
+let SRV = store.get('srvUsage', null);   // { uid, month, clip, batch }: this account's count, as the server last reported it
+const srvMonth = () => new Date().toISOString().slice(0, 7);   // the server counts months in UTC
+const srvUsage = () => (SRV && signedIn() && SRV.uid === SESSION.user.id && SRV.month === srvMonth()) ? SRV : null;
+const usage = () => srvUsage() || (signedIn() && BILL.accounts ? { month: srvMonth(), clip: 0, batch: 0 } : localUsage());
 const left = k => pro() ? Infinity : Math.max(0, FREE[k] - usage()[k]);
+const needAccount = () => live() && !pro() && BILL.accounts && !signedIn() && store.get('anonUsed', 0) >= 1;
+function setSrv(j) { if (j && signedIn()) { SRV = { uid: SESSION.user.id, month: j.month, clip: +j.clip || 0, batch: +j.batch || 0 }; store.set('srvUsage', SRV); renderPlan(); } }
+async function loadUsage() {
+  if (!signedIn() || !BILL.accounts) return;
+  try {
+    setSrv(await sb('/rest/v1/rpc/my_usage', { method: 'POST', body: {} }));
+    // the free reel made before signing up counts toward this account's month, once
+    const key = `anonSynced.${SESSION.user.id}.${monthKey()}`, lu = localUsage();
+    if (!store.get(key, false) && (lu.clip || lu.batch)) {
+      for (const k of ['clip', 'batch']) if (lu[k]) setSrv(await sb('/rest/v1/rpc/use_free', { method: 'POST', body: { kind: k, n: lu[k] } }));
+      store.set(key, true);
+    }
+  } catch (e) { /* offline or not set up: the last known count stands */ }
+}
+const accountGate = then => openAuth('signup', { why: 'Your first reel was on EDDIE. Create a free account to keep going: 3 reels and 1 long-video batch every month, on any device.', then: { fn: then } });
 const countReel = mode => { try { if (BILL.accounts) fetch(`${BILL.sbUrl}/rest/v1/rpc/count_reel`, { method: 'POST', headers: { apikey: BILL.sbKey, 'Content-Type': 'application/json' }, body: '{}', keepalive: true }).catch(() => {}); } catch (e) { /* best effort */ } };
-function useOne(k) { if (pro()) return; const u = usage(); u[k]++; store.set('usage', u); renderPlan(); }
+function useOne(k) {
+  if (pro()) return;
+  if (signedIn() && BILL.accounts) {
+    const cur = usage(); setSrv({ month: srvMonth(), clip: cur.clip + (k === 'clip'), batch: cur.batch + (k === 'batch') });   // shows at once; the server's answer replaces it
+    sb('/rest/v1/rpc/use_free', { method: 'POST', body: { kind: k, n: 1 } }).then(setSrv).catch(() => {});
+  } else { const u = localUsage(); u[k]++; store.set('usage', u); store.set('anonUsed', store.get('anonUsed', 0) + 1); }
+  renderPlan();
+}
 const same = (a, b) => String(a).toLowerCase() === String(b).toLowerCase();
 /** The settings a reel is actually made with: Premium choices are kept (and come back if you upgrade) but Free uses the defaults. */
 function eff() {
@@ -1352,7 +1380,7 @@ async function loadEnt() {
     const rows = await sb('/rest/v1/entitlements?select=id,plan,status,renews_at,ends_at,portal_url,license_key,test_mode,updated_at');
     const was = !!acctPlan(); ENT = { uid: SESSION.user.id, rows: rows || [], at: Date.now() }; store.set('ent', ENT);
     if (was && !acctPlan()) toast('Your Premium has ended. Everything you made is still here, and Free keeps working.', 6000);
-    refresh(); return true;
+    await loadUsage(); refresh(); return true;
   } catch (e) { if (e.status === 401) { setSession(null); refresh(); } return false; }
 }
 const owner = () => !!(LIC && LIC.owner && LIC.status === 'active');
@@ -2303,6 +2331,7 @@ wireDrop($('#clipDrop'), setTake);
 async function make() {
   if (!S.clip.file) return;
   if (S.busy) return toast('Wait for the current job to finish first.');
+  if (needAccount()) return accountGate(() => make());
   if (!left('clip')) return upsell({ limit: 'clip' });
   S.busy = 'clip'; S.clip.stage = 'work'; showClip(); updateBusy();
   Prog.start($('#view-clip'), 'EDDIE’s making your reel', CLIP_STAGES); await keepAwake(true); window.scrollTo(0, 0);
@@ -2509,6 +2538,7 @@ async function renderBatch(only) {
   if (S.busy) return toast('Wait for the current job to finish first.');
   if (only == null) {
     const picks = B.cands.filter(c => c.on); if (!picks.length) return;
+    if (!B.counted && needAccount()) return accountGate(() => renderBatch());
     if (!B.counted && !left('batch')) return upsell({ limit: 'batch' });
     B.reels = picks.map(c => ({ cand: c, P: null, blob: null, url: null, status: 'waiting' }));
   }

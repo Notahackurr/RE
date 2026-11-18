@@ -12,7 +12,7 @@ EDDIE is Reel Studio's mascot and the face of the brand: the editor character wh
 - Captions are written by Whisper, an open-source speech model running on the user's device; a small open-source face detector keeps the speaker framed.
 
 ## Pricing
-- Free: 3 Clip → Reel and 1 long-form batch every month, resets on the 1st, no watermark, no account needed.
+- Free: 3 Clip → Reel and 1 long-form batch every month, resets on the 1st, no watermark, no card; the first reel needs no account, then a free account keeps the monthly count.
 - Premium: $10 a month or $100 once. Unlimited reels and batches, plus every customization (caption colors, size and position, all seven music styles, pacing, clip amount, hook topics, reel counts, word fixes, maximum export quality). Cancel anytime.
 
 ## Pages
