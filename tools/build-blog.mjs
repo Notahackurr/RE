@@ -87,6 +87,7 @@ ${posts.map((a) => `        <li><a href="${esc(a.href)}"><h2>${esc(a.title)}</h2
     <a class="brand" href="/" style="font-size:16px"><img src="/icons/icon-192.png?v=3" alt="" width="24" height="24">Reel <span>Studio</span></a>
     <span class="sp"></span>
     <a href="/app.html">Editor</a><a href="/pricing.html">Pricing</a>${posts.length ? '<a href="/blog/">Blog</a>' : ''}<a href="/data.html">Your data</a><a href="/#faq">Questions</a><a href="/about">About Reel Studio</a><a href="/contact">Contact</a><a href="/privacy">Privacy</a><a href="/terms">Terms</a>${EMAIL ? `<a href="mailto:${esc(EMAIL)}">Email</a>` : ''}
+    <p class="legal-strip">Use Reel Studio under our <a href="/terms">Terms of Service</a>. See <a href="https://reeleditapp.com/data.html">Your data</a> for information about how data is handled.</p>
   </div>
 </footer>
 </body>

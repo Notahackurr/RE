@@ -294,6 +294,9 @@ footer .sp { flex: 1; }
   background: linear-gradient(135deg, var(--a1), var(--a2) 55%, var(--a3)); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .18); }
 @media (max-width: 640px) { .founder-ini { width: 120px; height: 120px; font-size: 44px; } }
 
-/* footer legal line */
-.legal-strip { flex-basis: 100%; margin: 6px 0 0; font-size: 13px; color: var(--faint); }
-.legal-strip a { color: var(--muted); }
+/* Legal strip (Linda's copy), homepage results disclaimer, editor acknowledgement. */
+footer .wrap .legal-strip { flex: 1 0 100%; margin: 14px 0 0; padding-top: 14px; border-top: 1px solid var(--line); font-size: 12.5px; line-height: 1.6; color: var(--faint); }
+footer .wrap .legal-strip a { color: var(--muted); text-decoration: underline; text-underline-offset: 2px; }
+footer .wrap .legal-strip a:hover { color: var(--fg); }
+.results-note { max-width: 760px; margin-top: 16px; }
+.legal-ack { margin: 10px 0 0; font-size: 12.5px; line-height: 1.55; color: var(--faint); }
