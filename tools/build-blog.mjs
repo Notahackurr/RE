@@ -13,7 +13,7 @@ const root = path.resolve(new URL('..', import.meta.url).pathname);
 const SITE = 'https://reeleditapp.com';
 const API = process.env.HEYCATCH_API_BASE || 'https://api.heycatch.ai/v1';   // the base can be overridden for tests
 const KEY = process.env.HEYCATCH_API_KEY || '';
-const EMAIL = (() => { try { const e = String(JSON.parse(fs.readFileSync(path.join(root, 'site/contact.json'), 'utf8')).email || '').trim(); return /^[^\s@<>"]+@[^\s@<>"]+\.[a-z]{2,}$/i.test(e) ? e : ''; } catch (e) { return ''; } })();
+const EMAIL = (() => { try { const e = String(JSON.parse(fs.readFileSync(path.join(root, 'site/contact.json'), 'utf8')).email || '').trim(); return /^[^\\s@<>"]+@[^\\s@<>"]+\\.[a-z]{2,}$/i.test(e) ? e : ''; } catch (e) { return ''; } })();
 const RTL = new Set(['ar', 'he', 'fa', 'ur', 'ps', 'yi', 'dv', 'ckb']);
 
 const esc = (x) => String(x ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -41,9 +41,24 @@ try {
   process.exit(0);
 }
 list = list.filter((a) => a && a.slug && a.published !== false);
+// Keep Penny's hand-authored article in the generated listing and sitemap. Its flat .html URL
+// is intentional; the regular HeyCatch articles continue to use /blog/<slug>/.
+const manualArticle = {
+  slug: 'capcut-alternatives',
+  title: 'CapCut Alternatives: 8 Editors to Try in 2026 (And Which One Fits You)',
+  published_at: '2026-11-17T12:00:00Z',
+  read_time: 8,
+  description: 'Eight real options for turning a take, or a podcast, into finished vertical reels. Where each one helps, and where it costs you.',
+  manual: true,
+};
+if (fs.existsSync(path.join(root, 'blog', `${manualArticle.slug}.html`)) || fs.existsSync(path.join(root, 'blog', manualArticle.slug, 'index.html'))) {
+  list = list.filter((a) => a.slug !== manualArticle.slug);
+  list.push(manualArticle);
+}
 
 const posts = [];
 for (const a of list) {
+  if (a.manual) { posts.push(a); continue; }
   try { posts.push({ ...a, ...(await api(`/articles/${encodeURIComponent(a.slug)}`)) }); }
   catch (e) { if (e.status === 404) continue; console.warn(`blog: skipped ${a.slug} (${e.message})`); const old = path.join(root, 'blog', a.slug, 'index.html'); if (fs.existsSync(old)) posts.push({ ...a, keep: true }); }
 }
@@ -75,7 +90,7 @@ const header = `<div class="glow" aria-hidden="true"></div>
     <nav aria-label="Main">
       <a href="/#how">How it works</a>
       <a href="/pricing.html">Pricing</a>
-      ${posts.length ? '<a href="/blog/" aria-current="page">Blog</a>\n      ' : ''}<a href="/#faq">Questions</a>
+      ${posts.length ? '<a href="/blog/">Blog</a>\n      ' : ''}<a href="/#faq">Questions</a>
     </nav>
     <a class="btn sm primary" href="/app.html">Open the editor</a>
   </div>
@@ -102,9 +117,9 @@ const clean = (html) => sanitizeHtml(String(html || ''), {
 const slugs = new Set();
 for (const a of posts) {
   slugs.add(a.slug);
-  if (a.keep) continue;   // a fetch hiccup: keep yesterday's page rather than a broken one
+  if (a.keep || a.manual) continue;   // keep manual pages and pages skipped after a fetch hiccup
   const body = clean(a.content_html);
-  const toc = [...body.matchAll(/<h2 id="([^"]+)"[^>]*>([\s\S]*?)<\/h2>/g)].filter((m) => m[1] !== 'faq')
+  const toc = [...body.matchAll(/<h2 id="([^"]+)"[^>]*>([\\s\\S]*?)<\\/h2>/g)].filter((m) => m[1] !== 'faq')
     .map((m) => `<li><a href="#${esc(m[1])}">${m[2].replace(/<[^>]+>/g, '')}</a></li>`);
   const lang = String(a.language || 'en').toLowerCase().split(/[-_]/)[0];
   const langAttr = lang && lang !== 'en' ? ` lang="${esc(a.language)}"${RTL.has(lang) ? ' dir="rtl"' : ''}` : '';
@@ -153,7 +168,7 @@ ${header}
     <div class="wrap">
       <div class="head"><span class="eyebrow">Blog</span><h1 style="font-size:clamp(34px,5vw,54px)">The Reel Studio blog</h1></div>
 ${posts.length ? `      <ul class="post-list">
-${posts.map((a) => `        <li><a href="/blog/${esc(encodeURIComponent(a.slug))}/"><h2>${esc(a.title)}</h2><span class="muted">${meta(a)}</span></a></li>`).join('\n')}
+${posts.map((a) => `        <li><a href="/blog/${esc(encodeURIComponent(a.slug))}${a.manual ? '.html' : '/'}"><h2>${esc(a.title)}</h2><span class="muted">${meta(a)}</span></a></li>`).join('\\n')}
       </ul>` : '      <p class="lede">No articles yet.</p>'}
     </div>
   </section>
@@ -165,17 +180,17 @@ ${footer}
 
 // ---- sitemap: the site's own pages, plus the blog
 const smf = path.join(root, 'sitemap.xml');
-let sm = fs.readFileSync(smf, 'utf8').replace(/\s*<url><loc>https:\/\/reeleditapp\.com\/blog\/[\s\S]*?<\/url>/g, '');
+let sm = fs.readFileSync(smf, 'utf8').replace(/\\s*<url><loc>https:\\/\\/reeleditapp\\.com\\/blog\\/[\\s\\S]*?<\\/url>/g, '');
 const latest = posts.map((a) => a.updated_at || a.published_at).filter(Boolean).sort().pop();
 const urls = [`  <url><loc>${SITE}/blog/</loc>${latest ? `<lastmod>${iso(latest).slice(0, 10)}</lastmod>` : ''}<changefreq>daily</changefreq><priority>0.6</priority></url>`,
-  ...posts.map((a) => `  <url><loc>${SITE}/blog/${esc(encodeURIComponent(a.slug))}/</loc>${(a.updated_at || a.published_at) ? `<lastmod>${iso(a.updated_at || a.published_at).slice(0, 10)}</lastmod>` : ''}<priority>0.6</priority></url>`)];
-sm = sm.replace('</urlset>', urls.join('\n') + '\n</urlset>');
+  ...posts.map((a) => `  <url><loc>${SITE}/blog/${esc(encodeURIComponent(a.slug))}${a.manual ? '.html' : '/'}</loc>${(a.updated_at || a.published_at) ? `<lastmod>${iso(a.updated_at || a.published_at).slice(0, 10)}</lastmod>` : ''}<priority>0.6</priority></url>`)];
+sm = sm.replace('</urlset>', urls.join('\\n') + '\\n</urlset>');
 fs.writeFileSync(smf, sm);
 
 // ---- "Blog" in the main menu, only while there are articles
 for (const f of ['index.html', 'pricing.html', 'data.html', 'about.html', 'refund.html', 'vs/opus-clip.html', 'contact.html']) {
   const p = path.join(root, f); let html = fs.readFileSync(p, 'utf8');
-  html = html.replace(/<!--bake:blognav-->[\s\S]*?<!--\/bake:blognav-->/, `<!--bake:blognav-->${posts.length ? '<a href="/blog/">Blog</a>' : ''}<!--/bake:blognav-->`);
+  html = html.replace(/<!--bake:blognav-->[\\s\\S]*?<!--\\/bake:blognav-->/, `<!--bake:blognav-->${posts.length ? '<a href="/blog/">Blog</a>' : ''}<!--/bake:blognav-->`);
   fs.writeFileSync(p, html);
 }
 console.log(`blog: ${posts.length} article${posts.length === 1 ? '' : 's'}`);
