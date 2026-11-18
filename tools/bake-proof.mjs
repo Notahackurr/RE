@@ -65,8 +65,10 @@ ${mentions.map((m) => `        <li>${m.badge ? `<img src="${url(m.badge)}" alt="
     </div>
   </section>`;
 
+// No photo yet: initials in a gradient circle, never a stand-in face.
+const initials = (n) => { const first = String(n).trim().split(/\s+/)[0] || ''; if (/^(\p{L}\.){2,}$/u.test(first)) return first.replace(/\./g, '').slice(0, 2).toUpperCase(); return String(n).replace(/[^\p{L}\s]/gu, '').trim().split(/\s+/).map((w) => w[0]).join('').slice(0, 2).toUpperCase(); };
 const founderCard = name
-  ? `<div class="maker">${founder.photo ? `<img src="${url(founder.photo)}" alt="${esc(name)}" width="56" height="56">` : ''}<div><b>${esc(name)}</b>${founder.role ? `<span>${esc(founder.role)}</span>` : ''}</div></div>
+  ? `<div class="maker">${founder.photo ? `<img src="${url(founder.photo)}" alt="${esc(name)}" width="56" height="56">` : `<span class="qface ini maker-ini" aria-hidden="true">${esc(initials(name))}</span>`}<div><b>${esc(name)}</b>${founder.role ? `<span>${esc(founder.role)}</span>` : ''}</div></div>
           <p class="muted">Reel Studio is made by ${esc(first)}, an independent creator who edits his own reels with it.</p>
           <p class="muted">It's one product, with a free plan that stays free and no ads.</p>
           <p><a href="about.html">More about who makes it →</a></p>`
@@ -78,7 +80,7 @@ const links = (founder.links || []).filter((l) => l && /^https:\/\//.test(l.url 
 const about = name
   ? `  <span class="eyebrow">About</span>
   <h1 style="font-size:clamp(32px,4.6vw,48px);margin-top:10px">Hi, I'm ${esc(first.replace(/\.$/, ''))}.</h1>
-  <div class="founder">${founder.photo ? `<img src="${url(founder.photo)}" alt="${esc(name)}" width="180" height="180">` : '<span></span>'}
+  <div class="founder">${founder.photo ? `<img src="${url(founder.photo)}" alt="${esc(name)}" width="180" height="180">` : `<span class="founder-ini" aria-hidden="true">${esc(initials(name))}</span>`}
     <div>${String(founder.story || '').split(/\n\s*\n/).filter(Boolean).map((p) => `<p class="lede">${esc(p.trim())}</p>`).join('')}
       <p class="muted"><b style="color:var(--fg)">${esc(name)}</b>${founder.role ? ` · ${esc(founder.role)}` : ''}</p>
       ${founder.since || founder.based ? `<p class="muted">${[founder.since && `Building Reel Studio since ${esc(founder.since)}`, founder.based && `from ${esc(founder.based)}`].filter(Boolean).join(' ')}.</p>` : ''}

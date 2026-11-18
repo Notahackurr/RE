@@ -287,3 +287,9 @@ footer .sp { flex: 1; }
 
 /* beta label (long form) */
 .beta { display: inline-block; vertical-align: 2px; margin-left: 6px; padding: 2px 7px; border-radius: 999px; font: 800 10px/1.4 var(--ui); letter-spacing: .08em; font-style: normal; color: #10131c; background: var(--grad); }
+
+/* founder initials (until there's a photo) */
+.maker-ini { width: 56px; height: 56px; font-size: 18px; --h: 230; }
+.founder-ini { width: 180px; height: 180px; border-radius: 24px; display: grid; place-items: center; font: 800 64px/1 var(--head); font-stretch: 112%; color: #fff;
+  background: linear-gradient(135deg, var(--a1), var(--a2) 55%, var(--a3)); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .18); }
+@media (max-width: 640px) { .founder-ini { width: 120px; height: 120px; font-size: 44px; } }
