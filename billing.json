@@ -6,8 +6,8 @@
   "storeId": 521572,
   "manage": "https://reelstudioeditapp.lemonsqueezy.com/billing",
   "refundDays": 15,
-  "supabaseUrl": "",
-  "supabaseAnonKey": "",
+  "supabaseUrl": "https://byvnpcjkjjndxpecoyet.supabase.co",
+  "supabaseAnonKey": "sb_publishable_xT8EYXuculwzoRYQ3dEb0g_mPGSpzR4",
   "lifetimeVariant": 2365610,
   "monthlyVariant": 2365599,
   "ownerHash": "ef3fb8dd4af4c0d64b4536aacb4a275a6914bff919d481422ebd665d99bda77d"

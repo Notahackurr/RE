@@ -1459,7 +1459,7 @@ function startCheckout(plan) {
   }, 4000);
 }
 $$('#proSheet [data-plan]').forEach(b => b.onclick = () => {
-  if (!BILL.links) return toast('Checkout opens soon.');
+  if (!BILL.links || (!BILL.ready && !forcePaywall)) return toast('Premium checkout opens soon. Until then, everything is free.');
   if (!BILL.accounts) return toast('Accounts open soon.');
   const plan = b.dataset.plan;
   if (!signedIn()) return openAuth('signup', { why: 'Premium is tied to your account, so it’s there on every device you sign in to. No keys to keep track of.', then: { plan, fn: () => { upsell(); startCheckout(plan); } } });
