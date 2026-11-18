@@ -205,6 +205,10 @@ input[type="range"] { width: 100%; accent-color: var(--acc); }
 .yt-card .row .btn svg.i { width: 17px; height: 17px; }
 #ytPick.nudge { border-color: var(--acc); box-shadow: 0 0 0 3px var(--acc-soft); }
 @media (max-width: 560px) { .yt-head { grid-template-columns: 96px minmax(0, 1fr); } .yt-thumb { width: 96px; } #ytClear { grid-column: 1 / -1; justify-self: start; } .yt-card .row .btn { flex: 1 1 100%; justify-content: center; } }
+.beta { display: inline-block; vertical-align: 2px; margin-left: 6px; padding: 2px 7px; border-radius: 999px; font: 800 10px/1.4 var(--ui, Inter, sans-serif); letter-spacing: .08em; font-style: normal; color: var(--on-acc); background: var(--grad); }
+.beta-note { display: flex; gap: 10px; align-items: flex-start; margin: 0; padding: 12px 14px; border-radius: 14px; background: var(--panel); border: 1px solid var(--line); font-size: 14px; color: var(--muted); }
+.beta-note .beta { margin: 1px 0 0; flex: none; }
+.beta-note b { color: var(--fg); font-weight: 650; }
 .tip { font-size: 13px; color: var(--muted); padding: 7px 14px; border-radius: 999px; background: var(--panel-2); margin-top: 4px; }
 .file-row { display: grid; grid-template-columns: 56px minmax(0, 1fr) auto; gap: 14px; align-items: center; padding: 12px; }
 .file-row .thumb { width: 56px; aspect-ratio: 9 / 16; border-radius: 10px; background: var(--sunk); overflow: hidden; display: grid; place-items: center; }
@@ -761,7 +765,7 @@ a.btn { text-decoration: none; color: inherit; }
     <a class="brand" href="./?home" data-home aria-label="Reel Studio home page"><span class="logo" data-icon="play"></span><b>Reel <span>Studio</span></b></a>
     <div class="brand-sub">Automated editing. Zero AI slop.</div>
     <button class="nav-i" data-go="clip"><span data-icon="clip"></span><b>Clip → Reel</b><small>One take, one finished reel</small></button>
-    <button class="nav-i" data-go="batch"><span data-icon="batch"></span><b>Long form → Reels</b><small>A long video into a batch</small></button>
+    <button class="nav-i" data-go="batch"><span data-icon="batch"></span><b>Long form → Reels</b><small><i class="beta" style="margin:0 5px 0 0;vertical-align:1px">BETA</i>A long video into a batch</small></button>
     <div class="side-label">Library</div>
     <button class="nav-i" data-go="library" data-tab="clips"><span data-icon="film"></span><b>Clips</b><span class="cnt" data-cnt="clips"></span></button>
     <button class="nav-i" data-go="library" data-tab="photos"><span data-icon="image"></span><b>Photos</b><span class="cnt" data-cnt="photos"></span></button>
@@ -837,6 +841,7 @@ a.btn { text-decoration: none; color: inherit; }
             <span class="tip">Up to 30 minutes works best.</span>
             <span class="tagline"><i></i>Edited by clear rules on your device. Nothing AI-generated.</span>
           </label>
+          <p class="beta-note" id="betaNote"><i class="beta">BETA</i><span><b>Long form is still in beta.</b> Long videos can be slow, and on some devices a reel may not finish. Keep this tab open while EDDIE works, and tap Try again on any reel that doesn’t.</span></p>
           <div class="stack yt" id="ytBox">
             <form class="yt-paste" id="ytForm" autocomplete="off" novalidate>
               <label class="yt-field"><span data-icon="link"></span><input type="text" id="ytUrl" inputmode="url" spellcheck="false" placeholder="Or paste your YouTube link" aria-label="YouTube link to your own video"></label>
@@ -2346,7 +2351,7 @@ function showBatch() {
   else if (S.busy !== 'clip') $('#progress').hidden = true;
   if (st === 'review') openReview('batch', B.idx);
   else if ($('#review').parentElement === $('#view-batch')) $('#review').hidden = true;
-  if (st === 'setup') { const has = !!B.file; $('#batchDrop').hidden = has; $('#ytBox').hidden = has; $('#longRow').hidden = !has; $('#batchStyle').hidden = !has; $('#batchCta').hidden = !has; }
+  if (st === 'setup') { const has = !!B.file; $('#batchDrop').hidden = has; $('#ytBox').hidden = has; $('#betaNote').hidden = has; $('#longRow').hidden = !has; $('#batchStyle').hidden = !has; $('#batchCta').hidden = !has; }
   if (st === 'pick') renderCands();
   if (st === 'results' || st === 'rendering') renderReels();
 }
