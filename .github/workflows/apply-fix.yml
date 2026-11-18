@@ -1,6 +1,9 @@
 name: apply-fix
 on:
   workflow_dispatch:
+  push:
+    paths:
+      - 'apply-trigger.txt'
 permissions:
   contents: write
 jobs:
