@@ -105,7 +105,7 @@ bake('index.html', {
   usage, proofwall, elsewhere, founder: '\n          ' + founderCard + '\n          ',
 });
 const footemail = email ? `<a href="mailto:${esc(email)}">Email</a>` : '';
-for (const f of ['index.html', 'pricing.html', 'data.html', 'about.html', 'refund.html', 'vs/opus-clip.html', '404.html', 'contact.html']) bake(f, { footemail });
+for (const f of ['index.html', 'pricing.html', 'data.html', 'about.html', 'refund.html', 'vs/opus-clip.html', '404.html', 'contact.html', 'privacy.html', 'terms.html']) bake(f, { footemail });
 bake('contact.html', { contact: '\n' + (email
   ? `  <div class="card" style="margin:28px 0"><h2 style="margin:0">Email</h2><p style="margin:0;font-size:20px"><a href="mailto:${esc(email)}">${esc(email)}</a></p><p class="muted" style="margin:0">Usually answered within a day or two.</p></div>`
   : `  <div class="card" style="margin:28px 0"><h2 style="margin:0">Email</h2><p class="muted" style="margin:0">The contact address is being set up and will be posted here shortly.</p></div>`) + '\n' });

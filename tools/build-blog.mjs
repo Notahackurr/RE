@@ -86,7 +86,7 @@ ${posts.map((a) => `        <li><a href="${esc(a.href)}"><h2>${esc(a.title)}</h2
   <div class="wrap">
     <a class="brand" href="/" style="font-size:16px"><img src="/icons/icon-192.png?v=3" alt="" width="24" height="24">Reel <span>Studio</span></a>
     <span class="sp"></span>
-    <a href="/app.html">Editor</a><a href="/pricing.html">Pricing</a>${posts.length ? '<a href="/blog/">Blog</a>' : ''}<a href="/data.html">Your data</a><a href="/#faq">Questions</a><a href="/about">About Reel Studio</a><a href="/contact">Contact</a>${EMAIL ? `<a href="mailto:${esc(EMAIL)}">Email</a>` : ''}
+    <a href="/app.html">Editor</a><a href="/pricing.html">Pricing</a>${posts.length ? '<a href="/blog/">Blog</a>' : ''}<a href="/data.html">Your data</a><a href="/#faq">Questions</a><a href="/about">About Reel Studio</a><a href="/contact">Contact</a><a href="/privacy">Privacy</a><a href="/terms">Terms</a>${EMAIL ? `<a href="mailto:${esc(EMAIL)}">Email</a>` : ''}
   </div>
 </footer>
 </body>
@@ -104,7 +104,7 @@ sm = sm.replace('</urlset>', urls.join('\n') + '\n</urlset>');
 fs.writeFileSync(smf, sm);
 
 // ---- "Blog" in the main menu, only while there are articles
-for (const f of ['index.html', 'pricing.html', 'data.html', 'about.html', 'refund.html', 'vs/opus-clip.html', 'contact.html']) {
+for (const f of ['index.html', 'pricing.html', 'data.html', 'about.html', 'refund.html', 'vs/opus-clip.html', 'contact.html', 'privacy.html', 'terms.html']) {
   const p = path.join(root, f); if (!fs.existsSync(p)) continue;
   const html = fs.readFileSync(p, 'utf8');
   if (!/<!--bake:blognav-->/.test(html)) { console.warn(`blog: ${f} has no menu marker, skipped`); continue; }

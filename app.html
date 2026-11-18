@@ -1109,6 +1109,7 @@ a.btn { text-decoration: none; color: inherit; }
       <button class="btn primary big" id="authGo" type="submit">Sign in</button>
       <div class="row between"><button type="button" class="btn ghost sm" id="authForgot">Forgot password?</button><button type="button" class="btn ghost sm" id="authBack" hidden>Back to sign in</button><button type="button" class="btn ghost sm" id="authResend" hidden>Resend the email</button></div>
     </form>
+    <p class="fine" id="authLegal" style="text-align:center;margin-top:10px">By creating an account you agree to the <a href="/terms" target="_blank" rel="noopener">Terms</a> and <a href="/privacy" target="_blank" rel="noopener">Privacy policy</a>.</p>
     <p class="fine">Your account just holds your plan. Your videos, clips and music never leave your device.</p>
   </div>
 </div>
@@ -1437,7 +1438,7 @@ function upsell(reason) {
   $('#proTitle').textContent = lim === 'clip' ? `That's your ${FREE.clip} free reels for ${new Date().toLocaleDateString(undefined, { month: 'long' })}` : lim === 'batch' ? "You've used this month's free batch" : typeof reason === 'string' ? `${reason} is a Premium touch` : 'Go Premium';
   $('#proWhy').textContent = lim ? `Nice work. More free ones arrive ${resetDay()}, or go unlimited now.` : typeof reason === 'string' ? 'Free keeps everything you need to make great reels. Premium adds the extra dials.' : 'Unlimited reels and every customization, on every device you sign in to.';
   if (!live()) $('#proWhy').textContent = 'Free during launch preview. After launch: 3 reels and 1 long-video batch a month free, unlimited with Premium ($10/month or $100 once).';
-  const rd = +BILL.refundDays || 0; $('#proRefund').hidden = !rd; if (rd) $('#proRefund').innerHTML = `${rd}-day money-back on the lifetime plan, no questions asked. <a href="refund.html" target="_blank" rel="noopener">Refund policy</a>`;
+  const rd = +BILL.refundDays || 0; $('#proRefund').hidden = !rd; if (rd) $('#proRefund').innerHTML = `${rd}-day money-back on Premium, no questions asked. <a href="refund.html" target="_blank" rel="noopener">Refund policy</a>`;
   proStep('buy'); $$('#proSheet [data-plan]').forEach(b => { b.disabled = !BILL.links; });
   sh.hidden = false; setTimeout(() => sh.querySelector('.plan.best').focus({ preventScroll: true }), 50);
 }

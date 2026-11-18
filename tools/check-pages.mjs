@@ -3,7 +3,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 const root = path.resolve(new URL('..', import.meta.url).pathname);
-const pages = ['index.html', 'pricing.html', 'data.html', 'about.html', 'refund.html', 'contact.html', 'vs/opus-clip.html', '404.html', 'blog/index.html'];
+const pages = ['index.html', 'pricing.html', 'data.html', 'about.html', 'refund.html', 'contact.html', 'privacy.html', 'terms.html', 'vs/opus-clip.html', '404.html', 'blog/index.html'];
 const blog = path.join(root, 'blog');
 if (fs.existsSync(blog)) for (const d of fs.readdirSync(blog, { withFileTypes: true })) {
   if (d.isFile() && d.name.endsWith('.html') && d.name !== 'index.html') pages.push(`blog/${d.name}`);

@@ -5,7 +5,7 @@
   "lifetime": "https://reelstudioeditapp.lemonsqueezy.com/checkout/buy/fd1da5e4-f007-4d3b-a475-d8f59e3b75dd",
   "storeId": 521572,
   "manage": "https://reelstudioeditapp.lemonsqueezy.com/billing",
-  "refundDays": null,
+  "refundDays": 15,
   "supabaseUrl": "",
   "supabaseAnonKey": "",
   "lifetimeVariant": 2365610,
