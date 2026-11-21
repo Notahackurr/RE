@@ -20,7 +20,7 @@ const iso = (d) => { const t = new Date(d); return isNaN(t) ? '' : t.toISOString
 // ---- the articles in blog/
 const blogDir = path.join(root, 'blog');
 const files = !fs.existsSync(blogDir) ? [] : fs.readdirSync(blogDir, { withFileTypes: true }).flatMap((d) => {
-  if (d.isFile() && d.name.endsWith('.html') && d.name !== 'index.html') return [{ file: path.join(blogDir, d.name), slug: d.name.slice(0, -5), href: `/blog/${d.name}` }];
+  if (d.isFile() && d.name.endsWith('.html') && d.name !== 'index.html') return [{ file: path.join(blogDir, d.name), slug: d.name.slice(0, -5), href: `/blog/${d.name.slice(0, -5)}` }];
   if (d.isDirectory() && fs.existsSync(path.join(blogDir, d.name, 'index.html'))) return [{ file: path.join(blogDir, d.name, 'index.html'), slug: d.name, href: `/blog/${d.name}/` }];
   return [];
 });

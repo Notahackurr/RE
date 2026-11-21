@@ -13,7 +13,7 @@
 <link rel="apple-touch-icon" href="icons/icon-180.png?v=3">
 <link rel="icon" href="icons/icon-192.png?v=3">
 <link rel="manifest" href="manifest.webmanifest">
-<link rel="canonical" href="https://reeleditapp.com/app.html">
+<link rel="canonical" href="https://reeleditapp.com/app">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@125,800&family=Inter:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@500&display=swap">
@@ -1087,7 +1087,7 @@ a.btn { text-decoration: none; color: inherit; }
       </ul>
     </div>
     <p class="acct-line" id="proAcct"></p>
-    <div id="proWait" class="wait" hidden><span class="spin" aria-hidden="true"></span><b>Waiting for your purchase…</b><p class="hint" id="proWaitNote"></p><button class="btn ghost sm" type="button" id="proWaitKey">Already paid and nothing's happening? Use your license key</button></div>
+    <div id="proWait" class="wait" hidden><span class="spin" aria-hidden="true"></span><b>Waiting for your purchase…</b><p class="hint" id="proWaitNote"></p><button class="btn ghost sm" type="button" id="proWaitKey">Already paid and nothing's happening? Check again</button></div>
     <div id="proKey" class="stack" style="gap:10px" hidden>
       <p class="hint" id="proKeyNote">Paste the license key from your receipt email. It's linked to your account once, and after that signing in is all it takes on any device.</p>
       <div class="keyrow"><input type="text" id="proKeyInput" placeholder="XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX" autocomplete="off" spellcheck="false" aria-label="License key"><button class="btn primary" id="proKeyGo" type="button">Unlock</button></div>
@@ -1246,13 +1246,13 @@ const save = () => store.set('settings', SET);
 const corrections = () => SET.speech.corrections ?? E.DEFAULT_CORRECTIONS ?? '';
 
 // ---------------------------------------------------------- plans: Free (3 reels + 1 batch a month) and Premium ($10/month or $100 once)
-// Payments and license keys are handled by Lemon Squeezy; links live in billing.json. Until checkout links are set,
+// Payments are handled by Stripe (Managed Payments, through Link); the payment links live in billing.json. Until checkout links are set,
 // the app runs in launch mode: nothing is locked. Add ?paywall=1 to the address to preview the paywall anyway.
 const FREE = { clip: 3, batch: 1 };
 const FREE_GENRES = ['chill', 'lofi', 'upbeat'];
 const CROWN = '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M3 8.2c0-.7.8-1 1.3-.6l3.6 3.1 3.3-6.1c.4-.7 1.3-.7 1.6 0l3.3 6.1 3.6-3.1c.5-.4 1.3-.1 1.3.6l-1.5 9.3c-.1.5-.5.9-1 .9H5.5c-.5 0-.9-.4-1-.9z"/><rect fill="currentColor" x="5" y="19.6" width="14" height="2" rx="1"/></svg>';
 const crown = (t = 'Premium') => `<span class="crown" title="${esc(t)}" aria-label="${esc(t)}" role="img">${CROWN}</span>`;
-const BILL = { monthly: '', lifetime: '', storeId: null, manage: 'https://app.lemonsqueezy.com/my-orders', ownerHash: '', sbUrl: '', sbKey: '', links: false, accounts: false, ready: false };
+const BILL = { monthly: '', lifetime: '', storeId: null, manage: 'https://app.link.com', ownerHash: '', sbUrl: '', sbKey: '', links: false, accounts: false, ready: false };
 const forcePaywall = /[?&]paywall=1\b/.test(location.search);
 let LIC = store.get('license', null);   // only the creator's key lives on the device now; everyone else's Premium is on their account
 const monthKey = (d = new Date()) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
@@ -1315,7 +1315,7 @@ async function loadBilling() {
 }
 
 // ---------------------------------------------------------- accounts (email + password). Premium belongs to the account, not the device.
-// Sign-in and purchase records live in Supabase; Lemon Squeezy tells it about every purchase (supabase/functions/ls-webhook).
+// Sign-in and purchase records live in Supabase; Stripe tells it about every purchase (supabase/functions/stripe-webhook).
 let SESSION = store.get('session', null);   // { access_token, refresh_token, expires_at, user: { id, email } }
 let ENT = store.get('ent', null);           // { uid, rows, at }: this account's purchases, cached so Premium works offline
 const signedIn = () => !!(SESSION && SESSION.user);
@@ -1399,10 +1399,10 @@ async function linkKey(raw) {
   try { await Account.call('link-key', { key }); await loadEnt(); return acctPlan() ? { ok: true } : { error: "That key is linked, but its plan isn't active." }; }
   catch (e) { return { error: e.status ? e.message : authMsg(e) }; }
 }
+// Stripe payment links: the account id rides along as client_reference_id, so the purchase lands on this account (supabase/functions/stripe-webhook)
 function checkoutUrl(plan) {
   const u = new URL(BILL[plan]);
-  u.searchParams.set('checkout[custom][user_id]', SESSION.user.id); u.searchParams.set('checkout[email]', SESSION.user.email);
-  if (SET.profile.name) u.searchParams.set('checkout[name]', SET.profile.name);
+  u.searchParams.set('client_reference_id', SESSION.user.id); u.searchParams.set('prefilled_email', SESSION.user.email);
   return u.toString();
 }
 
@@ -1493,8 +1493,13 @@ $$('#proSheet [data-plan]').forEach(b => b.onclick = () => {
   if (!signedIn()) return openAuth('signup', { why: 'Premium is tied to your account, so it’s there on every device you sign in to. No keys to keep track of.', then: { plan, fn: () => { upsell(); startCheckout(plan); } } });
   startCheckout(plan);
 });
-$('#proHaveKey').onclick = () => { if (!signedIn() && BILL.accounts) return openAuth('signin', { why: 'Sign in to the account you bought Premium with. It unlocks by itself.', then: { fn: async () => { await loadEnt(); if (!licensed()) { upsell(); proStep('key'); } } } }); proStep('key'); setTimeout(() => $('#proKeyInput').focus(), 50); };
-$('#proWaitKey').onclick = () => { proStep('key'); setTimeout(() => $('#proKeyInput').focus(), 50); };
+// Stripe doesn't issue license keys: a purchase is found by the account it was bought from, or by the email it was paid with
+const notFound = () => toast(`No Premium purchase found for ${SESSION.user.email} yet. If you paid with a different email, write to reelstudioeditor@gmail.com and we'll move it over.`, 7000);
+$('#proHaveKey').onclick = async () => {
+  if (!signedIn() && BILL.accounts) return openAuth('signin', { why: 'Sign in to the account you bought Premium with. It unlocks by itself.', then: { fn: async () => { await loadEnt(); if (!licensed()) notFound(); } } });
+  await loadEnt(); if (licensed()) { $('#proSheet').hidden = true; toast('Premium is on.'); } else notFound();
+};
+$('#proWaitKey').onclick = async () => { await loadEnt(); if (acctPlan()) { clearInterval(waitTimer); $('#proSheet').hidden = true; toast('Premium unlocked. Thank you!', 5000); } else notFound(); };
 const unlock = async (input, btn, msg) => {
   btn.disabled = true; const t = btn.textContent; btn.textContent = 'Checking…'; msg.textContent = '';
   const r = await linkKey(input.value); btn.disabled = false; btn.textContent = t;
@@ -2882,12 +2887,6 @@ function planSection() {
     box.append(up);
   }
   const rows = [setRow('Your plan', '', box)];
-  if ((signedIn() && !r) || !BILL.accounts) {
-    const key = h(`<div class="stack" style="gap:8px"><div class="keyrow"><input type="text" placeholder="License key" autocomplete="off" spellcheck="false" aria-label="License key"><button class="btn" type="button">Link</button></div><p class="hint" role="status"></p></div>`);
-    const [ki, kb] = key.querySelectorAll('input, button'), km = key.querySelector('[role=status]');
-    kb.onclick = () => unlock(ki, kb, km); ki.onkeydown = e => { if (e.key === 'Enter') kb.click(); };
-    rows.push(setRow('License key', 'Only if a purchase didn’t show up by itself. Linked to your account once; it can’t be used by anyone else after.', key));
-  }
   return section('plan', 'Plan and billing', rows, 'Free: 3 reels and 1 long-form batch every month, no watermark, no catch. Premium: $10 a month or $100 once, on your Reel Studio account.');
 }
 function accountRow() {

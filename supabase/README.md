@@ -1,35 +1,30 @@
 # Reel Studio accounts and payments
 
-Premium belongs to a Reel Studio account (email + password), not to a device.
+Premium belongs to a Reel Studio account (email + password), not to a device. Checkout is Stripe (Managed Payments: Stripe is the seller of record, through its Link checkout).
 
 1. Someone taps a plan. If they're signed out, they create an account (or sign in) first.
-2. Checkout opens with their account attached (`checkout[custom][user_id]`).
-3. Lemon Squeezy tells `ls-webhook` about the purchase, which writes it to their account.
+2. The app opens the Stripe payment link with `?client_reference_id=<account id>&prefilled_email=<email>`.
+3. Stripe tells `stripe-webhook` about the purchase, which writes it to their account.
 4. The app notices within a few seconds and unlocks. Any device they sign in to has Premium too.
+5. Customers manage or cancel at app.link.com; refunds are issued in the Stripe Dashboard (or by Link support).
 
-Fallbacks:
-- **Bought with the same email before signing up:** the purchase attaches itself once that email is confirmed (`claim_purchases`).
-- **Something went missing:** they link their license key to their account, once (`account` → `link-key`). After that the key can't be linked to anyone else.
+Fallback: a purchase paid with the same email as the account attaches itself once that email is confirmed (`claim_purchases`).
 
 ## Files
-- `schema.sql`: the purchases table, its security rules, and the claim function.
-- `functions/ls-webhook/index.ts`: receives Lemon Squeezy events. Deploy with JWT verification **off**.
-- `functions/account/index.ts`: links a license key, or deletes an account. Leave JWT verification **on**.
-- `functions/stock/index.ts`: free stock search (Pexels videos and photos) for the Library and for automatic matching. Deploy with JWT verification **off**. Needs the `PEXELS_API_KEY` secret (free at pexels.com/api). Until it's deployed, the app simply doesn't show online stock.
+- `schema.sql`: purchases, free-plan usage, the reel counter, and their security rules.
+- `functions/stripe-webhook/index.ts`: receives Stripe events. Deploy with JWT verification **off**.
+- `functions/account/index.ts`: deletes an account. Leave JWT verification **on**.
+- `functions/stock/index.ts`: free stock search (needs `PEXELS_API_KEY`). JWT **off**. Optional.
+- `functions/ls-webhook/index.ts`: the old Lemon Squeezy webhook (Lemon Squeezy is shutting down). Unused.
 
 ## Secrets (Supabase → Edge Functions → Secrets)
-- `LS_SIGNING_SECRET`: the same random string you type into the Lemon Squeezy webhook.
-- `LS_STORE_ID`: `521572`
-- `PEXELS_API_KEY`: your free Pexels API key (for the `stock` function).
-- `LIFETIME_VARIANT_IDS`: comma-separated lifetime variant IDs. Test mode is `2365610`; add the live one after you copy to live mode.
+- `STRIPE_WEBHOOK_SECRET`: the signing secret (`whsec_…`) of the Stripe webhook below.
+- `PEXELS_API_KEY`: optional, for the `stock` function.
 
-## Lemon Squeezy webhook (Settings → Webhooks → +, once in test mode and again in live mode)
-- **URL:** `https://YOUR-PROJECT.supabase.co/functions/v1/ls-webhook`
-- **Events:**
-  - Orders: `order_created`, `order_refunded`
-  - Subscriptions: `subscription_created`, `subscription_updated`, `subscription_cancelled`, `subscription_resumed`, `subscription_expired`, `subscription_paused`, `subscription_unpaused`
-  - Subscription payments: `subscription_payment_success`, `subscription_payment_failed`
-  - License keys: `license_key_created`
-
-## App config (`billing.json`)
-`supabaseUrl` and `supabaseAnonKey` come from Project Settings → API. The anon key is public by design; never put the `service_role` key anywhere in the site.
+## Stripe
+- Settings → Managed Payments: turn it on.
+- Products: "Reel Studio Premium (monthly)" $10/month recurring, and "Reel Studio Premium (lifetime)" $100 one time, each with a software/SaaS tax code.
+- Payment links: one per product, with **Enable Managed Payments** ticked. Paste both links into `billing.json` (`monthly`, `lifetime`).
+- Developers → Webhooks → Add destination: `https://<project>.supabase.co/functions/v1/stripe-webhook`, events
+  `checkout.session.completed`, `checkout.session.async_payment_succeeded`, `customer.subscription.created`,
+  `customer.subscription.updated`, `customer.subscription.deleted`, `charge.refunded`. Do it once in test mode and once in live mode.

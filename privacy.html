@@ -44,7 +44,7 @@
   <h2>What we collect, and why</h2>
   <ul>
     <li><b>Account details</b>, if you create an account: your email address and a password (stored only as a secure hash by our sign-in provider). Used to sign you in and keep your plan on every device.</li>
-    <li><b>Purchase records</b>, if you buy Premium: your plan, its status and renewal dates, the order or subscription ID, and the email you bought with, as reported to us by our payment partner. Used to unlock Premium and handle refunds. We never see your card details.</li>
+    <li><b>Purchase records</b>, if you buy Premium: your plan, its status and renewal dates, the order or subscription ID, and the email you bought with, as reported to us by Stripe. Used to unlock Premium and handle refunds. We never see your card details.</li>
     <li><b>Your free-plan count</b>, if you have an account: how many free reels and long-video batches your account has used this month, so the free plan works the same on every device. Just the numbers.</li>
     <li><b>A count of reels made.</b> When a reel finishes, 1 is added to a public total. Nothing else goes with it: no video, words, name or device ID.</li>
     <li><b>Free stock searches</b>, if switched on in Settings: a few search words (like "coffee" or "city at night") are sent to our server and to Pexels to find matching clips. Never your video and never your full transcript.</li>
@@ -55,7 +55,7 @@
   <h2>Who handles it for us</h2>
   <ul>
     <li><b>Supabase</b>: accounts, sign-in emails and purchase records.</li>
-    <li><b>Our payment partner</b> (named here before Premium checkout opens): checkout, payments, taxes and receipts. They are the seller of record for Premium, and their own privacy policy covers the payment details you give them.</li>
+    <li><b>Stripe</b>, through its Link checkout: payments, taxes and receipts. They are the seller of record for Premium, and their own privacy policy covers the payment details you give them.</li>
     <li><b>Pexels</b>: free stock search results.</li>
     <li><b>GitHub Pages</b> (hosting), <b>Google Fonts</b>, <b>jsDelivr</b> (code libraries), <b>Hugging Face</b> (the speech model, downloaded once) and the image host for blog pictures: like any website request, these see your IP address and browser details when your browser loads files from them.</li>
   </ul>

@@ -17,7 +17,7 @@ EDDIE is Reel Studio's mascot and the face of the brand: the editor character wh
 
 ## Pages
 - [Home](https://reeleditapp.com/): what it does and how it works
-- [Pricing](https://reeleditapp.com/pricing.html): exactly what's in Free and Premium
-- [Your data](https://reeleditapp.com/data.html): what stays on the device and what is sent where
-- [Reel Studio vs Opus Clip](https://reeleditapp.com/vs/opus-clip.html): an honest comparison
-- [Editor](https://reeleditapp.com/app.html): the app itself
+- [Pricing](https://reeleditapp.com/pricing): exactly what's in Free and Premium
+- [Your data](https://reeleditapp.com/data): what stays on the device and what is sent where
+- [Reel Studio vs Opus Clip](https://reeleditapp.com/vs/opus-clip): an honest comparison
+- [Editor](https://reeleditapp.com/app): the app itself
