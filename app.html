@@ -319,6 +319,9 @@ input[type="range"] { width: 100%; accent-color: var(--acc); }
 .screen { width: fit-content; max-width: 100%; border-radius: 22px; overflow: hidden; background: #000; box-shadow: var(--shadow); }
 .screen video { display: block; max-width: 100%; max-height: 62vh; aspect-ratio: 9 / 16; background: #000; }
 .stats { font-size: 13.5px; color: var(--muted); text-align: center; }
+.hashrow { display: flex; gap: 8px; align-items: center; width: 100%; max-width: 420px; }
+.hashrow[hidden] { display: none; }
+.hashrow input { flex: 1; min-width: 0; }
 .player .btn.big { max-width: 420px; }
 .player .row { justify-content: center; }
 .insp { padding: 6px 18px 18px; gap: 14px; }
@@ -361,7 +364,7 @@ input[type="range"] { width: 100%; accent-color: var(--acc); }
 }
 @media (max-width: 759px) {
   .player { display: contents; }
-  .screen, #audioNote { order: 1; justify-self: center; } .stats { order: 2; } .insp { order: 3; } #saveReel { order: 4; justify-self: stretch; max-width: none; } .player > .row { order: 5; }
+  .screen, #audioNote { order: 1; justify-self: center; } .stats, .hashrow { order: 2; } .insp { order: 3; } #saveReel { order: 4; justify-self: stretch; max-width: none; } .player > .row { order: 5; }
   .screen video { max-height: 44vh; }
   .edit-list, .caps { max-height: 46vh; overflow: auto; }
 }
@@ -916,6 +919,7 @@ a.btn { text-decoration: none; color: inherit; }
             <div class="screen"><video id="reelVideo" controls playsinline></video></div>
             <div class="notice bad" id="audioNote" hidden></div>
             <div class="stats" id="stats"></div>
+            <div class="hashrow" id="hashtags" hidden><input type="text" id="tagText" readonly aria-label="Five hashtags for this reel"><button class="btn sm" id="copyTags" type="button">Copy hashtags</button></div>
             <button class="btn primary big" id="saveReel" type="button"><span data-icon="download"></span>Save reel</button>
             <div class="row">
               <button class="btn ghost sm" id="saveSrt" type="button">Captions file</button>
@@ -2614,7 +2618,30 @@ function markDirty(k, v = true) { S.P.ui.dirty[k] = v; S.P.ui.changed = true; up
 function updateBar() {
   const host = S.rev && (S.rev.where === 'clip' ? 'clip' : 'batch');
   $('#changeBar').hidden = !(S.P && S.P.ui && S.P.ui.changed && !$('#review').hidden && S.view === host && !S.busy);
+  renderHashtags();
 }
+// ---------------------------------------------------------- hashtags: five per reel (Instagram's cap)
+const cleanWord = raw => String(raw).toLowerCase().replace(/[’']/g, '').replace(/[^a-z0-9]/g, '');
+const TAG_SKIP = new Set('because people thing things something everything anything make makes going know want need think first last time good great actually always never every still ever where there here their about being doing'.split(' '));
+function hashtagSet(P) {
+  const score = new Map(), label = new Map();
+  for (const x of P.outWords || []) {
+    const w = cleanWord(x.w);
+    if (w.length < 3 || /^\d+$/.test(w) || E.isStop(w) || TAG_SKIP.has(w)) continue;
+    const k = E.stem(w);
+    score.set(k, (score.get(k) || 0) + 1 + (w.length >= 6 ? 0.5 : 0));
+    if (!label.has(k) || w.length < label.get(k).length) label.set(k, w);
+  }
+  const trending = new Set((S.trends && S.trends.topics || []).flatMap(t => t.split(/\s+/)).map(w => E.stem(cleanWord(w))));
+  for (const k of score.keys()) if (trending.has(k)) score.set(k, score.get(k) + 2);
+  return [...score].sort((a, b) => b[1] - a[1]).slice(0, 5).map(([k]) => '#' + label.get(k));
+}
+function renderHashtags() {
+  const box = $('#hashtags'), tags = S.P && S.rev && !$('#review').hidden ? hashtagSet(S.P) : [];
+  box.hidden = !tags.length;
+  if (tags.length) $('#tagText').value = tags.join(' ');
+}
+$('#copyTags').onclick = async () => { const i = $('#tagText'); try { await navigator.clipboard.writeText(i.value); toast('Hashtags copied'); } catch (e) { i.focus(); i.select(); } };
 $$('.tabs button').forEach(b => b.onclick = () => {
   $$('.tabs button').forEach(x => x.setAttribute('aria-selected', String(x === b)));
   $$('[data-pane]').forEach(p => { p.hidden = p.dataset.pane !== b.dataset.p; });
