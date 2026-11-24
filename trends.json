@@ -1,5 +1,5 @@
 {
-  "updated": "2026-11-23",
+  "updated": "2026-11-24",
   "about": "Hook formats and their weights for picking reel openers. Topics refresh daily from Google's US trending searches.",
   "hooks": {
     "question": 0.55,
@@ -13,15 +13,15 @@
     "you": 0.35
   },
   "topics": [
-    "tom holland",
-    "grayson chrisley",
-    "michelle randolph",
-    "wwe raw",
-    "manny manuel",
-    "airbag",
-    "michigan vs miami fl",
-    "flood watch",
-    "maria middleton",
-    "what time does the stock market close"
+    "rihanna",
+    "uic vs rice",
+    "chapecoense x palmeiras",
+    "fc porto",
+    "huawei",
+    "cia",
+    "lajohntay wester",
+    "jude bellingham",
+    "rb leipzig",
+    "jobe bellingham"
   ]
 }
