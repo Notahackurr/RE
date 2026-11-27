@@ -1,5 +1,5 @@
 {
-  "updated": "2026-11-26",
+  "updated": "2026-11-27",
   "about": "Hook formats and their weights for picking reel openers. Topics refresh daily from Google's US trending searches.",
   "hooks": {
     "question": 0.55,
@@ -13,15 +13,15 @@
     "you": 0.35
   },
   "topics": [
-    "john 3:16",
-    "joe biden",
-    "laporta",
-    "georgetown vs texas",
-    "lyon - lillestrøm",
-    "al pacino",
-    "movies in theaters",
-    "port hardy hospital",
-    "crystal palace - real sociedad",
-    "juventus vs omonoia"
+    "app state vs south alabama",
+    "panthers vs capitals",
+    "levante - racing de santander",
+    "canucks vs flyers",
+    "red wings vs blue jackets",
+    "venezia vs bologna",
+    "nottm forest vs chelsea",
+    "tim tawa",
+    "jojo siwa",
+    "storm"
   ]
 }
